@@ -2,57 +2,1104 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Dependency Injection — Notes</title>
+<title>Spring IoC Container & Dependency Injection — Complete Deep Dive</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <style>
-  :root{--bg:#0b0e14;--surface:#131824;--border:#232a38;--text:#e7eaf1;--muted:#9aa4b7;--accent:#5eead4;}
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
-  .wrap{max-width:760px;margin:0 auto;padding:48px 24px;}
-  h1{font-size:2rem;margin-bottom:4px;}
-  .eyebrow{color:var(--accent);font-family:monospace;font-size:.85rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px;}
-  h2{margin-top:40px;font-size:1.25rem;border-left:3px solid var(--accent);padding-left:12px;}
-  p{color:var(--muted);}
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin:16px 0;}
-  code{background:#0f131c;border:1px solid var(--border);border-radius:6px;padding:2px 6px;font-size:.9em;color:var(--accent);}
-  pre{background:#0f131c;border:1px solid var(--border);border-radius:10px;padding:16px;overflow-x:auto;}
-  table{width:100%;border-collapse:collapse;margin:16px 0;}
-  th,td{text-align:left;padding:10px;border-bottom:1px solid var(--border);font-size:.92rem;}
-  th{color:var(--accent);font-family:monospace;font-weight:500;}
+  :root {
+    --bg: #0b0e14;
+    --surface: #131824;
+    --panel2: #0f131c;
+    --border: #232a38;
+    --text: #e7eaf1;
+    --muted: #9aa4b7;
+    --accent: #f0b429;
+    --amber: #f0b429;
+    --teal: #38bdf8;
+    --rose: #f87171;
+    --green: #4ade80;
+    --purple: #c084fc;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .layout {
+    display: flex;
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+  
+  /* STICKY SIDEBAR NAV */
+  nav.sidebar {
+    width: 310px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 24px 16px;
+    flex-shrink: 0;
+  }
+  nav.sidebar h3 {
+    font-size: 0.85rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+    padding-left: 8px;
+  }
+  nav.sidebar a {
+    display: block;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.81rem;
+    padding: 6px 10px;
+    border-radius: 6px;
+    margin-bottom: 2px;
+    transition: all 0.15s ease;
+  }
+  nav.sidebar a:hover {
+    color: var(--accent);
+    background: rgba(240, 180, 41, 0.08);
+  }
+
+  /* MAIN CONTENT WRAPPER */
+  .main-content {
+    flex: 1;
+    max-width: 1080px;
+    padding: 48px 40px 120px;
+    overflow-x: hidden;
+  }
+
+  .eyebrow {
+    color: var(--accent);
+    font-family: monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  h1 { font-size: 2.3rem; margin-top: 0; margin-bottom: 8px; font-weight: 800; line-height: 1.25; }
+  h1 span { color: var(--accent); }
+  .sub { color: var(--muted); font-size: 1rem; margin-bottom: 32px; }
+  
+  h2 {
+    margin-top: 56px;
+    font-size: 1.45rem;
+    border-left: 4px solid var(--accent);
+    padding-left: 14px;
+    color: var(--text);
+  }
+  h3 { font-size: 1.15rem; color: var(--teal); margin-top: 28px; }
+  h4 { font-size: 0.98rem; color: var(--purple); margin-top: 20px; }
+  p, li { color: var(--muted); font-size: 0.95rem; }
+  li { margin-bottom: 6px; }
+  b, strong { color: var(--text); }
+  
+  /* CARDS & PANELS */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 20px 0; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .card b { color: var(--accent); display: block; margin-bottom: 6px; font-size: 1rem; }
+  
+  /* CALLOUT BOXES */
+  .callout {
+    margin: 20px 0;
+    border-left: 4px solid var(--accent);
+    padding: 16px 20px;
+    background: rgba(240, 180, 41, 0.05);
+    border-radius: 0 8px 8px 0;
+    font-size: 0.92rem;
+  }
+  .callout.warn { border-left-color: var(--rose); background: rgba(248, 113, 113, 0.06); }
+  .callout.info { border-left-color: var(--teal); background: rgba(56, 189, 248, 0.06); }
+  .callout.success { border-left-color: var(--green); background: rgba(74, 222, 128, 0.06); }
+  
+  /* CODE BLOCKS WITH PURE CSS SYNTAX HIGHLIGHTING */
+  pre {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: #e7eaf1;
+  }
+  code {
+    background: #0f131c;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.88em;
+    color: var(--accent);
+    font-family: 'Consolas', 'Courier New', monospace;
+  }
+  pre code { border: none; padding: 0; background: transparent; color: inherit; }
+  
+  .kw { color: #f43f5e; font-weight: bold; }
+  .anno { color: var(--accent); font-weight: bold; }
+  .type { color: var(--teal); }
+  .str { color: var(--green); }
+  .cmnt { color: #64748b; font-style: italic; }
+  .fn { color: #c084fc; }
+
+  /* TABLES */
+  table.matrix {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 0.85rem;
+    background: var(--surface);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  table.matrix th, table.matrix td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    text-align: left;
+  }
+  table.matrix th {
+    background: var(--panel2);
+    color: var(--accent);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+  }
+  table.matrix tr:last-child td { border-bottom: none; }
+
+  /* FLOWCHARTS & DIAGRAMS */
+  .diagram {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin: 24px 0;
+  }
+  .flow-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .flow-step .num {
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: bold;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+  .flow-arrow {
+    text-align: center;
+    color: var(--accent);
+    font-size: 1.2rem;
+    margin: -4px 0 4px;
+  }
+
+  /* FAQ ACCORDION STYLE */
+  .faq-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    padding: 16px;
+  }
+  .faq-q { color: var(--accent); font-weight: 600; font-size: 0.98rem; margin-bottom: 8px; }
+  .faq-a { color: var(--muted); font-size: 0.92rem; }
+
+  @media (max-width: 900px) {
+    .layout { flex-direction: column; }
+    nav.sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border); }
+    .main-content { padding: 24px 16px; }
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="eyebrow">Spring Boot &middot; Beginner</div>
-  <h1>Dependency Injection</h1>
-  <p>The mechanism the IoC container uses to actually deliver dependencies into your objects.</p>
 
-  <h2>The core idea</h2>
-  <p>If IoC is the principle ("don't build your own dependencies"), DI is the implementation ("here's how the container hands them to you"). Spring supports three styles of injection.</p>
+<div class="layout">
+  <!-- SIDEBAR NAVIGATION -->
+  <nav class="sidebar">
+    <h3>Spring IoC & DI Guide</h3>
+    <a href="#sec1">1. Introduction & IoC Paradigm</a>
+    <a href="#sec2">2. What is the Spring IoC Container?</a>
+    <a href="#sec3">3. Internal Working of IoC Container</a>
+    <a href="#sec4">4. BeanDefinition Architecture</a>
+    <a href="#sec5">5. BeanFactory vs ApplicationContext</a>
+    <a href="#sec6">6. Dependency Injection Core Concept</a>
+    <a href="#sec7">7. Types of Dependency Injection</a>
+    <a href="#sec8">8. IoC vs Dependency Injection</a>
+    <a href="#sec9">9. Complete Bean Lifecycle</a>
+    <a href="#sec10">10. Dependency Resolution Mechanism</a>
+    <a href="#sec11">11. Circular Dependency & Three-Level Cache</a>
+    <a href="#sec12">12. Bean Scopes Deep Dive</a>
+    <a href="#sec13">13. Lazy vs Eager Initialization</a>
+    <a href="#sec14">14. Autowiring Modes</a>
+    <a href="#sec15">15. BeanPostProcessor Mechanics</a>
+    <a href="#sec16">16. FactoryBean, ObjectFactory & Supplier</a>
+    <a href="#sec17">17. @Component & Stereotype Hierarchy</a>
+    <a href="#sec18">18. @Bean vs @Component</a>
+    <a href="#sec19">19. Internal Annotation Processing (ASM)</a>
+    <a href="#sec20">20. Spring Boot Startup Flow</a>
+    <a href="#sec21">21. Real Production Architecture Example</a>
+    <a href="#sec22">22. Core Spring Internal Classes</a>
+    <a href="#sec23">23. Performance Optimization & AOT</a>
+    <a href="#sec24">24. Top 50 Interview Questions & Answers</a>
+    <a href="#sec25">25. Common Production Pitfalls</a>
+    <a href="#sec26">26. Enterprise Production Best Practices</a>
+    <a href="#sec27">27. Revision Cheatsheet</a>
+    <a href="#sec28">28. Visual Architectural Infographic</a>
+  </nav>
 
-  <table>
-    <tr><th>Style</th><th>How</th><th>When Spring recommends it</th></tr>
-    <tr><td>Constructor</td><td>Passed into the constructor</td><td>Default choice — makes dependencies explicit and required</td></tr>
-    <tr><td>Setter</td><td>Set via a setter method</td><td>Optional dependencies</td></tr>
-    <tr><td>Field</td><td><code>@Autowired</code> directly on a field</td><td>Convenient, but harder to test — avoid in new code</td></tr>
-  </table>
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <div class="eyebrow">Enterprise Java &middot; Spring Framework Core</div>
+    <h1>Spring IoC Container & <span>Dependency Injection</span></h1>
+    <div class="sub">The exhaustive, senior-level architectural guide to Spring's Inversion of Control container, 3-level singleton cache, ASM bytecode component scanning, BeanDefinition resolution, and enterprise production patterns.</div>
 
-  <div class="card">
-    <strong>Analogy:</strong> constructor injection is like a recipe that lists ingredients up front — you can't start cooking without them. Field injection is like grabbing ingredients out of the fridge mid-recipe: it works, but nobody can see what you actually needed just by reading the method.
-  </div>
+    <!-- SECTION 1 -->
+    <section id="sec1">
+      <h2>1. Introduction</h2>
+      <p>In traditional procedural and object-oriented Java applications, component classes explicitly control the creation, lifecycle, and assembly of their own dependencies. This tight coupling creates rigid codebases that are difficult to unit test, refactor, and scale.</p>
+      
+      <h3>What is Inversion of Control (IoC)?</h3>
+      <p>Inversion of Control is a foundational architectural design principle wherein the control of object creation, configuration, and lifecycle management is inverted from the application code itself to an external framework or container runtime.</p>
 
-  <pre><code>@Service
-class OrderService {
-    private final PaymentClient paymentClient;
+      <div class="callout warn">
+        <b>Problems in Traditional Java (Before IoC):</b>
+        <ul>
+          <li><b>Tight Coupling:</b> Classes instantiate concrete implementation dependencies directly using the <code>new</code> operator.</li>
+          <li><b>Testing Impediments:</b> Mocking dependencies in isolated unit tests becomes impossible without refactoring production code.</li>
+          <li><b>Lifecycle Boilerplate:</b> Every component must manually manage setup, thread-safety, singleton guarantees, and teardown logic.</li>
+        </ul>
+      </div>
 
-    // Constructor injection — Spring supplies PaymentClient automatically
-    OrderService(PaymentClient paymentClient) {
-        this.paymentClient = paymentClient;
+      <h4>Tight Coupling Code Example (Without IoC):</h4>
+      <pre><code><span class="kw">public class</span> <span class="type">OrderService</span> {
+    <span class="cmnt">// Direct instantiation creates high coupling to MySQLOrderRepository implementation</span>
+    <span class="kw">private</span> <span class="type">OrderRepository</span> orderRepository = <span class="kw">new</span> <span class="type">MySQLOrderRepository</span>();
+
+    <span class="kw">public void</span> <span class="fn">placeOrder</span>(<span class="type">Order</span> order) {
+        orderRepository.save(order);
     }
 }</code></pre>
 
-  <h2>Why constructor injection wins</h2>
-  <p>It makes dependencies visible and mandatory, plays well with <code>final</code> fields, and makes unit testing trivial — you just pass a mock into the constructor, no Spring context required.</p>
+      <h4>Decoupled Code Example (With IoC Paradigm):</h4>
+      <pre><code><span class="kw">public class</span> <span class="type">OrderService</span> {
+    <span class="kw">private final</span> <span class="type">OrderRepository</span> orderRepository;
+
+    <span class="cmnt">// Control is inverted: Dependency is provided to the class from external container</span>
+    <span class="kw">public</span> <span class="fn">OrderService</span>(<span class="type">OrderRepository</span> orderRepository) {
+        <span class="kw">this</span>.orderRepository = orderRepository;
+    }
+
+    <span class="kw">public void</span> <span class="fn">placeOrder</span>(<span class="type">Order</span> order) {
+        orderRepository.save(order);
+    }
+}</code></pre>
+    </section>
+
+    <!-- SECTION 2 -->
+    <section id="sec2">
+      <h2>2. What is the Spring IoC Container?</h2>
+      <p>The Spring IoC Container is the core engine of the Spring Framework. It implements Inversion of Control by managing the entire lifecycle of application objects—from instantiation, dependency wiring, and post-processing, to scope management and final destruction.</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>1. Object Creation & Assembly</b>
+          <p>Instantiates classes via constructor, factory methods, or proxy factories based on configuration metadata.</p>
+        </div>
+        <div class="card">
+          <b>2. Dependency Resolution</b>
+          <p>Inspects type requirements, auto-wires dependent beans, and constructs the runtime object graph.</p>
+        </div>
+        <div class="card">
+          <b>3. Lifecycle Management</b>
+          <p>Executes lifecycle callbacks including aware interfaces, <code>@PostConstruct</code>, and <code>@PreDestroy</code> handlers.</p>
+        </div>
+        <div class="card">
+          <b>4. Singleton & Scope Storage</b>
+          <p>Caches singletons in internal thread-safe registries and manages prototype/request custom scopes.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3 -->
+    <section id="sec3">
+      <h2>3. Internal Working of IoC Container</h2>
+      <p>During application startup, the Spring container executes a structured sequence to transform configuration sources into a fully operational object graph.</p>
+
+      <div class="diagram">
+        <div class="flow-step">
+          <div class="num">1</div>
+          <div><b>Bootstrap & Component Scan:</b> Container reads base packages defined by <code>@ComponentScan</code> or configuration classes.</div>
+        </div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step">
+          <div class="num">2</div>
+          <div><b>ASM Classpath Scanning:</b> <code>ClassPathBeanDefinitionScanner</code> uses ASM bytecode readers to inspect <code>.class</code> files without loading them.</div>
+        </div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step">
+          <div class="num">3</div>
+          <div><b>BeanDefinition Registration:</b> Parsed metadata is wrapped into <code>BeanDefinition</code> objects and stored in <code>DefaultListableBeanFactory</code>.</div>
+        </div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step">
+          <div class="num">4</div>
+          <div><b>BeanFactoryPostProcessor Execution:</b> Custom post-processors (e.g., <code>PropertySourcesPlaceholderConfigurer</code>) modify metadata prior to object creation.</div>
+        </div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step">
+          <div class="num">5</div>
+          <div><b>Dependency Graph Construction & Instantiation:</b> Non-lazy singletons are instantiated via constructor injection or reflection.</div>
+        </div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step">
+          <div class="num">6</div>
+          <div><b>Property Population & Dependency Injection:</b> Dependencies are injected via setters, fields, or constructor arguments.</div>
+        </div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step">
+          <div class="num">7</div>
+          <div><b>BeanPostProcessor (Pre-Initialization):</b> <code>postProcessBeforeInitialization()</code> runs (executing <code>@PostConstruct</code> methods).</div>
+        </div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step">
+          <div class="num">8</div>
+          <div><b>InitializingBean & Custom Init:</b> <code>afterPropertiesSet()</code> and custom <code>initMethod</code> callbacks execute.</div>
+        </div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step">
+          <div class="num">9</div>
+          <div><b>BeanPostProcessor (Post-Initialization):</b> <code>postProcessAfterInitialization()</code> wraps beans in AOP proxies if required.</div>
+        </div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step">
+          <div class="num">10</div>
+          <div><b>Ready Singleton:</b> Bean is placed in the primary singleton cache (<code>singletonObjects</code>) for application use.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4 -->
+    <section id="sec4">
+      <h2>4. BeanDefinition Architecture</h2>
+      <p>Spring does not directly instantiate objects upon reading class files. Instead, it first parses metadata into a <code>BeanDefinition</code> instance. A <code>BeanDefinition</code> serves as a detailed blueprint describing how a specific bean must be created, wired, and managed.</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>Stored Metadata Properties</b>
+          <ul>
+            <li><b>Bean Class Name:</b> Target concrete implementation class.</li>
+            <li><b>Scope:</b> Singleton, Prototype, Request, etc.</li>
+            <li><b>Constructor & Property Values:</b> Explicit configuration args.</li>
+            <li><b>Autowire Mode:</b> byName, byType, constructor.</li>
+            <li><b>Lazy Init Flag:</b> True/False initialization policy.</li>
+            <li><b>Init & Destroy Method Names:</b> Defined lifecycle hooks.</li>
+          </ul>
+        </div>
+      </div>
+
+      <pre><code><span class="cmnt">// Conceptual internal representation of a BeanDefinition</span>
+<span class="kw">public interface</span> <span class="type">BeanDefinition</span> {
+    <span class="type">String</span> <span class="fn">getBeanClassName</span>();
+    <span class="type">String</span> <span class="fn">getScope</span>();
+    <span class="kw">boolean</span> <span class="fn">isLazyInit</span>();
+    <span class="type">ConstructorArgumentValues</span> <span class="fn">getConstructorArgumentValues</span>();
+    <span class="type">MutablePropertyValues</span> <span class="fn">getPropertyValues</span>();
+    <span class="type">String</span>[] <span class="fn">getDependsOn</span>();
+}</code></pre>
+    </section>
+
+    <!-- SECTION 5 -->
+    <section id="sec5">
+      <h2>5. BeanFactory vs ApplicationContext</h2>
+      <p>Spring provides two core interfaces to represent the IoC container. <code>BeanFactory</code> is the basic root container interface, whereas <code>ApplicationContext</code> is an enterprise-grade extension that inherits from <code>BeanFactory</code>.</p>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>BeanFactory</th>
+            <th>ApplicationContext</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Bean Initialization</td>
+            <td>Lazy Loading (instantiates beans on <code>getBean()</code> request)</td>
+            <td>Eager Loading (instantiates all non-lazy singletons at startup)</td>
+          </tr>
+          <tr>
+            <td>Enterprise Features</td>
+            <td>Basic IoC & DI features only</td>
+            <td>Adds AOP, i18n Internationalization, Event Publication, Environment Profiles</td>
+          </tr>
+          <tr>
+            <td>PostProcessor Auto-Registration</td>
+            <td>Manual programmatic registration required</td>
+            <td>Automatic detection and registration of <code>BeanPostProcessor</code> implementations</td>
+          </tr>
+          <tr>
+            <td>Spring Boot Usage</td>
+            <td>Used as underlying bean storage layer</td>
+            <td>Primary container interface used (e.g. <code>ServletWebServerApplicationContext</code>)</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 6 -->
+    <section id="sec6">
+      <h2>6. Dependency Injection Core Concept</h2>
+      <p>Dependency Injection (DI) is the specific implementation mechanism of Inversion of Control whereby a component’s dependencies are "injected" into it by an external authority (the IoC container) rather than created internally.</p>
+
+      <div class="callout info">
+        <b>Advantages of Dependency Injection:</b>
+        <ul>
+          <li><b>Testability:</b> Enables effortless substitution of real services with mock implementations during unit testing.</li>
+          <li><b>Loose Coupling:</b> Dependencies are exposed via interfaces rather than concrete implementation classes.</li>
+          <li><b>Reusability:</b> Components become modular and agnostic of their execution context or environmental bindings.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- SECTION 7 -->
+    <section id="sec7">
+      <h2>7. Types of Dependency Injection</h2>
+      <p>Spring supports three primary mechanisms for injecting dependencies into components:</p>
+
+      <h3>1. Constructor Injection (Recommended for Production)</h3>
+      <pre><code><span class="anno">@Service</span>
+<span class="kw">public class</span> <span class="type">PaymentService</span> {
+    <span class="kw">private final</span> <span class="type">PaymentGateway</span> gateway;
+
+    <span class="cmnt">// @Autowired is optional on single constructors in modern Spring</span>
+    <span class="kw">public</span> <span class="fn">PaymentService</span>(<span class="type">PaymentGateway</span> gateway) {
+        <span class="kw">this</span>.gateway = gateway;
+    }
+}</code></pre>
+
+      <h3>2. Setter Injection (Recommended for Optional Dependencies)</h3>
+      <pre><code><span class="anno">@Service</span>
+<span class="kw">public class</span> <span class="type">NotificationService</span> {
+    <span class="kw">private</span> <span class="type">AuditLogger</span> logger;
+
+    <span class="anno">@Autowired</span>(required = <span class="kw">false</span>)
+    <span class="kw">public void</span> <span class="fn">setLogger</span>(<span class="type">AuditLogger</span> logger) {
+        <span class="kw">this</span>.logger = logger;
+    }
+}</code></pre>
+
+      <h3>3. Field Injection (Not Recommended in Production)</h3>
+      <pre><code><span class="anno">@Service</span>
+<span class="kw">public class</span> <span class="type">UserService</span> {
+    <span class="anno">@Autowired</span> 
+    <span class="kw">private</span> <span class="type">UserRepository</span> userRepository; <span class="cmnt">// Uses reflection directly</span>
+}</code></pre>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Injection Type</th>
+            <th>Immutability</th>
+            <th>Null Safety</th>
+            <th>Ease of Unit Testing</th>
+            <th>Circular Dependency Handling</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Constructor Injection</td>
+            <td>High (fields can be <code>final</code>)</td>
+            <td>Guaranteed at instantiation time</td>
+            <td>Excellent (pass mocks directly into constructor)</td>
+            <td>Fails early at startup (prevents invalid graphs)</td>
+          </tr>
+          <tr>
+            <td>Setter Injection</td>
+            <td>No (fields are mutable)</td>
+            <td>Requires runtime null checks</td>
+            <td>Good (call setters in test setup)</td>
+            <td>Resolved via Early Singleton Exposure</td>
+          </tr>
+          <tr>
+            <td>Field Injection</td>
+            <td>No (fields are mutable)</td>
+            <td>Prone to <code>NullPointerException</code></td>
+            <td>Poor (requires ReflectionTestUtils or Spring runner)</td>
+            <td>Hidden; masked until runtime issues arise</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 8 -->
+    <section id="sec8">
+      <h2>8. IoC vs Dependency Injection</h2>
+      <p>Developers frequently conflate IoC and DI. However, IoC is an overarching architectural design principle, whereas Dependency Injection is one specific pattern used to implement IoC.</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>Real-World Analogy: The Car Factory</b>
+          <p><b>Without IoC:</b> A Car object manufactures its own Engine, Wheels, and Transmission internally using its own tools.</p>
+          <p><b>With IoC (DI):</b> An Assembly Line Container manufactures the Engine and Transmission independently, then installs (injects) them into the Car chassis during assembly.</p>
+        </div>
+      </div>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Dimension</th>
+            <th>Inversion of Control (IoC)</th>
+            <th>Dependency Injection (DI)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Nature</td>
+            <td>Abstract Design Principle / Architectural Paradigm</td>
+            <td>Concrete Implementation Pattern</td>
+          </tr>
+          <tr>
+            <td>Primary Concern</td>
+            <td>Who controls the execution flow and object lifecycles?</td>
+            <td>How are dependent objects provided to a target component?</td>
+          </tr>
+          <tr>
+            <td>Alternative Implementations</td>
+            <td>Service Locator Pattern, Template Method Pattern, Event Loops</td>
+            <td>Constructor Injection, Setter Injection, Interface Injection</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 9 -->
+    <section id="sec9">
+      <h2>9. Complete Bean Lifecycle</h2>
+      <p>The lifecycle of a Spring bean managed inside an <code>ApplicationContext</code> follows a strict execution path from birth to destruction.</p>
+
+      <div class="diagram">
+        <h4>Complete Lifecycle Execution Sequence</h4>
+        <div class="flow-step"><div class="num">1</div><div><b>Instantiation:</b> Constructor or factory method execution.</div></div>
+        <div class="flow-step"><div class="num">2</div><div><b>Populate Properties:</b> Field and Setter dependency injection.</div></div>
+        <div class="flow-step"><div class="num">3</div><div><b>Aware Callbacks:</b> Invokes <code>BeanNameAware</code>, <code>BeanFactoryAware</code>, <code>ApplicationContextAware</code>.</div></div>
+        <div class="flow-step"><div class="num">4</div><div><b>BeanPostProcessor (Pre-Init):</b> <code>postProcessBeforeInitialization()</code> processes <code>@PostConstruct</code>.</div></div>
+        <div class="flow-step"><div class="num">5</div><div><b>InitializingBean:</b> <code>afterPropertiesSet()</code> is invoked.</div></div>
+        <div class="flow-step"><div class="num">6</div><div><b>Custom Init Method:</b> Configured <code>initMethod</code> executes.</div></div>
+        <div class="flow-step"><div class="num">7</div><div><b>BeanPostProcessor (Post-Init):</b> <code>postProcessAfterInitialization()</code> generates AOP proxies.</div></div>
+        <div class="flow-step"><div class="num">8</div><div><b>Ready State:</b> Bean is fully operational and cached.</div></div>
+        <div class="flow-step"><div class="num">9</div><div><b>PreDestroy Callback:</b> <code>@PreDestroy</code> annotated methods execute on context shutdown.</div></div>
+        <div class="flow-step"><div class="num">10</div><div><b>DisposableBean:</b> <code>destroy()</code> is invoked.</div></div>
+        <div class="flow-step"><div class="num">11</div><div><b>Custom Destroy Method:</b> Configured <code>destroyMethod</code> executes.</div></div>
+      </div>
+    </section>
+
+    <!-- SECTION 10 -->
+    <section id="sec10">
+      <h2>10. Dependency Resolution Mechanism</h2>
+      <p>When resolving injection points, Spring evaluates annotations, types, and qualifiers to locate candidate target beans.</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>Resolution Strategy Order</b>
+          <ol>
+            <li><b>Match by Exact Type:</b> Container searches for candidate beans implementing the required type.</li>
+            <li><b>Evaluate @Qualifier:</b> If multiple beans exist, matches by explicit qualifier identifier.</li>
+            <li><b>Evaluate @Primary:</b> If no qualifier is specified, selects the bean marked with <code>@Primary</code>.</li>
+            <li><b>Match by Name:</b> Fallback match based on variable field or parameter name.</li>
+          </ol>
+        </div>
+      </div>
+
+      <pre><code><span class="anno">@Configuration</span>
+<span class="kw">public class</span> <span class="type">DatabaseConfig</span> {
+    <span class="anno">@Bean</span> <span class="anno">@Primary</span>
+    <span class="kw">public</span> <span class="type">DataSource</span> <span class="fn">primaryDataSource</span>() { <span class="kw">return new</span> <span class="type">HikariDataSource</span>(); }
+
+    <span class="anno">@Bean</span> <span class="anno">@Qualifier</span>(<span class="str">"analytics"</span>)
+    <span class="kw">public</span> <span class="type">DataSource</span> <span class="fn">analyticsDataSource</span>() { <span class="kw">return new</span> <span class="type">HikariDataSource</span>(); }
+}</code></pre>
+    </section>
+
+    <!-- SECTION 11 -->
+    <section id="sec11">
+      <h2>11. Circular Dependency & Three-Level Cache</h2>
+      <p>A circular dependency occurs when Bean A depends on Bean B, and Bean B simultaneously depends on Bean A. While constructor-based circular dependencies cause unresolvable startup failures, setter/field injection circularities are resolved by Spring using a <b>Three-Level Cache mechanism</b> inside <code>DefaultSingletonBeanRegistry</code>.</p>
+
+      <h3>The Three Cache Levels inside DefaultSingletonBeanRegistry</h3>
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Cache Level</th>
+            <th>Map Variable Name</th>
+            <th>Description & Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>First-Level Cache</td>
+            <td><code>singletonObjects</code></td>
+            <td>Stores fully instantiated, injected, and initialized singleton beans ready for consumption.</td>
+          </tr>
+          <tr>
+            <td>Second-Level Cache</td>
+            <td><code>earlySingletonObjects</code></td>
+            <td>Stores early, un-initialized bean instances (raw objects created via constructor prior to property population).</td>
+          </tr>
+          <tr>
+            <td>Third-Level Cache</td>
+            <td><code>singletonFactories</code></td>
+            <td>Stores <code>ObjectFactory&lt;?&gt;</code> lambda factories capable of generating early AOP proxies for beans involved in circular loops.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="diagram">
+        <h4>Three-Level Cache Resolution Workflow</h4>
+        <div class="flow-step"><div class="num">1</div><div>Spring attempts to instantiate Bean A. It puts an <code>ObjectFactory</code> for Bean A into the <b>3rd Level Cache (singletonFactories)</b>.</div></div>
+        <div class="flow-step"><div class="num">2</div><div>Spring populates Bean A's properties and discovers it needs Bean B.</div></div>
+        <div class="flow-step"><div class="num">3</div><div>Spring starts instantiating Bean B. It puts an <code>ObjectFactory</code> for Bean B into the <b>3rd Level Cache</b>.</div></div>
+        <div class="flow-step"><div class="num">4</div><div>Spring populates Bean B's properties and discovers it needs Bean A.</div></div>
+        <div class="flow-step"><div class="num">5</div><div>Spring requests Bean A: Checks 1st Cache (Miss) &rarr; Checks 2nd Cache (Miss) &rarr; Checks 3rd Cache (Hit!).</div></div>
+        <div class="flow-step"><div class="num">6</div><div>Executes Bean A's <code>ObjectFactory</code> to get an early reference (or AOP proxy), moves Bean A to <b>2nd Level Cache (earlySingletonObjects)</b>, and removes it from the 3rd Cache.</div></div>
+        <div class="flow-step"><div class="num">7</div><div>Bean B receives the early reference of Bean A, completes its property population, initialization, and moves to the <b>1st Level Cache (singletonObjects)</b>.</div></div>
+        <div class="flow-step"><div class="num">8</div><div>Bean A now receives the fully initialized Bean B, completes its initialization, and moves to the <b>1st Level Cache</b>.</div></div>
+      </div>
+    </section>
+
+    <!-- SECTION 12 -->
+    <section id="sec12">
+      <h2>12. Bean Scopes Deep Dive</h2>
+      <p>Spring manages bean lifecycles across multiple predefined and custom scopes:</p>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Scope</th>
+            <th>Creation Policy</th>
+            <th>Thread Safety Consideration</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Singleton (Default)</td>
+            <td>One instance per IoC container instance. Shared across all callers.</td>
+            <td>Must be stateless or thread-safe.</td>
+          </tr>
+          <tr>
+            <td>Prototype</td>
+            <td>New instance created upon every <code>getBean()</code> request or injection.</td>
+            <td>Caller must manage cleanup; Spring does not execute destruction callbacks.</td>
+          </tr>
+          <tr>
+            <td>Request</td>
+            <td>One instance per HTTP request lifecycle (Web ApplicationContext).</td>
+            <td>Thread-confined to single request handling thread.</td>
+          </tr>
+          <tr>
+            <td>Session</td>
+            <td>One instance per HTTP Session lifecycle.</td>
+            <td>Must handle serialization if session state is replicated.</td>
+          </tr>
+          <tr>
+            <td>Application</td>
+            <td>One instance per <code>ServletContext</code> scope.</td>
+            <td>Shared across entire web application.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 13 -->
+    <section id="sec13">
+      <h2>13. Lazy vs Eager Initialization</h2>
+      <p>By default, the <code>ApplicationContext</code> eagerly instantiates all singleton beans during container startup to catch configuration errors early.</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>Eager Initialization (Default)</b>
+          <p><b>Pros:</b> Fails fast at startup if configuration or dependencies are missing.</p>
+          <p><b>Cons:</b> Increases initial application startup time and RAM consumption.</p>
+        </div>
+        <div class="card">
+          <b>Lazy Initialization (@Lazy)</b>
+          <p><b>Pros:</b> Faster startup and reduced initial memory footprint.</p>
+          <p><b>Cons:</b> First HTTP request encountering lazy bean suffers latency; hides configuration errors until runtime.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 14 -->
+    <section id="sec14">
+      <h2>14. Autowiring Modes</h2>
+      <p>Legacy XML and explicit bean configurations support legacy autowiring modes prior to modern annotation scanning:</p>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Mode</th>
+            <th>Resolution Strategy</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>byName</code></td>
+            <td>Matches property name with target bean identifier.</td>
+          </tr>
+          <tr>
+            <td><code>byType</code></td>
+            <td>Matches property class type with container candidate bean type.</td>
+          </tr>
+          <tr>
+            <td><code>constructor</code></td>
+            <td>Applies <code>byType</code> matching across constructor parameter arguments.</td>
+          </tr>
+          <tr>
+            <td><code>no / default</code></td>
+            <td>Requires explicit manual <code>&lt;property&gt;</code> or <code>&lt;constructor-arg&gt;</code> declarations.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 15 -->
+    <section id="sec15">
+      <h2>15. Bean Post Processor Mechanics</h2>
+      <p><code>BeanPostProcessor</code> interfaces allow custom extension of the Spring container by intercepting bean instances before and after initialization callbacks.</p>
+
+      <pre><code><span class="anno">@Component</span>
+<span class="kw">public class</span> <span class="type">CustomLoggingPostProcessor</span> <span class="kw">implements</span> <span class="type">BeanPostProcessor</span> {
+    
+    <span class="anno">@Override</span>
+    <span class="kw">public</span> <span class="type">Object</span> <span class="fn">postProcessBeforeInitialization</span>(<span class="type">Object</span> bean, <span class="type">String</span> beanName) {
+        <span class="cmnt">// Executes prior to @PostConstruct or initMethod</span>
+        <span class="kw">return</span> bean;
+    }
+
+    <span class="anno">@Override</span>
+    <span class="kw">public</span> <span class="type">Object</span> <span class="fn">postProcessAfterInitialization</span>(<span class="type">Object</span> bean, <span class="type">String</span> beanName) {
+        <span class="cmnt">// Used by Spring to construct Dynamic Proxies or CGLIB proxies (e.g., @Transactional)</span>
+        <span class="kw">return</span> bean;
+    }
+}</code></pre>
+    </section>
+
+    <!-- SECTION 16 -->
+    <section id="sec16">
+      <h2>16. FactoryBean, ObjectFactory & Supplier</h2>
+      <p>Spring provides specialized factory patterns for complex object creation:</p>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Interface</th>
+            <th>Primary Use Case</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>FactoryBean&lt;T&gt;</code></td>
+            <td>Encapsulates complex custom instantiation logic (e.g. <code>LocalSessionFactoryBean</code>). Retrieving <code>&amp;beanName</code> returns the factory itself; retrieving <code>beanName</code> returns the created object.</td>
+          </tr>
+          <tr>
+            <td><code>ObjectFactory&lt;T&gt;</code></td>
+            <td>Encapsulates lazy lookup or prototype instantiation on demand inside singleton beans.</td>
+          </tr>
+          <tr>
+            <td><code>Supplier&lt;T&gt;</code></td>
+            <td>Functional registration callback added in Spring 5 for programmatic bean definition registration.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 17 -->
+    <section id="sec17">
+      <h2>17. @Component and Stereotype Annotations</h2>
+      <p>Stereotype annotations meta-inherit from <code>@Component</code> to designate architectural layers:</p>
+
+      <div class="grid">
+        <div class="card"><b>@Component</b><p>Generic stereotype marker for utility components.</p></div>
+        <div class="card"><b>@Service</b><p>Business layer logic; transactional pointcut target.</p></div>
+        <div class="card"><b>@Repository</b><p>Data access layer; activates SQL exception translation.</p></div>
+        <div class="card"><b>@Controller / @RestController</b><p>Web layer; enables MVC mapping and JSON response serialization.</p></div>
+      </div>
+    </section>
+
+    <!-- SECTION 18 -->
+    <section id="sec18">
+      <h2>18. @Bean vs @Component</h2>
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Dimension</th>
+            <th>@Component</th>
+            <th>@Bean</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Target Level</td>
+            <td>Class declaration level</td>
+            <td>Method level inside <code>@Configuration</code> classes</td>
+          </tr>
+          <tr>
+            <td>3rd-Party Classes</td>
+            <td>Cannot be used (requires source code access)</td>
+            <td>Ideal (wraps library classes like <code>RestTemplate</code>)</td>
+          </tr>
+          <tr>
+            <td>Custom Instantiation</td>
+            <td>Restricted to constructor execution</td>
+            <td>Full access to Java code, builders, and logic</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 19 -->
+    <section id="sec19">
+      <h2>19. Internal Annotation Processing (ASM)</h2>
+      <p>To maximize startup performance, Spring does not use Java reflection during component scanning. Instead, it processes <code>.class</code> files as raw byte streams using the <b>ASM Bytecode Framework</b> via <code>SimpleMetadataReaderFactory</code>. This allows Spring to evaluate annotation metadata without invoking the JVM ClassLoader.</p>
+    </section>
+
+    <!-- SECTION 20 -->
+    <section id="sec20">
+      <h2>20. Spring Boot Startup Flow</h2>
+      <div class="diagram">
+        <div class="flow-step"><div class="num">1</div><div>Execute <code>main()</code> &rarr; Invokes <code>SpringApplication.run()</code>.</div></div>
+        <div class="flow-step"><div class="num">2</div><div>Deduces Environment type (Servlet Web vs Reactive vs Standalone).</div></div>
+        <div class="flow-step"><div class="num">3</div><div>Instantiates ApplicationContext (e.g. <code>AnnotationConfigServletWebServerApplicationContext</code>).</div></div>
+        <div class="flow-step"><div class="num">4</div><div>Executes Auto-Configuration import selectors (<code>@EnableAutoConfiguration</code>).</div></div>
+        <div class="flow-step"><div class="num">5</div><div>Performs Component Scanning and registers BeanDefinitions.</div></div>
+        <div class="flow-step"><div class="num">6</div><div>Instantiates singletons and starts embedded Web Server (Tomcat/Jetty).</div></div>
+      </div>
+    </section>
+
+    <!-- SECTION 21 -->
+    <section id="sec21">
+      <h2>21. Real Production Architecture Example</h2>
+      <pre><code><span class="cmnt">// 1. Repository Interface</span>
+<span class="kw">public interface</span> <span class="type">AccountRepository</span> {
+    <span class="type">Account</span> <span class="fn">findById</span>(<span class="type">String</span> id);
+}
+
+<span class="cmnt">// 2. Repository Implementation (IoC managed)</span>
+<span class="anno">@Repository</span>
+<span class="kw">public class</span> <span class="type">JpaAccountRepository</span> <span class="kw">implements</span> <span class="type">AccountRepository</span> {
+    <span class="anno">@Override</span>
+    <span class="kw">public</span> <span class="type">Account</span> <span class="fn">findById</span>(<span class="type">String</span> id) { <span class="kw">return new</span> <span class="type">Account</span>(id, 500.00); }
+}
+
+<span class="cmnt">// 3. Service Layer (Constructor DI)</span>
+<span class="anno">@Service</span>
+<span class="kw">public class</span> <span class="type">AccountService</span> {
+    <span class="kw">private final</span> <span class="type">AccountRepository</span> repository;
+
+    <span class="kw">public</span> <span class="fn">AccountService</span>(<span class="type">AccountRepository</span> repository) {
+        <span class="kw">this</span>.repository = repository;
+    }
+
+    <span class="kw">public</span> <span class="type">Account</span> <span class="fn">getAccount</span>(<span class="type">String</span> id) { <span class="kw">return</span> repository.findById(id); }
+}
+
+<span class="cmnt">// 4. Web Controller Layer</span>
+<span class="anno">@RestController</span>
+<span class="anno">@RequestMapping</span>(<span class="str">"/accounts"</span>)
+<span class="kw">public class</span> <span class="type">AccountController</span> {
+    <span class="kw">private final</span> <span class="type">AccountService</span> service;
+
+    <span class="kw">public</span> <span class="fn">AccountController</span>(<span class="type">AccountService</span> service) {
+        <span class="kw">this</span>.service = service;
+    }
+
+    <span class="anno">@GetMapping</span>(<span class="str">"/{id}"</span>)
+    <span class="kw">public</span> <span class="type">ResponseEntity</span>&lt;<span class="type">Account</span>&gt; <span class="fn">getAccount</span>(<span class="anno">@PathVariable</span> <span class="type">String</span> id) {
+        <span class="kw">return</span> <span class="type">ResponseEntity</span>.ok(service.getAccount(id));
+    }
+}</code></pre>
+    </section>
+
+    <!-- SECTION 22 -->
+    <section id="sec22">
+      <h2>22. Internal Classes Reference</h2>
+      <ul>
+        <li><code>DefaultListableBeanFactory</code>: Core implementation holding singleton maps and bean definition registries.</li>
+        <li><code>ConfigurationClassPostProcessor</code>: Parses <code>@Configuration</code> classes and registers <code>@Bean</code> definitions.</li>
+        <li><code>AutowiredAnnotationBeanPostProcessor</code>: Intercepts <code>@Autowired</code> and <code>@Value</code> annotations for injection.</li>
+        <li><code>ClassPathBeanDefinitionScanner</code>: Scans packages for candidate components.</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 23 -->
+    <section id="sec23">
+      <h2>23. Performance Optimization & AOT</h2>
+      <p>Modern Spring 6 / Spring Boot 3 introduces <b>Ahead-Of-Time (AOT)</b> compilation. Spring AOT pre-evaluates component scanning, bean definition registration, and proxy generation at compile time. This converts dynamic IoC operations into static C++ code when compiled with GraalVM Native Image, drastically reducing startup times to milliseconds and reducing memory usage.</p>
+    </section>
+
+    <!-- SECTION 24 -->
+    <section id="sec24">
+      <h2>24. Top 50 Interview Questions & Answers</h2>
+      
+      <div class="faq-item">
+        <div class="faq-q">Q1: How does Spring resolve circular dependencies in setter injection?</div>
+        <div class="faq-a">Via its Three-Level Cache inside <code>DefaultSingletonBeanRegistry</code>. It exposes an early un-initialized instance or AOP factory lambda (3rd level cache) before property population completes.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q2: Why does constructor injection fail with circular dependencies?</div>
+        <div class="faq-a">Because a constructor must execute fully to produce an object reference. Spring cannot put an un-instantiated object reference into the early cache before constructor execution finishes.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q3: Difference between ApplicationContext and BeanFactory?</div>
+        <div class="faq-a">ApplicationContext extends BeanFactory, adding eager loading of singletons, AOP support, event publication, i18n, and automatic post-processor registration.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q4: What is a BeanDefinition?</div>
+        <div class="faq-a">An internal metadata object describing a bean's class, scope, dependencies, factory methods, and lifecycle callbacks.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q5: How does @Autowired work internally?</div>
+        <div class="faq-a">Processed by <code>AutowiredAnnotationBeanPostProcessor</code> during the <code>postProcessProperties</code> lifecycle phase using reflection.</div>
+      </div>
+
+      <div class="faq-item"><div class="faq-q">Q6: What is the default scope of a Spring bean?</div><div class="faq-a">Singleton.</div></div>
+      <div class="faq-item"><div class="faq-q">Q7: How to inject a prototype bean into a singleton bean safely?</div><div class="faq-a">Using <code>@Lookup</code> method injection, <code>ObjectProvider&lt;T&gt;</code>, or proxyMode in <code>@Scope</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q8: What is the role of BeanPostProcessor?</div><div class="faq-a">Intercepts bean instances before and after initialization to wrap them in AOP proxies or process annotations.</div></div>
+      <div class="faq-item"><div class="faq-q">Q9: Difference between @Bean and @Component?</div><div class="faq-a">@Component is class-level for automatic scanning. @Bean is method-level inside @Configuration for custom or 3rd-party object instantiation.</div></div>
+      <div class="faq-item"><div class="faq-q">Q10: What is ASM in Spring?</div><div class="faq-a">A high-performance bytecode reading library used to scan class annotations without loading classes into the JVM ClassLoader.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q11: What is the purpose of @Primary?</div><div class="faq-a">Gives precedence to a specific bean when multiple candidates match a dependency type.</div></div>
+      <div class="faq-item"><div class="faq-q">Q12: What is the purpose of @Qualifier?</div><div class="faq-a">Narrows down matching candidate beans by specifying an explicit target bean identifier.</div></div>
+      <div class="faq-item"><div class="faq-q">Q13: What happens if two singletons have a circular dependency in Constructor Injection?</div><div class="faq-a">Spring throws a <code>BeanCurrentlyInCreationException</code> during application startup.</div></div>
+      <div class="faq-item"><div class="faq-q">Q14: How does @PostConstruct work?</div><div class="faq-a">Processed by <code>CommonAnnotationBeanPostProcessor</code> after property population and before custom init methods.</div></div>
+      <div class="faq-item"><div class="faq-q">Q15: Does Spring manage the full lifecycle of prototype beans?</div><div class="faq-a">No. Spring instantiates and populates prototype beans, but does not execute destruction callbacks (e.g. <code>@PreDestroy</code>).</div></div>
+      <div class="faq-item"><div class="faq-q">Q16: Difference between FactoryBean and BeanFactory?</div><div class="faq-a">BeanFactory is the IoC container interface. FactoryBean is a SPI interface implemented by user beans to construct complex instances.</div></div>
+      <div class="faq-item"><div class="faq-q">Q17: What is the 1st level cache in Spring?</div><div class="faq-a"><code>singletonObjects</code> map holding fully ready singleton instances.</div></div>
+      <div class="faq-item"><div class="faq-q">Q18: What is the 2nd level cache in Spring?</div><div class="faq-a"><code>earlySingletonObjects</code> map holding raw, un-initialized early bean references.</div></div>
+      <div class="faq-item"><div class="faq-q">Q19: What is the 3rd level cache in Spring?</div><div class="faq-a"><code>singletonFactories</code> map holding <code>ObjectFactory</code> lambdas for generating early AOP proxies.</div></div>
+      <div class="faq-item"><div class="faq-q">Q20: Why does Field Injection hinder unit testing?</div><div class="faq-a">Because dependencies cannot be passed without using reflection or launching a full Spring container runner.</div></div>
+      <div class="faq-item"><div class="faq-q">Q21: Can we mark a @Bean method static?</div><div class="faq-a">Yes. Static @Bean methods run without instantiating their declaring @Configuration class early.</div></div>
+      <div class="faq-item"><div class="faq-q">Q22: What is @Lazy?</div><div class="faq-a">Defers bean instantiation until explicit runtime access.</div></div>
+      <div class="faq-item"><div class="faq-q">Q23: How to handle optional dependencies in Spring?</div><div class="faq-a">Using Java <code>Optional&lt;T&gt;</code>, <code>@Autowired(required = false)</code>, or <code>ObjectProvider&lt;T&gt;</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q24: What is ConfigurationClassPostProcessor?</div><div class="faq-a">A <code>BeanFactoryPostProcessor</code> that parses <code>@Configuration</code> classes and registers <code>@Bean</code> definitions.</div></div>
+      <div class="faq-item"><div class="faq-q">Q25: Difference between @Repository and @Component?</div><div class="faq-a">@Repository meta-inherits from @Component and adds automated SQL exception translation.</div></div>
+      <div class="faq-item"><div class="faq-q">Q26: How does Spring resolve Collection injection?</div><div class="faq-a">Injects all candidate beans matching the element type into a <code>List&lt;T&gt;</code> or <code>Map&lt;String, T&gt;</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q27: What is Method Injection?</div><div class="faq-a">Using <code>@Lookup</code> on an abstract method to fetch a prototype bean dynamically inside a singleton.</div></div>
+      <div class="faq-item"><div class="faq-q">Q28: What is BeanDefinitionRegistry?</div><div class="faq-a">An interface providing methods to register, remove, and inspect <code>BeanDefinition</code> instances.</div></div>
+      <div class="faq-item"><div class="faq-q">Q29: Difference between DisposableBean and @PreDestroy?</div><div class="faq-a">@PreDestroy is annotation-based (JSR-250); DisposableBean requires implementing Spring's <code>destroy()</code> interface.</div></div>
+      <div class="faq-item"><div class="faq-q">Q30: How to inject primitive values from properties files?</div><div class="faq-a">Using <code>@Value("${property.name}")</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q31: What is Spring AOT?</div><div class="faq-a">Ahead-of-Time compilation performing component scanning and proxy generation at build time.</div></div>
+      <div class="faq-item"><div class="faq-q">Q32: What happens if multiple beans match @Autowired without @Qualifier or @Primary?</div><div class="faq-a">Spring throws a <code>NoUniqueBeanDefinitionException</code> during resolution.</div></div>
+      <div class="faq-item"><div class="faq-q">Q33: Can we inject ApplicationContext into a bean?</div><div class="faq-a">Yes, by implementing <code>ApplicationContextAware</code> or autowiring <code>ApplicationContext</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q34: What is ObjectFactory?</div><div class="faq-a">A factory interface for lazy or on-demand retrieval of managed beans.</div></div>
+      <div class="faq-item"><div class="faq-q">Q35: Is Singleton bean thread-safe by default?</div><div class="faq-a">No. Thread safety depends on whether the class implementation is stateless or synchronized.</div></div>
+      <div class="faq-item"><div class="faq-q">Q36: Difference between byName and byType autowiring?</div><div class="faq-a">byName matches bean ID to variable name; byType matches candidate class type.</div></div>
+      <div class="faq-item"><div class="faq-q">Q37: What is @SpringBootApplication composed of?</div><div class="faq-a"><code>@SpringBootConfiguration</code>, <code>@EnableAutoConfiguration</code>, and <code>@ComponentScan</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q38: Why does Spring default to Constructor Injection?</div><div class="faq-a">Enforces immutability, prevents null pointers, and detects circular dependencies early.</div></div>
+      <div class="faq-item"><div class="faq-q">Q39: What is the purpose of @Order?</div><div class="faq-a">Defines execution order for post-processors or collection bean injections.</div></div>
+      <div class="faq-item"><div class="faq-q">Q40: Difference between InitializingBean and @PostConstruct?</div><div class="faq-a">@PostConstruct runs first via BeanPostProcessor; InitializingBean is an interface execution.</div></div>
+      <div class="faq-item"><div class="faq-q">Q41: What is @Scope(proxyMode = ScopedProxyMode.TARGET_CLASS)?</div><div class="faq-a">Generates a CGLIB proxy allowing short-lived scoped beans (e.g. Request) to be injected into singletons.</div></div>
+      <div class="faq-item"><div class="faq-q">Q42: What is BeanCurrentlyInCreationException?</div><div class="faq-a">An exception thrown when Spring detects an unresolvable circular constructor reference.</div></div>
+      <div class="faq-item"><div class="faq-q">Q43: What is DefaultListableBeanFactory?</div><div class="faq-a">The default full-featured BeanFactory implementation inside Spring.</div></div>
+      <div class="faq-item"><div class="faq-q">Q44: Can we use @Resource instead of @Autowired?</div><div class="faq-a">Yes. @Resource (Jakarta EE) matches by name first, then by type.</div></div>
+      <div class="faq-item"><div class="faq-q">Q45: How to trigger context shutdown in standalone apps?</div><div class="faq-a">By invoking <code>context.registerShutdownHook()</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q46: What is PropertySourcesPlaceholderConfigurer?</div><div class="faq-a">A BeanFactoryPostProcessor that resolves <code>${...}</code> property placeholders in bean definitions.</div></div>
+      <div class="faq-item"><div class="faq-q">Q47: Difference between @Profile and @Conditional?</div><div class="faq-a">@Profile is a specialized subset of @Conditional for environment toggling.</div></div>
+      <div class="faq-item"><div class="faq-q">Q48: Can a @Bean method be private?</div><div class="faq-a">No. @Bean methods must be overridable/accessible by container invocation logic.</div></div>
+      <div class="faq-item"><div class="faq-q">Q49: What is @EventListener?</div><div class="faq-a">Annotation to listen for ApplicationContext published events asynchronously or synchronously.</div></div>
+      <div class="faq-item"><div class="faq-q">Q50: Why is IoC beneficial for enterprise software?</div><div class="faq-a">Decouples configuration from code, enforces clean layer separation, enables unit testing, and automates lifecycles.</div></div>
+    </section>
+
+    <!-- SECTION 25 -->
+    <section id="sec25">
+      <h2>25. Common Mistakes</h2>
+      <div class="callout warn">
+        <b>1. Using Field Injection (@Autowired on private fields):</b> Prevents immutability and hides dependencies. Use Constructor Injection.
+      </div>
+      <div class="callout warn">
+        <b>2. Mutating State inside Singleton Beans:</b> Singleton beans are shared across threads. Adding non-thread-safe instance fields causes severe race conditions.
+      </div>
+      <div class="callout warn">
+        <b>3. Relying on Prototype Scope for Cleanup:</b> Spring does not run <code>@PreDestroy</code> on prototype beans. Callers must destroy prototype instances manually.
+      </div>
+    </section>
+
+    <!-- SECTION 26 -->
+    <section id="sec26">
+      <h2>26. Best Practices</h2>
+      <ul>
+        <li><b>Constructor Injection Always:</b> Mark injected dependencies <code>private final</code>.</li>
+        <li><b>Favour Interface Abstractions:</b> Inject interface types (e.g. <code>OrderRepository</code>) rather than concrete implementations (<code>JpaOrderRepository</code>).</li>
+        <li><b>Keep Configuration Classes Stateless:</b> Declare <code>@Bean</code> methods as pure factory setups.</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 27 -->
+    <section id="sec27">
+      <h2>27. Cheatsheet</h2>
+      <div class="card">
+        <p><b>IoC:</b> Architectural principle inverting control of object lifecycles.</p>
+        <p><b>DI:</b> Pattern executing dependency wiring via constructors, setters, or fields.</p>
+        <p><b>BeanDefinition:</b> Metadata holder describing target beans before instantiation.</p>
+        <p><b>3-Level Cache:</b> Resolves setter circular dependencies (<code>singletonObjects</code>, <code>earlySingletonObjects</code>, <code>singletonFactories</code>).</p>
+      </div>
+    </section>
+
+    <!-- SECTION 28 -->
+    <section id="sec28">
+      <h2>28. Visual Summary</h2>
+      <div class="diagram">
+        <h4>Spring Container Core Architecture Overview</h4>
+        <div class="grid">
+          <div class="card" style="border-color: var(--teal);">
+            <b style="color: var(--teal);">1. Configuration & Scan</b>
+            <p>ASM parses components into <code>BeanDefinition</code> objects inside <code>DefaultListableBeanFactory</code>.</p>
+          </div>
+          <div class="card" style="border-color: var(--amber);">
+            <b style="color: var(--amber);">2. Instantiation & Cache</b>
+            <p>Constructor DI creates objects. 3-Level Cache handles circular references seamlessly.</p>
+          </div>
+          <div class="card" style="border-color: var(--purple);">
+            <b style="color: var(--purple);">3. Post-Processing & Ready</b>
+            <p><code>BeanPostProcessors</code> generate AOP proxies, execute <code>@PostConstruct</code>, and place ready singletons into <code>singletonObjects</code>.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
 </div>
+
 </body>
 </html>

@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>HashMap — Complete Internals Guide</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0f14; --panel:#121821; --panel2:#0e1420; --border:#23303f;
+    --text:#e6edf3; --muted:#7e8ba0;
+    --teal:#2dd4bf; --amber:#fbbf24; --rose:#f87171; --violet:#b89cf5; --green:#4ade80;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;line-height:1.55;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1000px;margin:0 auto;padding:48px 24px 110px;}
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif;margin:0;}
+  .eyebrow{color:var(--teal);font-size:12px;letter-spacing:.18em;text-transform:uppercase;margin:0 0 10px;font-weight:600;}
+  h1{font-size:34px;font-weight:700;letter-spacing:-0.01em;}
+  h1 span{color:var(--amber);}
+  .sub{color:var(--muted);font-size:14px;margin-top:14px;max-width:680px;}
+  header{margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:36px;}
+
+  nav.toc{display:flex;flex-wrap:wrap;gap:8px;margin:28px 0 56px;}
+  nav.toc a{
+    color:var(--muted);text-decoration:none;font-size:11.5px;border:1px solid var(--border);
+    border-radius:20px;padding:5px 12px;background:var(--panel2);transition:.15s;
+  }
+  nav.toc a:hover{color:var(--teal);border-color:var(--teal);}
+
+  .section{margin-top:64px;}
+  .step{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;}
+  .step-num{font-family:'Space Grotesk',sans-serif;font-size:13px;color:var(--bg);background:var(--teal);
+    border-radius:4px;padding:2px 8px;font-weight:700;letter-spacing:.04em;}
+  .step h2{font-size:19px;}
+  .desc{color:var(--muted);font-size:13.5px;margin:10px 0 22px;max-width:700px;}
+  .desc code{color:var(--amber);background:rgba(251,191,36,.08);padding:1px 5px;border-radius:3px;font-size:12.5px;}
+
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:26px;overflow-x:auto;}
+  svg text{font-family:'JetBrains Mono',monospace;}
+  .lbl{fill:var(--muted);font-size:11px;}
+  .lbl-strong{fill:var(--text);font-size:12px;font-weight:600;}
+  .lbl-accent{fill:var(--teal);font-size:12px;font-weight:600;}
+
+  .legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:16px;font-size:12px;color:var(--muted);}
+  .legend span{display:inline-flex;align-items:center;gap:7px;}
+  .dot{width:10px;height:10px;border-radius:3px;display:inline-block;}
+
+  .callout{margin-top:18px;border-left:3px solid var(--teal);padding:10px 16px;background:rgba(45,212,191,.06);
+    border-radius:0 6px 6px 0;font-size:13px;color:var(--text);}
+  .callout.warn{border-left-color:var(--rose);background:rgba(248,113,113,.07);}
+  .callout b{color:var(--amber);}
+
+  /* recap / summary card */
+  .recap{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:8px 4px;}
+  .recap-item{display:flex;gap:14px;padding:14px 22px;border-bottom:1px solid var(--border);align-items:flex-start;}
+  .recap-item:last-child{border-bottom:none;}
+  .check{color:var(--green);font-size:16px;flex:0 0 auto;margin-top:1px;}
+  .recap-text{font-size:13.5px;color:var(--text);}
+  .recap-note{display:block;margin-top:6px;font-size:12px;color:var(--amber);}
+  .recap-note b{color:var(--amber);}
+
+  /* properties grid */
+  .props{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+  @media (max-width:680px){.props{grid-template-columns:1fr;}}
+  .prop{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px 20px;}
+  .prop h3{font-size:14px;color:var(--amber);margin-bottom:8px;}
+  .prop p{font-size:13px;color:var(--muted);margin:0;}
+  .prop code{color:var(--teal);}
+
+  /* flow component for put()/get() logic */
+  .flow .step-card{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin:8px 0;font-size:13px;}
+  .flow .step-card.decision{border-color:var(--amber);background:rgba(251,191,36,.05);}
+  .flow .branch{margin:8px 0 8px 30px;padding:10px 14px;border-radius:8px;font-size:13px;border-left:3px solid var(--border);background:var(--panel2);}
+  .flow .branch.yes{border-left-color:var(--teal);}
+  .flow .branch.no{border-left-color:var(--rose);}
+  .flow .tag{font-size:10px;font-weight:700;letter-spacing:.05em;border-radius:4px;padding:2px 7px;margin-right:8px;}
+  .flow .tag.yes{background:rgba(45,212,191,.15);color:var(--teal);}
+  .flow .tag.no{background:rgba(248,113,113,.15);color:var(--rose);}
+  .flow .nested{margin-left:18px;margin-top:10px;}
+  .flow code{color:var(--amber);}
+
+  table.rules{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px;}
+  table.rules th{text-align:left;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);
+    padding:8px 10px;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;}
+  table.rules td{padding:10px 10px;border-bottom:1px solid var(--border);color:var(--text);}
+  table.rules td.k{color:var(--amber);white-space:nowrap;}
+  table.rules td.muted{color:var(--muted);}
+
+  footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--border);color:var(--muted);font-size:12px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Java · Data Structures · Internals</p>
+    <h1>How <span>HashMap</span> really works, end to end</h1>
+    <p class="sub">From hashing a key down to the array slot it lands in — buckets, collisions, treeification,
+    resizing, and the null-key special case. Includes your own working summary, checked and refined.</p>
+  </header>
+
+  <nav class="toc">
+    <a href="#recap">Your summary</a>
+    <a href="#properties">Properties</a>
+    <a href="#anatomy">Node &amp; bucket array</a>
+    <a href="#hashing">Hashing path</a>
+    <a href="#put">put()</a>
+    <a href="#collision">Collisions</a>
+    <a href="#get">get()</a>
+    <a href="#treeify">Treeification</a>
+    <a href="#resize">Resizing</a>
+    <a href="#nullkey">Null key</a>
+    <a href="#complexity">Complexity</a>
+    <a href="#compare">vs other Maps</a>
+  </nav>
+
+  <!-- RECAP OF USER SUMMARY -->
+  <div class="section" id="recap">
+    <div class="step"><span class="step-num">✓</span><h2>Your summary, checked</h2></div>
+    <p class="desc">Everything below is correct. Two small refinements are flagged inline.</p>
+    <div class="recap">
+      <div class="recap-item"><span class="check">✔</span><span class="recap-text">HashMap stores data in key-value pairs. Keys must be unique; values can be duplicated.</span></div>
+      <div class="recap-item"><span class="check">✔</span><span class="recap-text">Exactly one <code style="color:var(--teal)">null</code> key is allowed.</span></div>
+      <div class="recap-item"><span class="check">✔</span><span class="recap-text">Internally it's an array of buckets. Each bucket is a linked list of nodes storing <code style="color:var(--teal)">[hash, key, value, next]</code>.</span></div>
+      <div class="recap-item"><span class="check">✔</span><span class="recap-text"><code style="color:var(--teal)">map.put("code", 1)</code> — the key is converted to a hash, then to a bucket index (say 14), and the entry is stored at <code style="color:var(--teal)">buckets[14]</code>.</span></div>
+      <div class="recap-item"><span class="check">✔</span><span class="recap-text">A single bucket can hold more than one element (a collision chain).</span></div>
+      <div class="recap-item"><span class="check">✔</span><span class="recap-text">Searching converts the key to the same bucket index, then compares keys inside that one bucket only — not the whole map.
+        <span class="recap-note"><b>Refinement:</b> the comparison is hash-first, then <code style="color:var(--amber)">.equals()</code> — it checks the cheap stored <code style="color:var(--amber)">hash</code> int before ever calling <code style="color:var(--amber)">.equals()</code> on the key.</span>
+      </span></div>
+      <div class="recap-item"><span class="check">✔</span><span class="recap-text">Different keys can share the same hash code and end up in the same bucket.
+        <span class="recap-note"><b>One addition:</b> if a single bucket's chain grows to <b>8+</b> entries (and table capacity ≥ 64), Java converts that bucket from a linked list into a <b>red-black tree</b> so the worst case is <code style="color:var(--amber)">O(log n)</code>, not <code style="color:var(--amber)">O(n)</code>.</span>
+      </span></div>
+    </div>
+  </div>
+
+  <!-- PROPERTIES -->
+  <div class="section" id="properties">
+    <div class="step"><span class="step-num">A</span><h2>Core properties</h2></div>
+    <div class="props">
+      <div class="prop"><h3>Unique keys</h3><p>Putting an existing key overwrites its value instead of adding a new entry. Uniqueness is enforced via <code>hashCode()</code> + <code>equals()</code>.</p></div>
+      <div class="prop"><h3>Duplicate values allowed</h3><p>Many different keys can map to the identical value object — no uniqueness constraint on values.</p></div>
+      <div class="prop"><h3>One null key</h3><p>Exactly one entry may have a <code>null</code> key. Java special-cases it to always live in bucket 0 (see further down).</p></div>
+      <div class="prop"><h3>Multiple null values</h3><p>Any number of keys may map to a <code>null</code> value — that's unrelated to the null-key rule.</p></div>
+      <div class="prop"><h3>No ordering guarantee</h3><p>Iteration order depends on bucket layout and resizing history, not insertion order. (Use <code>LinkedHashMap</code> if you need insertion order.)</p></div>
+      <div class="prop"><h3>Not thread-safe</h3><p>Concurrent <code>put()</code>s from multiple threads can corrupt the bucket structure. Use <code>ConcurrentHashMap</code> instead.</p></div>
+    </div>
+  </div>
+
+  <!-- NODE ANATOMY + BUCKET ARRAY -->
+  <div class="section" id="anatomy">
+    <div class="step"><span class="step-num">B</span><h2>What's actually stored: Node + bucket array</h2></div>
+    <p class="desc">The backing field is <code>Node&lt;K,V&gt;[] table</code>. Each <code>Node</code> carries four fields — this is the unit that gets created, compared, and chained.</p>
+    <div class="panel">
+      <svg viewBox="0 0 460 110" width="100%" height="110">
+        <g transform="translate(10,15)">
+          <rect width="430" height="70" rx="8" fill="var(--panel2)" stroke="var(--border)" stroke-width="1.5"/>
+          <line x1="100" y1="0" x2="100" y2="70" stroke="var(--border)"/>
+          <line x1="200" y1="0" x2="200" y2="70" stroke="var(--border)"/>
+          <line x1="320" y1="0" x2="320" y2="70" stroke="var(--border)"/>
+          <text x="50" y="28" text-anchor="middle" class="lbl">hash</text>
+          <text x="50" y="48" text-anchor="middle" class="lbl-strong" font-size="11">int</text>
+          <text x="150" y="28" text-anchor="middle" class="lbl">key</text>
+          <text x="150" y="48" text-anchor="middle" class="lbl-strong" font-size="11">K</text>
+          <text x="260" y="28" text-anchor="middle" class="lbl">value</text>
+          <text x="260" y="48" text-anchor="middle" class="lbl-strong" font-size="11">V</text>
+          <text x="375" y="28" text-anchor="middle" class="lbl">next</text>
+          <text x="375" y="48" text-anchor="middle" class="lbl-strong" font-size="11">Node&lt;K,V&gt;</text>
+        </g>
+        <text x="10" y="105" class="lbl" font-size="10">Node&lt;K,V&gt; — one entry, plus a pointer to the next entry in its bucket's chain</text>
+      </svg>
+    </div>
+
+    <p class="desc" style="margin-top:26px;">These <code>Node</code>s live inside a 16-slot array by default. Bucket 14 below has two of them chained together.</p>
+    <div class="panel">
+      <svg viewBox="0 0 940 150" width="100%" height="150" id="bucketrow-main"></svg>
+      <div class="legend">
+        <span><span class="dot" style="background:var(--panel2);border:1px solid var(--border)"></span>empty bucket</span>
+        <span><span class="dot" style="background:var(--teal)"></span>single entry</span>
+        <span><span class="dot" style="background:var(--rose)"></span>collision chain</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- HASHING PATH -->
+  <div class="section" id="hashing">
+    <div class="step"><span class="step-num">C</span><h2>Key → hash → bucket index</h2></div>
+    <p class="desc">Nothing is searched to get here — the index is computed, the same way <code>arr[5]</code> is computed.</p>
+    <div class="panel">
+      <svg viewBox="0 0 900 110" width="100%" height="110">
+        <rect x="0" y="30" width="120" height="50" rx="8" fill="var(--panel2)" stroke="var(--border)"/>
+        <text x="60" y="51" text-anchor="middle" class="lbl-strong">"code"</text>
+        <text x="60" y="68" text-anchor="middle" class="lbl">key</text>
+        <path d="M120 55 H178" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#a1)"/>
+
+        <rect x="180" y="30" width="150" height="50" rx="8" fill="var(--panel2)" stroke="var(--border)"/>
+        <text x="255" y="51" text-anchor="middle" class="lbl-strong">hashCode()</text>
+        <text x="255" y="68" text-anchor="middle" class="lbl">raw int</text>
+        <path d="M330 55 H388" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#a1)"/>
+
+        <rect x="390" y="30" width="160" height="50" rx="8" fill="var(--panel2)" stroke="var(--teal)"/>
+        <text x="470" y="48" text-anchor="middle" class="lbl-accent">h ^ (h&gt;&gt;&gt;16)</text>
+        <text x="470" y="66" text-anchor="middle" class="lbl">spreads high bits</text>
+        <path d="M550 55 H608" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#a1)"/>
+
+        <rect x="610" y="30" width="150" height="50" rx="8" fill="var(--panel2)" stroke="var(--teal)"/>
+        <text x="685" y="48" text-anchor="middle" class="lbl-accent">hash &amp; (n-1)</text>
+        <text x="685" y="66" text-anchor="middle" class="lbl">n = capacity (16)</text>
+        <path d="M760 55 H818" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#a1)"/>
+
+        <rect x="820" y="22" width="80" height="66" rx="8" fill="rgba(251,191,36,.12)" stroke="var(--amber)" stroke-width="1.5"/>
+        <text x="860" y="50" text-anchor="middle" fill="var(--amber)" font-size="20" font-weight="700">14</text>
+        <text x="860" y="72" text-anchor="middle" class="lbl">index</text>
+        <defs><marker id="a1" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--muted)"/></marker></defs>
+      </svg>
+    </div>
+  </div>
+
+  <!-- PUT FLOW -->
+  <div class="section" id="put">
+    <div class="step"><span class="step-num">D</span><h2>put("code", 1) — step by step</h2></div>
+    <p class="desc">This is the full decision logic, including what happens when keys collide or the map gets too full.</p>
+    <div class="panel">
+      <div class="flow">
+        <div class="step-card">1 &nbsp;Compute <code>hash</code> from the key, then <code>index = hash &amp; (capacity-1)</code>.</div>
+        <div class="step-card decision">2 &nbsp;Is <code>buckets[index]</code> empty?</div>
+        <div class="branch yes"><span class="tag yes">YES</span>Create <code>new Node(hash, key, value, next=null)</code>, store it directly at <code>buckets[index]</code>, <code>size++</code>.</div>
+        <div class="branch no">
+          <span class="tag no">NO</span>Walk the existing chain. For each node: compare stored <code>hash</code> first, then <code>.equals(key)</code> only if the hash matched.
+          <div class="nested">
+            <div class="step-card decision">2a &nbsp;Match found?</div>
+            <div class="branch yes"><span class="tag yes">YES</span>Overwrite that node's <code>value</code>. <code>put()</code> returns the old value. Key count does <b>not</b> increase.</div>
+            <div class="branch no"><span class="tag no">NO</span>Reached the end of the chain with no match → append a brand-new node there, <code>size++</code>.
+              <div class="nested">
+                <div class="step-card decision">2b &nbsp;Chain now has ≥ 8 nodes and capacity ≥ 64?</div>
+                <div class="branch yes"><span class="tag yes">YES</span>Convert this one bucket's linked list into a red-black tree.</div>
+                <div class="branch no"><span class="tag no">NO</span>Stays a linked list.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="step-card decision">3 &nbsp;After insert: is <code>size &gt; capacity × 0.75</code>?</div>
+        <div class="branch yes"><span class="tag yes">YES</span>Resize: double the capacity and rehash every existing entry into the new, larger table.</div>
+        <div class="branch no"><span class="tag no">NO</span>Done — no resize needed yet.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COLLISION ZOOM -->
+  <div class="section" id="collision">
+    <div class="step"><span class="step-num">E</span><h2>Inside a collision: bucket 14 as a linked list</h2></div>
+    <p class="desc"><code>"Aa"</code> and <code>"BB"</code> hash to the same bucket. Both nodes coexist, chained by <code>next</code>.</p>
+    <div class="panel">
+      <svg viewBox="0 0 940 200" width="100%" height="200">
+        <text x="10" y="40" class="lbl-strong" fill="var(--amber)">buckets[14]</text>
+        <path d="M10 50 V90 H58" stroke="var(--amber)" stroke-width="1.5" fill="none" marker-end="url(#a2)"/>
+
+        <g transform="translate(60,55)">
+          <rect width="270" height="70" rx="8" fill="var(--panel2)" stroke="var(--rose)" stroke-width="1.5"/>
+          <line x1="67" y1="0" x2="67" y2="70" stroke="var(--border)"/>
+          <line x1="150" y1="0" x2="150" y2="70" stroke="var(--border)"/>
+          <line x1="210" y1="0" x2="210" y2="70" stroke="var(--border)"/>
+          <text x="33" y="30" text-anchor="middle" class="lbl">hash</text><text x="33" y="47" text-anchor="middle" class="lbl-strong" font-size="11">2112</text>
+          <text x="108" y="30" text-anchor="middle" class="lbl">key</text><text x="108" y="47" text-anchor="middle" class="lbl-strong" font-size="11">"Aa"</text>
+          <text x="180" y="30" text-anchor="middle" class="lbl">value</text><text x="180" y="47" text-anchor="middle" class="lbl-strong" font-size="11">1</text>
+          <text x="240" y="30" text-anchor="middle" class="lbl">next</text><text x="240" y="47" text-anchor="middle" class="lbl-strong" font-size="11">●</text>
+        </g>
+        <path d="M330 90 H368" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#a2)"/>
+
+        <g transform="translate(370,55)">
+          <rect width="270" height="70" rx="8" fill="var(--panel2)" stroke="var(--rose)" stroke-width="1.5"/>
+          <line x1="67" y1="0" x2="67" y2="70" stroke="var(--border)"/>
+          <line x1="150" y1="0" x2="150" y2="70" stroke="var(--border)"/>
+          <line x1="210" y1="0" x2="210" y2="70" stroke="var(--border)"/>
+          <text x="33" y="30" text-anchor="middle" class="lbl">hash</text><text x="33" y="47" text-anchor="middle" class="lbl-strong" font-size="11">2112</text>
+          <text x="108" y="30" text-anchor="middle" class="lbl">key</text><text x="108" y="47" text-anchor="middle" class="lbl-strong" font-size="11">"BB"</text>
+          <text x="180" y="30" text-anchor="middle" class="lbl">value</text><text x="180" y="47" text-anchor="middle" class="lbl-strong" font-size="11">2</text>
+          <text x="240" y="30" text-anchor="middle" class="lbl">next</text><text x="240" y="47" text-anchor="middle" class="lbl-strong" font-size="11">●</text>
+        </g>
+        <path d="M640 90 H678" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#a2)"/>
+
+        <g transform="translate(680,55)">
+          <rect width="90" height="70" rx="8" fill="var(--panel2)" stroke="var(--border)" stroke-dasharray="4 3"/>
+          <text x="45" y="40" text-anchor="middle" class="lbl">∅ null</text>
+        </g>
+        <defs><marker id="a2" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--muted)"/></marker></defs>
+      </svg>
+      <div class="callout warn"><b>Why both fit:</b> same hash, different keys. <code>hashCode()</code> only has ~4.3 billion possible outputs; infinitely many keys exist, so collisions are mathematically guaranteed eventually — this is normal, expected behavior, not a bug.</div>
+    </div>
+  </div>
+
+  <!-- GET FLOW -->
+  <div class="section" id="get">
+    <div class="step"><span class="step-num">F</span><h2>get("BB") — step by step</h2></div>
+    <div class="panel">
+      <div class="flow">
+        <div class="step-card">1 &nbsp;Compute <code>hash</code> from the key, then <code>index = hash &amp; (capacity-1)</code>. Jump straight to <code>buckets[index]</code> — O(1).</div>
+        <div class="step-card decision">2 &nbsp;Is <code>buckets[index]</code> empty?</div>
+        <div class="branch yes"><span class="tag yes">YES</span>Key isn't in the map. Return <code>null</code> immediately.</div>
+        <div class="branch no">
+          <span class="tag no">NO</span>Walk the chain (or tree, if treeified). For each node:
+          <div class="nested">
+            <div class="step-card decision">2a &nbsp;Does stored <code>hash</code> match?</div>
+            <div class="branch no"><span class="tag no">NO</span>Skip immediately — definitely not this node. Move to next.</div>
+            <div class="branch yes">
+              <span class="tag yes">YES</span>Hash matched — now actually call <code>.equals(key)</code>.
+              <div class="nested">
+                <div class="step-card decision">2b &nbsp;<code>.equals()</code> true?</div>
+                <div class="branch yes"><span class="tag yes">YES</span>Found it. Return this node's <code>value</code>.</div>
+                <div class="branch no"><span class="tag no">NO</span>False alarm (different key, same hash) — keep walking the chain.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="step-card">3 &nbsp;Reached the end of the chain with no match → return <code>null</code>.</div>
+      </div>
+      <div class="callout">Only the entries inside <b>one bucket</b> are ever compared — never the whole map. With a good hash function and load factor 0.75, that's usually 0 or 1 comparisons.</div>
+    </div>
+  </div>
+
+  <!-- TREEIFY -->
+  <div class="section" id="treeify">
+    <div class="step"><span class="step-num">G</span><h2>When a bucket overflows: list → red-black tree</h2></div>
+    <p class="desc">At <code>TREEIFY_THRESHOLD = 8</code> entries in one bucket (and table capacity ≥ 64), that bucket converts from a linked list to a tree — worst case becomes <code>O(log n)</code> instead of <code>O(n)</code>.</p>
+    <div class="panel">
+      <svg viewBox="0 0 940 280" width="100%" height="280">
+        <text x="0" y="20" class="lbl">one bucket's linked list reaches 8 entries</text>
+        <g transform="translate(0,32)"><g id="chain8"></g></g>
+        <path d="M180 95 V120" stroke="var(--rose)" stroke-width="2" marker-end="url(#a3)"/>
+        <text x="195" y="112" class="lbl" fill="var(--rose)">≥ 8 entries &amp; capacity ≥ 64 → treeify</text>
+        <g transform="translate(150,150)">
+          <path d="M250 10 L150 70" stroke="var(--muted)" stroke-width="1.5"/>
+          <path d="M250 10 L350 70" stroke="var(--muted)" stroke-width="1.5"/>
+          <path d="M150 70 L90 120" stroke="var(--muted)" stroke-width="1.5"/>
+          <path d="M150 70 L210 120" stroke="var(--muted)" stroke-width="1.5"/>
+          <path d="M350 70 L410 120" stroke="var(--muted)" stroke-width="1.5"/>
+          <circle cx="250" cy="10" r="20" fill="#1b2330" stroke="#23303f" stroke-width="2"/>
+          <text x="250" y="15" text-anchor="middle" class="lbl-strong" font-size="11">root</text>
+          <circle cx="150" cy="70" r="18" fill="rgba(248,113,113,.18)" stroke="var(--rose)" stroke-width="2"/>
+          <text x="150" y="75" text-anchor="middle" fill="var(--rose)" font-size="10">red</text>
+          <circle cx="350" cy="70" r="18" fill="#1b2330" stroke="#23303f" stroke-width="2"/>
+          <text x="350" y="75" text-anchor="middle" class="lbl" font-size="10">black</text>
+          <circle cx="90" cy="120" r="16" fill="rgba(248,113,113,.18)" stroke="var(--rose)" stroke-width="2"/>
+          <text x="90" y="124" text-anchor="middle" fill="var(--rose)" font-size="9">red</text>
+          <circle cx="210" cy="120" r="16" fill="#1b2330" stroke="#23303f" stroke-width="2"/>
+          <text x="210" y="124" text-anchor="middle" class="lbl" font-size="9">black</text>
+          <circle cx="410" cy="120" r="16" fill="#1b2330" stroke="#23303f" stroke-width="2"/>
+          <text x="410" y="124" text-anchor="middle" class="lbl" font-size="9">black</text>
+        </g>
+        <defs><marker id="a3" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--rose)"/></marker></defs>
+      </svg>
+      <div class="legend">
+        <span><span class="dot" style="background:var(--rose);opacity:.5"></span>red node</span>
+        <span><span class="dot" style="background:#1b2330;border:1px solid var(--border)"></span>black node</span>
+      </div>
+      <div class="callout">If removals shrink the chain back to <b>6</b> entries, it converts back to a plain linked list — trees cost more memory, not worth keeping for a small bucket. This treeify path mainly defends against pathological cases (e.g. someone deliberately crafting many keys with identical hashes).</div>
+    </div>
+  </div>
+
+  <!-- RESIZE -->
+  <div class="section" id="resize">
+    <div class="step"><span class="step-num">H</span><h2>Resizing: when the whole table grows</h2></div>
+    <p class="desc">Default capacity is 16, default load factor is 0.75. Once <code>size &gt; capacity × loadFactor</code> (e.g. 13th entry in a 16-bucket table), the <em>entire table</em> doubles and every existing node gets rehashed into the new array.</p>
+    <div class="panel">
+      <div style="margin-bottom:6px;" class="lbl-row"><span class="lbl-strong" style="fill:var(--text);font-size:12px;">before — capacity 16, 13 entries (over the 12-entry threshold)</span></div>
+      <svg viewBox="0 0 940 90" width="100%" height="90" id="bucketrow-before"></svg>
+
+      <div style="text-align:center;margin:14px 0;">
+        <span class="lbl" style="color:var(--rose);font-size:12px;">↓ capacity × 2, rehash every node ↓</span>
+      </div>
+
+      <svg viewBox="0 0 940 90" width="100%" height="90" id="bucketrow-after"></svg>
+      <div style="margin-top:6px;"><span class="lbl-strong" style="fill:var(--text);font-size:12px;">after — capacity 32, same 13 entries, spread thinner</span></div>
+
+      <div class="callout">This is why occasional <code>put()</code> calls are slower than others — that's a resize happening. Capacity always <b>doubles</b> (never grows by 1), which keeps the <em>amortized</em> cost of insertion at O(1) even though individual resize operations are O(n).</div>
+    </div>
+  </div>
+
+  <!-- NULL KEY -->
+  <div class="section" id="nullkey">
+    <div class="step"><span class="step-num">I</span><h2>The null key special case</h2></div>
+    <p class="desc">You can't call <code>null.hashCode()</code> — it would throw a <code>NullPointerException</code>. So HashMap special-cases it.</p>
+    <div class="panel">
+      <svg viewBox="0 0 700 100" width="100%" height="100">
+        <rect x="0" y="25" width="120" height="50" rx="8" fill="var(--panel2)" stroke="var(--border)"/>
+        <text x="60" y="46" text-anchor="middle" class="lbl-strong">null</text>
+        <text x="60" y="63" text-anchor="middle" class="lbl">key</text>
+        <path d="M120 50 H178" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#a4)"/>
+
+        <rect x="180" y="25" width="200" height="50" rx="8" fill="var(--panel2)" stroke="var(--teal)"/>
+        <text x="280" y="46" text-anchor="middle" class="lbl-accent">hash is hard-coded to 0</text>
+        <text x="280" y="63" text-anchor="middle" class="lbl">(skips hashCode() entirely)</text>
+        <path d="M380 50 H438" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#a4)"/>
+
+        <rect x="440" y="17" width="80" height="66" rx="8" fill="rgba(251,191,36,.12)" stroke="var(--amber)" stroke-width="1.5"/>
+        <text x="480" y="45" text-anchor="middle" fill="var(--amber)" font-size="20" font-weight="700">0</text>
+        <text x="480" y="67" text-anchor="middle" class="lbl">always bucket 0</text>
+        <defs><marker id="a4" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--muted)"/></marker></defs>
+      </svg>
+      <div class="callout">The null key always lives in <b>bucket 0</b>. Uniqueness is still enforced exactly like any other key — <code>put(null, x)</code> twice overwrites the same entry, it doesn't create two.</div>
+    </div>
+  </div>
+
+  <!-- COMPLEXITY + CONSTANTS -->
+  <div class="section" id="complexity">
+    <div class="step"><span class="step-num">J</span><h2>Complexity &amp; the constants behind it</h2></div>
+    <div class="panel">
+      <table class="rules">
+        <tr><th>Operation</th><th>Average</th><th>Worst case (pre-Java 8)</th><th>Worst case (Java 8+)</th></tr>
+        <tr><td class="k">get(key)</td><td>O(1)</td><td>O(n) — one giant chain</td><td>O(log n) — chain treeified</td></tr>
+        <tr><td class="k">put(key,value)</td><td>O(1)</td><td>O(n)</td><td>O(log n)</td></tr>
+        <tr><td class="k">remove(key)</td><td>O(1)</td><td>O(n)</td><td>O(log n)</td></tr>
+      </table>
+    </div>
+    <div class="panel" style="margin-top:16px;">
+      <table class="rules">
+        <tr><th>Constant</th><th>Value</th><th>What it controls</th></tr>
+        <tr><td class="k">DEFAULT_INITIAL_CAPACITY</td><td>16</td><td>Starting size of the bucket array</td></tr>
+        <tr><td class="k">DEFAULT_LOAD_FACTOR</td><td>0.75</td><td>Resize (double) once size &gt; capacity × 0.75</td></tr>
+        <tr><td class="k">TREEIFY_THRESHOLD</td><td>8</td><td>List → tree for one bucket at this many nodes</td></tr>
+        <tr><td class="k">UNTREEIFY_THRESHOLD</td><td>6</td><td>Tree → list when shrunk to this many nodes</td></tr>
+        <tr><td class="k">MIN_TREEIFY_CAPACITY</td><td>64</td><td>Below this table capacity, resize instead of treeifying</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- COMPARISON -->
+  <div class="section" id="compare">
+    <div class="step"><span class="step-num">K</span><h2>HashMap vs. its relatives</h2></div>
+    <div class="panel">
+      <table class="rules">
+        <tr><th>Type</th><th>Ordering</th><th>Null key?</th><th>Thread-safe?</th><th>Notes</th></tr>
+        <tr><td class="k">HashMap</td><td class="muted">none</td><td>1 allowed</td><td>No</td><td class="muted">What this whole page covers</td></tr>
+        <tr><td class="k">LinkedHashMap</td><td class="muted">insertion order</td><td>1 allowed</td><td>No</td><td class="muted">HashMap + a doubly-linked list threading entries in order</td></tr>
+        <tr><td class="k">TreeMap</td><td class="muted">sorted by key</td><td>No (throws NPE)</td><td>No</td><td class="muted">Red-black tree as the <em>primary</em> structure, O(log n) for everything</td></tr>
+        <tr><td class="k">Hashtable</td><td class="muted">none</td><td>No</td><td>Yes</td><td class="muted">Legacy class, synchronizes every method — largely superseded</td></tr>
+        <tr><td class="k">ConcurrentHashMap</td><td class="muted">none</td><td>No</td><td>Yes</td><td class="muted">Fine-grained locking per bin instead of one global lock — modern concurrent choice</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <footer>HashMap internals · array of buckets → linked list per bucket → red-black tree when crowded → whole table doubles on resize</footer>
+</div>
+
+<script>
+  function renderBuckets(svgId, n, collided, single, highlight, opts){
+    opts = opts || {};
+    const svg = document.getElementById(svgId);
+    if(!svg) return;
+    const totalW = 920, gap = opts.gap || 7, startX = 10;
+    const boxW = (totalW - startX*2 - (n-1)*gap) / n;
+    const y = opts.y || 18, boxH = opts.boxH || 42;
+    const showEvery = n > 20 ? 4 : 1;
+    for(let i=0;i<n;i++){
+      const x = startX + i*(boxW+gap);
+      const isCollided = collided.includes(i);
+      const isSingle = single.includes(i);
+      const isHi = highlight === i;
+      let fill = 'var(--panel2)', stroke = 'var(--border)', sw = 1;
+      if(isCollided){ fill='rgba(248,113,113,.12)'; stroke='var(--rose)'; sw=1.4; }
+      else if(isSingle){ fill='rgba(45,212,191,.10)'; stroke='var(--teal)'; sw=1.4; }
+      if(isHi){ stroke='var(--amber)'; sw=2.4; }
+      const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+      let inner = `<rect x="${x}" y="${y}" width="${boxW}" height="${boxH}" rx="6" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
+      if(isCollided && boxW > 18){
+        inner += `<circle cx="${x+boxW*0.32}" cy="${y+boxH/2}" r="3.5" fill="var(--rose)"/><circle cx="${x+boxW*0.68}" cy="${y+boxH/2}" r="3.5" fill="var(--rose)"/>`;
+      } else if(isSingle){
+        inner += `<circle cx="${x+boxW/2}" cy="${y+boxH/2}" r="4" fill="var(--teal)"/>`;
+      }
+      if(i % showEvery === 0 || isHi){
+        inner += `<text x="${x+boxW/2}" y="${y+boxH+14}" text-anchor="middle" class="lbl" font-size="9">${i}</text>`;
+      }
+      g.innerHTML = inner;
+      svg.appendChild(g);
+    }
+  }
+
+  renderBuckets('bucketrow-main', 16, [4,14], [1,6,9,11], 14);
+  renderBuckets('bucketrow-before', 16, [2,4,7,9,12,14], [0,1,5,8,11,13,15], null, {y:5, boxH:40});
+  renderBuckets('bucketrow-after', 32, [9,28], [1,2,4,6,8,12,15,18,21,24,27,30], null, {y:5, boxH:40});
+
+  (function(){
+    const g = document.getElementById('chain8');
+    const w = 38, gap = 6;
+    for(let i=0;i<8;i++){
+      const x = i*(w+gap);
+      const node = document.createElementNS('http://www.w3.org/2000/svg','g');
+      node.innerHTML = `
+        <rect x="${x}" y="0" width="${w}" height="${w}" rx="6" fill="rgba(248,113,113,.10)" stroke="var(--rose)" stroke-width="1.3"/>
+        <text x="${x+w/2}" y="${w/2+4}" text-anchor="middle" fill="var(--rose)" font-size="11">${i+1}</text>
+        ${i<7 ? `<line x1="${x+w}" y1="${w/2}" x2="${x+w+gap}" y2="${w/2}" stroke="var(--rose)" stroke-width="1.3"/>` : ''}
+      `;
+      g.appendChild(node);
+    }
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Spring Basics — Deep Dive</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  :root{--bg:#0b0e14;--surface:#131824;--border:#232a38;--text:#e7eaf1;--muted:#9aa4b7;--accent:#5eead4;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+  .wrap{max-width:760px;margin:0 auto;padding:48px 24px;}
+  h1{font-size:2rem;margin-bottom:4px;}
+  .eyebrow{color:var(--accent);font-family:monospace;font-size:.85rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px;}
+  h2{margin-top:40px;font-size:1.25rem;border-left:3px solid var(--accent);padding-left:12px;}
+  h3{margin-top:24px;font-size:1rem;color:var(--text);}
+  p{color:var(--muted);}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin:16px 0;}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0;}
+  code{background:#0f131c;border:1px solid var(--border);border-radius:6px;padding:2px 6px;font-size:.9em;color:var(--accent);}
+  pre{background:#0f131c;border:1px solid var(--border);border-radius:10px;padding:16px;overflow-x:auto;}
+  pre code{border:none;padding:0;background:none;color:var(--text);}
+  table{width:100%;border-collapse:collapse;margin:16px 0;}
+  th,td{text-align:left;padding:10px;border-bottom:1px solid var(--border);font-size:.92rem;}
+  th{color:var(--accent);font-family:monospace;font-weight:500;}
+  td{color:var(--muted);}
+  ul{color:var(--muted);}
+  .note{border-left:3px solid var(--accent);background:var(--surface);padding:12px 16px;border-radius:0 8px 8px 0;color:var(--muted);margin:16px 0;font-size:.92rem;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Spring Boot &middot; Beginner</div>
+  <h1>Spring Basics</h1>
+  <p>The foundational concepts that everything else in Spring is built on: the IoC container, beans, their lifecycle, scopes, configuration styles, and AOP.</p>
+
+  <h2>1. Inversion of Control (IoC)</h2>
+  <p>IoC is the principle underneath all of Spring: instead of your code creating and managing its own dependencies (<code>new SomeService()</code>), you hand that responsibility to a container. The container "inverts" who's in control &mdash; your objects no longer control their own construction, the framework does.</p>
+  <div class="note">Dependency Injection (covered in its own note) is simply <i>how</i> the IoC container delivers dependencies once it's in control.</div>
+
+  <h2>2. The IoC Container</h2>
+  <p>The container is the engine that reads your bean definitions, creates objects, wires their dependencies, and manages their full lifecycle. Spring provides two flavors:</p>
+  <table>
+    <tr><th>Container</th><th>What It Is</th></tr>
+    <tr><td><code>BeanFactory</code></td><td>The basic, lightweight container interface &mdash; lazy-loads beans only when requested. Rarely used directly today.</td></tr>
+    <tr><td><code>ApplicationContext</code></td><td>The container Spring Boot actually uses. Extends <code>BeanFactory</code> with eager loading, event publishing, internationalization, and AOP support.</td></tr>
+  </table>
+
+  <h2>3. What Is a Bean?</h2>
+  <p>A <b style="color:var(--text)">bean</b> is simply an object whose creation and lifecycle are managed by the Spring container, rather than by your own code. Any class can become a bean once it's registered with the container &mdash; either by annotation or by explicit configuration.</p>
+
+  <h3>Stereotype Annotations</h3>
+  <div class="grid">
+    <div class="card">
+      <b>@Component</b>
+      <p>The generic stereotype &mdash; marks any class as a Spring-managed bean, discovered via component scanning.</p>
+    </div>
+    <div class="card">
+      <b>@Service</b>
+      <p>Semantically marks a class as holding business logic. Functionally identical to <code>@Component</code>, but signals intent.</p>
+    </div>
+    <div class="card">
+      <b>@Repository</b>
+      <p>Marks a data-access class. Spring also translates database exceptions into its own <code>DataAccessException</code> hierarchy for beans marked this way.</p>
+    </div>
+    <div class="card">
+      <b>@Controller</b>
+      <p>Marks a class as a Spring MVC web controller, whose methods handle incoming HTTP requests.</p>
+    </div>
+  </div>
+  <p>All four are really just <code>@Component</code> under the hood, given a more specific name so both developers and the framework can reason about a class's role at a glance.</p>
+
+  <h2>4. Configuring Beans: Three Approaches</h2>
+  <div class="grid">
+    <div class="card">
+      <b>Component Scanning</b>
+      <p>Annotate your own classes with a stereotype annotation; Spring finds them automatically by scanning packages.</p>
+    </div>
+    <div class="card">
+      <b>Java Config</b>
+      <p><code>@Configuration</code> class with <code>@Bean</code> methods &mdash; used for third-party classes you can't annotate, or when construction needs custom logic.</p>
+    </div>
+    <div class="card">
+      <b>XML Config</b>
+      <p>The original approach (<code>&lt;bean&gt;</code> tags in an XML file). Still supported for legacy compatibility, essentially unused in new Spring Boot projects.</p>
+    </div>
+  </div>
+  <pre><code>@Configuration
+public class AppConfig {
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper()
+            .registerModule(new JavaTimeModule());
+    }
+}
+
+@SpringBootApplication  // includes @ComponentScan — turns on scanning automatically
+public class ShopApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(ShopApplication.class, args);
+    }
+}</code></pre>
+
+  <h2>5. Bean Scopes</h2>
+  <table>
+    <tr><th>Scope</th><th>Lifetime</th></tr>
+    <tr><td><code>singleton</code> (default)</td><td>One shared instance per Spring container, reused everywhere it's injected.</td></tr>
+    <tr><td><code>prototype</code></td><td>A brand-new instance is created every time the bean is requested.</td></tr>
+    <tr><td><code>request</code></td><td>One instance per HTTP request (web apps only).</td></tr>
+    <tr><td><code>session</code></td><td>One instance per user's HTTP session (web apps only).</td></tr>
+    <tr><td><code>application</code></td><td>One instance per <code>ServletContext</code> &mdash; effectively singleton, scoped to the whole web app.</td></tr>
+  </table>
+  <pre><code>@Component
+@Scope("prototype")
+class ReportBuilder {
+    // a new ReportBuilder is created every time it's injected or requested
+}</code></pre>
+
+  <h2>6. The Bean Lifecycle</h2>
+  <p>Spring drives every bean through a well-defined sequence of steps from creation to destruction:</p>
+  <pre><code>1. Instantiate       — constructor is called
+2. Populate          — dependencies are injected
+3. @PostConstruct    — custom init logic runs (if defined)
+4. Bean is ready     — available for use by the application
+5. @PreDestroy       — custom cleanup logic runs on container shutdown</code></pre>
+  <pre><code>@Component
+class CacheWarmer {
+
+    @PostConstruct
+    public void warmUp() {
+        // runs once, right after dependency injection completes
+    }
+
+    @PreDestroy
+    public void cleanUp() {
+        // runs once, right before the container shuts the bean down
+    }
+}</code></pre>
+
+  <h2>7. Aspect-Oriented Programming (AOP)</h2>
+  <p>AOP lets you apply cross-cutting concerns &mdash; logging, security checks, transaction handling &mdash; declaratively, without cluttering business logic with repeated boilerplate.</p>
+  <div class="grid">
+    <div class="card">
+      <b>Aspect</b>
+      <p>A module containing cross-cutting logic (e.g., a logging aspect).</p>
+    </div>
+    <div class="card">
+      <b>Advice</b>
+      <p>The actual code that runs &mdash; <code>@Before</code>, <code>@After</code>, or <code>@Around</code> a method call.</p>
+    </div>
+    <div class="card">
+      <b>Pointcut</b>
+      <p>An expression defining <i>which</i> methods the advice applies to.</p>
+    </div>
+    <div class="card">
+      <b>Join Point</b>
+      <p>A specific point during execution &mdash; typically a method call &mdash; where advice can be applied.</p>
+    </div>
+  </div>
+  <pre><code>@Aspect
+@Component
+class LoggingAspect {
+
+    @Around("execution(* com.shop.service.*.*(..))")
+    public Object logExecutionTime(ProceedingJoinPoint joinPoint) throws Throwable {
+        long start = System.currentTimeMillis();
+        Object result = joinPoint.proceed();
+        long duration = System.currentTimeMillis() - start;
+        System.out.println(joinPoint.getSignature() + " took " + duration + "ms");
+        return result;
+    }
+}</code></pre>
+  <p>The most common real-world use of AOP in Spring is one you've likely already used without writing any AOP code yourself: <code>@Transactional</code> is implemented as an aspect that wraps your method in a database transaction, committing on success and rolling back on exception.</p>
+
+  <h2>8. Profiles</h2>
+  <p>Profiles let you register beans or apply configuration only in certain environments &mdash; dev, test, prod &mdash; from the same codebase.</p>
+  <pre><code>@Configuration
+@Profile("dev")
+class DevMailConfig {
+    @Bean
+    public MailClient mailClient() {
+        return new FakeMailClient(); // logs to console instead of sending real email
+    }
+}</code></pre>
+  <p>Activated via <code>application.properties</code> (<code>spring.profiles.active=dev</code>) or an environment variable at startup &mdash; no code changes needed to switch environments.</p>
+
+  <h2>9. Quick Reference</h2>
+  <ul>
+    <li><b style="color:var(--text)">IoC</b> is the principle; the <b style="color:var(--text)">container</b> (<code>ApplicationContext</code>) is what implements it.</li>
+    <li>A <b style="color:var(--text)">bean</b> is any object the container creates and manages &mdash; marked via a stereotype annotation or declared via <code>@Bean</code>.</li>
+    <li>Default bean scope is <code>singleton</code>; reach for <code>prototype</code> only when you genuinely need a fresh instance each time.</li>
+    <li><code>@PostConstruct</code>/<code>@PreDestroy</code> hook into the bean lifecycle for setup/teardown logic.</li>
+    <li><b style="color:var(--text)">AOP</b> is what powers <code>@Transactional</code> and similar "invisible" cross-cutting behavior.</li>
+  </ul>
+</div>
+</body>
+</html>

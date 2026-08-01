@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Redis Deep Dive — Internals, Features & Spring Integration</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  :root{--bg:#0b0e14;--surface:#131824;--border:#232a38;--text:#e7eaf1;--muted:#9aa4b7;--accent:#f0b429;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+  .wrap{max-width:760px;margin:0 auto;padding:48px 24px;}
+  h1{font-size:2rem;margin-bottom:4px;}
+  .eyebrow{color:var(--accent);font-family:monospace;font-size:.85rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px;}
+  h2{margin-top:40px;font-size:1.25rem;border-left:3px solid var(--accent);padding-left:12px;}
+  h3{margin-top:24px;font-size:1rem;color:var(--text);}
+  p{color:var(--muted);}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;}
+  .card b{color:var(--accent);}
+  code{background:#0f131c;border:1px solid var(--border);border-radius:6px;padding:2px 6px;font-size:.9em;color:var(--accent);}
+  pre{background:#0f131c;border:1px solid var(--border);border-radius:8px;padding:12px;overflow-x:auto;}
+  pre code{border:none;padding:0;background:none;color:var(--text);}
+  table{width:100%;border-collapse:collapse;margin:16px 0;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+  th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);font-size:.92rem;}
+  th{color:var(--accent);font-family:monospace;text-transform:uppercase;font-size:.75rem;letter-spacing:.05em;}
+  tr:last-child td{border-bottom:none;}
+  td{color:var(--muted);}
+  ul{color:var(--muted);}
+  .tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;}
+  .tag{background:#0f131c;border:1px solid var(--border);border-radius:999px;padding:4px 12px;font-family:monospace;font-size:.78rem;color:var(--accent);}
+  .note{border-left:3px solid var(--accent);background:var(--surface);padding:12px 16px;border-radius:0 8px 8px 0;color:var(--muted);margin:16px 0;font-size:.92rem;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Distributed Systems &middot; Caching</div>
+  <h1>Redis Deep Dive</h1>
+  <p>What Redis is, why it exists, its core data structures, persistence and eviction model, messaging and scripting capabilities, clustering, real-world use cases, and Spring Boot integration.</p>
+
+  <h2>1. What Is Redis?</h2>
+  <p><b style="color:var(--text)">Redis</b> (Remote Dictionary Server) is an open-source, in-memory data structure store used as a database, cache, message broker, and streaming engine. Unlike traditional databases that treat data as rows in tables, Redis exposes data as native structures &mdash; strings, hashes, lists, sets, sorted sets, streams &mdash; and lets applications operate on them directly and atomically.</p>
+  <p>It was created by Salvatore Sanfilippo in 2009 to solve a specific problem: relational databases were too slow for the read-heavy, low-latency workloads modern web apps needed. Redis trades some durability guarantees for speed, keeping the full dataset in RAM while optionally persisting it to disk.</p>
+  <div class="grid">
+    <div class="card">
+      <b>In-Memory Execution</b>
+      <p>Data operations reside entirely in RAM, delivering sub-millisecond latencies for read/write workloads.</p>
+    </div>
+    <div class="card">
+      <b>Single-Threaded Event Loop</b>
+      <p>Uses I/O multiplexing (epoll/kqueue) to serve requests sequentially, avoiding lock contention and race conditions entirely.</p>
+    </div>
+  </div>
+
+  <h2>2. Core Features</h2>
+  <div class="grid">
+    <div class="card">
+      <b>Atomic Operations</b>
+      <p>Every command (including compound ones like <code>INCR</code> or <code>LPUSH</code>) executes atomically &mdash; no partial writes, no manual locking.</p>
+    </div>
+    <div class="card">
+      <b>Rich Data Types</b>
+      <p>Strings, hashes, lists, sets, sorted sets, streams, bitmaps, HyperLogLogs, and geospatial indexes &mdash; not just key/value blobs.</p>
+    </div>
+    <div class="card">
+      <b>Persistence Options</b>
+      <p>RDB snapshots, AOF logs, or both together &mdash; tunable durability vs. performance tradeoff.</p>
+    </div>
+    <div class="card">
+      <b>Pub/Sub Messaging</b>
+      <p>Built-in publish/subscribe channels for real-time fan-out messaging between services.</p>
+    </div>
+    <div class="card">
+      <b>Replication &amp; HA</b>
+      <p>Master-replica replication, automatic failover via Sentinel, and horizontal sharding via Redis Cluster.</p>
+    </div>
+    <div class="card">
+      <b>Lua Scripting</b>
+      <p>Server-side scripts run atomically, letting you bundle multi-step logic into a single round trip.</p>
+    </div>
+    <div class="card">
+      <b>TTL &amp; Eviction</b>
+      <p>Per-key expiration and configurable eviction policies make Redis a natural fit as a bounded cache.</p>
+    </div>
+    <div class="card">
+      <b>Transactions</b>
+      <p><code>MULTI</code>/<code>EXEC</code> queues commands and runs them as one atomic, isolated unit.</p>
+    </div>
+  </div>
+
+  <h2>3. Essential Data Structures</h2>
+  <div class="grid">
+    <div class="card">
+      <b>Strings</b>
+      <p>Binary-safe values up to 512MB. Used for session caching, counters (<code>INCR</code>), and general key-value pairs.</p>
+    </div>
+    <div class="card">
+      <b>Hashes</b>
+      <p>Field-value pairs representing objects (e.g., <code>user:1001 -&gt; {name, email}</code>). Memory-efficient via ziplists.</p>
+    </div>
+    <div class="card">
+      <b>Lists</b>
+      <p>Ordered, doubly-linked collections. Power job queues and activity feeds via <code>LPUSH</code>/<code>RPOP</code>.</p>
+    </div>
+    <div class="card">
+      <b>Sets</b>
+      <p>Unordered, unique elements. Used for tagging, deduplication, and set algebra (<code>SINTER</code>, <code>SUNION</code>).</p>
+    </div>
+    <div class="card">
+      <b>Sorted Sets (ZSETs)</b>
+      <p>Unique elements ordered by floating-point score. Backed by skip lists; ideal for leaderboards and rate limiters.</p>
+    </div>
+    <div class="card">
+      <b>Streams</b>
+      <p>Append-only log structure with consumer groups &mdash; a lightweight alternative to Kafka for event pipelines.</p>
+    </div>
+    <div class="card">
+      <b>Bitmaps</b>
+      <p>Bit-level operations over strings. Extremely compact for feature flags, daily active user tracking.</p>
+    </div>
+    <div class="card">
+      <b>HyperLogLog</b>
+      <p>Probabilistic structure estimating cardinality (unique counts) using ~12KB regardless of dataset size.</p>
+    </div>
+  </div>
+
+  <h2>4. Persistence Mechanisms: RDB vs AOF</h2>
+  <div class="grid">
+    <div class="card">
+      <b>RDB (Redis Database Snapshot)</b>
+      <p>Point-in-time snapshots created at set intervals via <code>fork()</code>. Fast recovery; minor data loss risk on sudden crashes.</p>
+    </div>
+    <div class="card">
+      <b>AOF (Append Only File)</b>
+      <p>Logs every write command received. Near real-time durability with configurable sync (<code>fsync everysec</code>).</p>
+    </div>
+  </div>
+  <div class="note">In production, most teams enable both: AOF for durability, with periodic RDB snapshots for fast full restores and backups.</div>
+
+  <h2>5. Eviction Policies &amp; TTL</h2>
+  <p>When Redis reaches its maximum configured RAM limit (<code>maxmemory</code>), it applies eviction policies:</p>
+  <ul>
+    <li><code>volatile-lru</code> / <code>allkeys-lru</code>: Removes Least Recently Used keys.</li>
+    <li><code>volatile-lfu</code> / <code>allkeys-lfu</code>: Removes Least Frequently Used keys.</li>
+    <li><code>volatile-ttl</code>: Removes keys with the shortest remaining TTL first.</li>
+    <li><code>volatile-random</code> / <code>allkeys-random</code>: Removes a random key.</li>
+    <li><code>noeviction</code>: Returns memory errors when full &mdash; writes fail, reads still succeed.</li>
+  </ul>
+
+  <h2>6. Pub/Sub &amp; Streams for Messaging</h2>
+  <p>Redis supports two messaging models with different guarantees:</p>
+  <div class="grid">
+    <div class="card">
+      <b>Pub/Sub</b>
+      <p>Fire-and-forget. Messages published to a channel go only to currently connected subscribers &mdash; nothing is stored, so offline consumers miss messages.</p>
+    </div>
+    <div class="card">
+      <b>Streams</b>
+      <p>Durable, ordered logs with consumer groups. Multiple consumers can each track their own read position, enabling replay and load-balanced processing.</p>
+    </div>
+  </div>
+  <pre><code>PUBLISH orders:created '{"orderId": 4471}'
+SUBSCRIBE orders:created
+
+XADD orders:stream '*' orderId 4471 status CREATED
+XREADGROUP GROUP order-workers consumer-1 COUNT 10 STREAMS orders:stream '>'</code></pre>
+
+  <h2>7. Transactions &amp; Lua Scripting</h2>
+  <p>Redis transactions queue commands with <code>MULTI</code> and run them atomically with <code>EXEC</code> &mdash; no other client's commands can interleave. For conditional logic, Lua scripts go further: the entire script runs as a single atomic step server-side.</p>
+  <pre><code>MULTI
+INCR inventory:sku_42
+DECRBY wallet:user_9 500
+EXEC
+
+-- Lua: atomic check-then-decrement, avoids race conditions
+EVAL "
+  local stock = tonumber(redis.call('GET', KEYS[1]))
+  if stock > 0 then
+    redis.call('DECR', KEYS[1])
+    return 1
+  end
+  return 0
+" 1 inventory:sku_42</code></pre>
+
+  <h2>8. Spring Boot Caching with Redis</h2>
+  <p>Spring Boot provides a declarative AOP caching framework using annotations mapped to Redis:</p>
+
+  <pre><code>@Service
+@RequiredArgsConstructor
+public class ProductService {
+    private final ProductRepository repo;
+
+    // Cache Hit checks Redis first; Cache Miss executes method and populates Redis
+    @Cacheable(value = "products", key = "#id", unless = "#result == null")
+    public Product getProduct(Long id) {
+        return repo.findById(id).orElseThrow();
+    }
+
+    // Forces method execution and updates Redis entry
+    @CachePut(value = "products", key = "#product.id")
+    public Product updateProduct(Product product) {
+        return repo.save(product);
+    }
+
+    // Evicts stale entry from Redis
+    @CacheEvict(value = "products", key = "#id")
+    public void deleteProduct(Long id) {
+        repo.deleteById(id);
+    }
+}</code></pre>
+
+  <h3>Direct Access with RedisTemplate</h3>
+  <p>For cases that need more than annotation-based caching &mdash; counters, sorted sets, pub/sub &mdash; <code>RedisTemplate</code> gives direct command access:</p>
+  <pre><code>@Service
+@RequiredArgsConstructor
+public class RateLimiterService {
+    private final StringRedisTemplate redisTemplate;
+
+    public boolean isAllowed(String userId, int limit, Duration window) {
+        String key = "rate:" + userId;
+        Long count = redisTemplate.opsForValue().increment(key);
+        if (count != null && count == 1) {
+            redisTemplate.expire(key, window);
+        }
+        return count != null && count <= limit;
+    }
+}</code></pre>
+
+  <h2>9. High Availability &amp; Clustering</h2>
+  <div class="grid">
+    <div class="card">
+      <b>Replication</b>
+      <p>Asynchronous master-replica replication lets reads scale horizontally while writes stay on the master.</p>
+    </div>
+    <div class="card">
+      <b>Redis Sentinel</b>
+      <p>Provides high availability with automatic failover and monitoring for master-replica setups.</p>
+    </div>
+    <div class="card">
+      <b>Redis Cluster</b>
+      <p>Provides horizontal scaling by sharding keys across 16,384 hash slots across multiple master nodes.</p>
+    </div>
+    <div class="card">
+      <b>Client-Side Routing</b>
+      <p>Cluster-aware clients compute the hash slot for a key and route requests to the correct node directly.</p>
+    </div>
+  </div>
+
+  <h2>10. Real-World Use Cases</h2>
+  <table>
+    <tr><th>Use Case</th><th>Why Redis Fits</th></tr>
+    <tr><td>Application caching</td><td>Sub-millisecond reads take load off the primary database for hot data.</td></tr>
+    <tr><td>Session store</td><td>TTL-based expiry maps naturally onto session lifetimes; shared across app instances.</td></tr>
+    <tr><td>Rate limiting</td><td>Atomic <code>INCR</code> + TTL implements sliding/fixed window limiters in a few lines.</td></tr>
+    <tr><td>Leaderboards</td><td>Sorted sets keep ranked data updated and queryable in logarithmic time.</td></tr>
+    <tr><td>Real-time messaging</td><td>Pub/Sub and Streams support chat, notifications, and event-driven pipelines.</td></tr>
+    <tr><td>Job/task queues</td><td>Lists (<code>LPUSH</code>/<code>BRPOP</code>) implement simple, fast work queues.</td></tr>
+    <tr><td>Distributed locks</td><td><code>SET key value NX PX ttl</code> gives a simple mutual-exclusion lock across services.</td></tr>
+    <tr><td>Analytics counters</td><td>HyperLogLog and Bitmaps track unique visitors and flags at near-zero memory cost.</td></tr>
+    <tr><td>Geospatial queries</td><td>Built-in geo commands support "find nearby" features without a separate geo database.</td></tr>
+  </table>
+
+  <h2>11. Performance Notes &amp; Common Pitfalls</h2>
+  <div class="tag-row">
+    <span class="tag">avoid KEYS *</span>
+    <span class="tag">watch for hot keys</span>
+    <span class="tag">pipeline batch ops</span>
+    <span class="tag">size big values carefully</span>
+  </div>
+  <ul>
+    <li><b style="color:var(--text)">Never use <code>KEYS *</code> in production</b> &mdash; it blocks the single event loop while scanning the whole keyspace. Use <code>SCAN</code> instead, which iterates incrementally.</li>
+    <li><b style="color:var(--text)">Pipeline round trips.</b> Sending 100 commands one-by-one costs 100 network round trips; pipelining batches them into one.</li>
+    <li><b style="color:var(--text)">Watch key size.</b> A single massive hash or list can dominate memory and slow operations on that key &mdash; shard large collections across multiple keys where possible.</li>
+    <li><b style="color:var(--text)">Hot keys skew cluster load.</b> Because Redis Cluster shards by key hash, one extremely popular key can overload a single node regardless of overall cluster capacity.</li>
+    <li><b style="color:var(--text)">Set TTLs deliberately.</b> Caches without expiry silently become permanent storage and can exhaust <code>maxmemory</code>.</li>
+  </ul>
+
+  <h2>12. Redis vs. Memcached</h2>
+  <table>
+    <tr><th>Aspect</th><th>Redis</th><th>Memcached</th></tr>
+    <tr><td>Data types</td><td>Strings, hashes, lists, sets, ZSETs, streams</td><td>Strings only</td></tr>
+    <tr><td>Persistence</td><td>RDB, AOF, or both</td><td>None &mdash; pure in-memory cache</td></tr>
+    <tr><td>Replication</td><td>Built-in, plus Sentinel &amp; Cluster</td><td>Not built-in</td></tr>
+    <tr><td>Threading</td><td>Primarily single-threaded core</td><td>Multi-threaded</td></tr>
+    <tr><td>Extra capabilities</td><td>Pub/Sub, Lua scripting, transactions</td><td>Minimal, cache-only</td></tr>
+  </table>
+
+  <h2>13. Quick Command Reference</h2>
+  <pre><code>SET key value EX 60          # set with 60s TTL
+GET key
+EXPIRE key 60
+TTL key
+DEL key
+HSET user:1 name "Rakesh" role "dev"
+HGETALL user:1
+LPUSH queue:jobs "job1"
+BRPOP queue:jobs 0
+SADD tags:post1 "java" "redis"
+ZADD leaderboard 100 "user1"
+ZREVRANGE leaderboard 0 9 WITHSCORES
+SCAN 0 MATCH "session:*" COUNT 100</code></pre>
+
+</div>
+</body>
+</html>

@@ -11,19 +11,19 @@
       "description": "Core framework concepts, container internals, and configuration.",
       "notes": [
         {
-          "id": "ioc",
-          "title": "IoC Container",
-          "file": "notes/spring-boot/ioc.html",
+          "id": "spring-basics",
+          "title": "Spring Basics",
+          "file": "notes/spring-boot/spring-basics.html",
           "tags": [
-            "ioc",
-            "container"
+            "spring",
+            "basics"
           ],
           "difficulty": "Beginner",
-          "lastUpdated": "2026-07-18"
+          "lastUpdated": "2026-07-24"
         },
         {
           "id": "dependency-injection",
-          "title": "Dependency Injection",
+          "title": "IOC & DI",
           "file": "notes/spring-boot/dependency-injection.html",
           "tags": [
             "di",
@@ -31,6 +31,28 @@
           ],
           "difficulty": "Beginner",
           "lastUpdated": "2026-07-24"
+        },
+        {
+          "id": "stereotype-annotations",
+          "title": "Stereotype Annotations",
+          "file": "notes/spring-boot/stereotype-annotations.html",
+          "tags": [
+            "spring",
+            "annotations"
+          ],
+          "difficulty": "Beginner",
+          "lastUpdated": "2026-07-24"
+        },
+        {
+          "id": "ejb-vs-spring",
+          "title": "EJB vs Spring vs Spring Boot",
+          "file": "notes/spring-boot/ejb-and-spring.html",
+          "tags": [
+            "ejb",
+            "spring"
+          ],
+          "difficulty": "Beginner",
+          "lastUpdated": "2026-07-18"
         }
       ]
     },
@@ -47,6 +69,17 @@
           "tags": [
             "jvm",
             "memory"
+          ],
+          "difficulty": "Intermediate",
+          "lastUpdated": "2026-06-02"
+        },
+        {
+          "id": "hashmap-internals",
+          "title": "HashMap Internals",
+          "file": "notes/java/hashmap-deepdive.html",
+          "tags": [
+            "java",
+            "collections"
           ],
           "difficulty": "Intermediate",
           "lastUpdated": "2026-06-02"
@@ -86,12 +119,31 @@
       "description": "System design, patterns, and best practices.",
       "notes": [
         {
-          "id": "Ecommerce-Design",
+          "id": "ecommerce-design",
           "title": "Ecommerce System Design",
           "file": "notes/architecture/ecommerce-design.html",
           "tags": [
             "system-design",
             "ecommerce"
+          ],
+          "difficulty": "Beginner",
+          "lastUpdated": "2026-07-10"
+        }
+      ]
+    },
+    {
+      "id": "redis",
+      "name": "Redis",
+      "icon": "💾",
+      "description": "In-memory data structure store, used as a database, cache, and message broker.",
+      "notes": [
+        {
+          "id": "redis-basics",
+          "title": "Redis Basics",
+          "file": "notes/redis/redis-basics.html",
+          "tags": [
+            "redis",
+            "database"
           ],
           "difficulty": "Beginner",
           "lastUpdated": "2026-07-10"

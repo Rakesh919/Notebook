@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>EJB vs Spring vs Spring Boot vs Spring MVC — Deep Dive</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  :root{--bg:#0b0e14;--surface:#131824;--border:#232a38;--text:#e7eaf1;--muted:#9aa4b7;--accent:#f0b429;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+  .wrap{max-width:760px;margin:0 auto;padding:48px 24px;}
+  h1{font-size:2rem;margin-bottom:4px;}
+  .eyebrow{color:var(--accent);font-family:monospace;font-size:.85rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px;}
+  h2{margin-top:40px;font-size:1.25rem;border-left:3px solid var(--accent);padding-left:12px;}
+  h3{margin-top:24px;font-size:1rem;color:var(--text);}
+  p{color:var(--muted);}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;}
+  .card b{color:var(--accent);}
+  code{background:#0f131c;border:1px solid var(--border);border-radius:6px;padding:2px 6px;font-size:.9em;color:var(--accent);}
+  pre{background:#0f131c;border:1px solid var(--border);border-radius:8px;padding:12px;overflow-x:auto;}
+  pre code{border:none;padding:0;background:none;color:var(--text);}
+
+  table.compare{width:100%;border-collapse:collapse;margin-top:16px;font-size:0.9em;}
+  table.compare th{text-align:left;color:var(--accent);border-bottom:1px solid var(--border);padding:10px;}
+  table.compare td{border-bottom:1px solid var(--border);padding:10px;color:var(--muted);}
+  table.compare td.feature{color:var(--text);font-weight:600;}
+
+  ul{color:var(--muted);}
+  .note{border-left:3px solid var(--accent);background:var(--surface);padding:12px 16px;border-radius:0 8px 8px 0;color:var(--muted);margin:16px 0;font-size:.92rem;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Architecture &middot; Enterprise Java</div>
+  <h1>EJB vs Spring vs Spring Boot vs Spring MVC</h1>
+  <p>What each one actually is, what problem it was built to solve, what's bundled inside it, and how they relate &mdash; not competitors, but layers built on top of one another.</p>
+
+  <h2>1. What Is EJB?</h2>
+  <p><b style="color:var(--text)">EJB (Enterprise JavaBeans)</b> is the original Java EE specification for building server-side, transactional, distributed business components. Every EJB class had to implement container-mandated interfaces and be declared in verbose XML deployment descriptors (<code>ejb-jar.xml</code>). It could <i>only</i> run inside a full Java EE application server &mdash; GlassFish, WebLogic, JBoss &mdash; there was no lightweight or standalone option.</p>
+  <div class="grid">
+    <div class="card">
+      <b>Session Beans</b>
+      <p>Encapsulated business logic. Stateless beans handled request-scoped logic; stateful beans held conversational state per client.</p>
+    </div>
+    <div class="card">
+      <b>Entity Beans</b>
+      <p>Represented persistent data (pre-JPA). Heavy, container-managed persistence that was eventually replaced by JPA.</p>
+    </div>
+    <div class="card">
+      <b>Message-Driven Beans</b>
+      <p>Consumed messages from JMS queues/topics asynchronously, managed entirely by the container.</p>
+    </div>
+    <div class="card">
+      <b>Container Services</b>
+      <p>Transactions, security, and remoting were declared via annotations/XML and enforced by the app server &mdash; powerful, but rigid and slow to develop against.</p>
+    </div>
+  </div>
+  <div class="note">EJB's core problem wasn't its ideas (transactions, pooling, remoting are all still valuable) &mdash; it was the cost of using them: mandatory interfaces, a full app server, and slow edit-deploy-test cycles.</div>
+
+  <h2>2. What Is the Spring Framework?</h2>
+  <p><b style="color:var(--text)">Spring</b> emerged in 2003 as a direct reaction to EJB's complexity. Its core idea: business logic should be plain Java objects (<b>POJOs</b>) with no forced interfaces, and the framework should wire dependencies together rather than components looking them up themselves.</p>
+  <div class="grid">
+    <div class="card">
+      <b>IoC Container</b>
+      <p>The heart of Spring. Creates, configures, and manages the lifecycle of objects ("beans") so your code doesn't have to.</p>
+    </div>
+    <div class="card">
+      <b>Dependency Injection</b>
+      <p>Dependencies are supplied to a class (via constructor/setter) instead of the class creating or looking them up itself &mdash; enabling easy testing and loose coupling.</p>
+    </div>
+    <div class="card">
+      <b>Spring AOP</b>
+      <p>Aspect-Oriented Programming &mdash; cross-cutting concerns (logging, transactions, security) applied declaratively without cluttering business code.</p>
+    </div>
+    <div class="card">
+      <b>Spring Data / ORM Support</b>
+      <p>Abstractions over JDBC, JPA/Hibernate that cut down boilerplate for data access.</p>
+    </div>
+    <div class="card">
+      <b>Spring Security</b>
+      <p>Configurable authentication and authorization &mdash; a full replacement for EJB's container-managed security.</p>
+    </div>
+    <div class="card">
+      <b>Spring MVC</b>
+      <p>Spring's own web framework, covered in detail below.</p>
+    </div>
+  </div>
+  <p>What Spring didn't fix: you still had to hand-configure most of it &mdash; XML bean definitions (later <code>@Configuration</code> Java config), manually chosen dependency versions, and manual deployment to an external servlet container as a <code>.war</code>.</p>
+
+  <h2>3. What Is Spring Boot?</h2>
+  <p><b style="color:var(--text)">Spring Boot</b> (2014) doesn't replace Spring &mdash; it's built directly on top of it. Its entire purpose is removing the configuration burden that remained after Spring solved EJB's complexity problem: "convention over configuration," sensible defaults, and a runnable standalone application.</p>
+  <div class="grid">
+    <div class="card">
+      <b>1. Auto-Configuration</b>
+      <p>Scans classpath jars and conditionally creates beans using annotations like <code>@ConditionalOnClass</code> and <code>@ConditionalOnMissingBean</code> &mdash; if it sees a JPA driver, it wires up a <code>DataSource</code> for you.</p>
+    </div>
+    <div class="card">
+      <b>2. Starters Ecosystem</b>
+      <p>Single dependency wrappers (e.g., <code>spring-boot-starter-data-jpa</code>) bundling compatible versions of Hibernate, Spring Data, and JDBC &mdash; no manual version matching.</p>
+    </div>
+    <div class="card">
+      <b>3. Embedded Web Containers</b>
+      <p>Executes applications standalone via <code>public static void main</code> using a built-in Tomcat/Jetty/Undertow &mdash; a runnable <code>.jar</code>, not a <code>.war</code> deployed externally.</p>
+    </div>
+    <div class="card">
+      <b>4. Spring Boot Actuator</b>
+      <p>Provides production-ready REST endpoints (<code>/actuator/health</code>, <code>/actuator/metrics</code>, <code>/actuator/env</code>) without writing any business code.</p>
+    </div>
+    <div class="card">
+      <b>5. Externalized Configuration</b>
+      <p><code>application.properties</code>/<code>application.yml</code> with profile-based overrides (<code>application-dev.yml</code>) baked in.</p>
+    </div>
+    <div class="card">
+      <b>6. Opinionated Defaults</b>
+      <p>Sensible out-of-the-box choices (embedded Tomcat, Jackson for JSON, logback for logging) that you can override, but don't have to configure.</p>
+    </div>
+  </div>
+
+  <h2>4. What Is Spring MVC?</h2>
+  <p><b style="color:var(--text)">Spring MVC</b> is the web framework layer inside the Spring ecosystem &mdash; it existed in Spring Core long before Spring Boot did. It is <i>not</i> a competitor to Spring Boot; Spring Boot simply auto-configures Spring MVC the moment you add <code>spring-boot-starter-web</code> to your classpath.</p>
+  <p>At its center is the <b>DispatcherServlet</b> &mdash; a front controller that receives every incoming HTTP request, routes it to the right controller method based on URL/HTTP verb, and delegates response rendering. Around that core, Spring MVC provides a large set of annotations that let you declare routing, request binding, and validation instead of writing servlet plumbing by hand.</p>
+
+  <h3>Core Spring MVC Annotations</h3>
+  <table class="compare">
+    <thead>
+      <tr><th>Annotation</th><th>What It Does</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="feature"><code>@Controller</code></td><td>Marks a class as a web controller whose methods return view names (for server-rendered pages).</td></tr>
+      <tr><td class="feature"><code>@RestController</code></td><td>Shorthand for <code>@Controller</code> + <code>@ResponseBody</code> &mdash; every method's return value is serialized directly into the HTTP response body (typically JSON), the default for REST APIs.</td></tr>
+      <tr><td class="feature"><code>@RequestMapping</code></td><td>Maps a class or method to a URL path; base annotation behind the verb-specific shortcuts below.</td></tr>
+      <tr><td class="feature"><code>@GetMapping</code> / <code>@PostMapping</code> / <code>@PutMapping</code> / <code>@DeleteMapping</code> / <code>@PatchMapping</code></td><td>Verb-specific shortcuts for <code>@RequestMapping(method = ...)</code>.</td></tr>
+      <tr><td class="feature"><code>@ResponseBody</code></td><td>Tells Spring to write the method's return value straight into the HTTP response body instead of resolving it as a view name.</td></tr>
+      <tr><td class="feature"><code>@RequestBody</code></td><td>Deserializes the incoming HTTP request body (usually JSON) into a Java object parameter.</td></tr>
+      <tr><td class="feature"><code>@PathVariable</code></td><td>Binds a URI template segment (e.g., <code>/users/{id}</code>) to a method parameter.</td></tr>
+      <tr><td class="feature"><code>@RequestParam</code></td><td>Binds a query string parameter (e.g., <code>?page=2</code>) to a method parameter.</td></tr>
+      <tr><td class="feature"><code>@RequestHeader</code></td><td>Binds an HTTP header value to a method parameter.</td></tr>
+      <tr><td class="feature"><code>@Valid</code></td><td>Triggers bean validation (JSR-380) on the annotated object &mdash; combined with constraint annotations like <code>@NotNull</code>, <code>@Size</code>, <code>@Email</code> on the DTO fields.</td></tr>
+      <tr><td class="feature"><code>@ExceptionHandler</code></td><td>Marks a method to handle exceptions thrown by controller methods in the same class.</td></tr>
+      <tr><td class="feature"><code>@ControllerAdvice</code> / <code>@RestControllerAdvice</code></td><td>Applies exception handling, binding, or model attributes globally across all controllers.</td></tr>
+      <tr><td class="feature"><code>@ResponseStatus</code></td><td>Sets a specific HTTP status code on the response for a given handler or exception.</td></tr>
+      <tr><td class="feature"><code>@CrossOrigin</code></td><td>Enables CORS for a controller or handler method.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Spring Boot's Own Bootstrapping Annotation</h3>
+  <p>One annotation often confused as part of Spring MVC is actually Spring Boot's entry point:</p>
+  <div class="card">
+    <b>@SpringBootApplication</b>
+    <p>A convenience annotation combining three: <code>@Configuration</code> (marks the class as a source of bean definitions), <code>@EnableAutoConfiguration</code> (turns on Spring Boot's classpath-based auto-configuration), and <code>@ComponentScan</code> (scans the package for <code>@Component</code>/<code>@Service</code>/<code>@Repository</code>/<code>@Controller</code> beans). It's placed once, on the class containing <code>public static void main</code>.</p>
+  </div>
+
+  <pre><code>@SpringBootApplication
+public class ShopApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(ShopApplication.class, args);
+    }
+}
+
+@RestController
+@RequestMapping("/api/products")
+@RequiredArgsConstructor
+public class ProductController {
+
+    private final ProductService productService;
+
+    @GetMapping("/{id}")
+    public ResponseEntity&lt;ProductResponse&gt; getProduct(@PathVariable Long id) {
+        return ResponseEntity.ok(productService.getProduct(id));
+    }
+
+    @PostMapping
+    public ResponseEntity&lt;ProductResponse&gt; createProduct(@Valid @RequestBody ProductRequest request) {
+        ProductResponse created = productService.create(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    @ExceptionHandler(ProductNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse handleNotFound(ProductNotFoundException ex) {
+        return new ErrorResponse(ex.getMessage());
+    }
+}</code></pre>
+
+  <h2>5. Spring Core vs. Spring Boot</h2>
+  <p>Spring Core provides the underlying Dependency Injection framework and low-level abstractions. Spring Boot sits on top of Spring to remove boilerplate and manual setup.</p>
+
+  <table class="compare">
+    <thead>
+      <tr>
+        <th>Feature</th>
+        <th>Spring Framework (Core + MVC)</th>
+        <th>Spring Boot</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="feature">Configuration Strategy</td>
+        <td>Explicit manual config via XML files or Java <code>@Configuration</code> beans.</td>
+        <td><b>Auto-Configuration</b> based on classpath starters and conditions.</td>
+      </tr>
+      <tr>
+        <td class="feature">Server Deployment</td>
+        <td>Requires building a <code>.war</code> file and deploying to an external Tomcat/WildFly.</td>
+        <td>Includes an <b>Embedded Server</b> (Tomcat, Jetty, Undertow) inside a runnable <code>.jar</code>.</td>
+      </tr>
+      <tr>
+        <td class="feature">Dependency Management</td>
+        <td>Manual tracking of compatible versions across dozens of Spring jars.</td>
+        <td><b>Starter POMs</b> (e.g., <code>spring-boot-starter-web</code>) with curated transitive versions.</td>
+      </tr>
+      <tr>
+        <td class="feature">Production Readiness</td>
+        <td>Requires custom setup for metrics, health checks, and tracing.</td>
+        <td>Includes <b>Spring Boot Actuator</b> out-of-the-box for production monitoring.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>6. EJB vs Spring vs Spring Boot — Full Comparison</h2>
+  <table class="compare">
+    <thead>
+      <tr><th>Aspect</th><th>EJB</th><th>Spring Framework</th><th>Spring Boot</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="feature">Programming Model</td><td>Container-managed beans implementing mandatory interfaces</td><td>Plain POJOs wired via Dependency Injection</td><td>Same POJO model as Spring, plus auto-configured beans</td></tr>
+      <tr><td class="feature">Deployment</td><td>Requires a full Java EE application server</td><td>Requires an external servlet container (deployed as <code>.war</code>)</td><td>Standalone runnable <code>.jar</code> with embedded server</td></tr>
+      <tr><td class="feature">Configuration</td><td>Verbose XML deployment descriptors</td><td>XML or Java <code>@Configuration</code>, all manual</td><td>Convention-over-configuration, auto-detected from classpath</td></tr>
+      <tr><td class="feature">Testability</td><td>Hard to unit test outside a container</td><td>Easy &mdash; POJOs with injected mocks</td><td>Easy, plus <code>@SpringBootTest</code> for integration slices</td></tr>
+      <tr><td class="feature">Dependency Versions</td><td>Tied to the app server's bundled spec version</td><td>Manually managed by the developer</td><td>Curated automatically via starter BOMs</td></tr>
+      <tr><td class="feature">Monitoring</td><td>App-server specific tooling</td><td>Custom-built by the team</td><td>Actuator endpoints out of the box</td></tr>
+      <tr><td class="feature">Learning Curve</td><td>Steep &mdash; interfaces, descriptors, server setup</td><td>Moderate &mdash; concepts are simpler, setup still manual</td><td>Low to get started, depth available when needed</td></tr>
+    </tbody>
+  </table>
+
+  <h2>7. The Relationship, Summed Up</h2>
+  <div class="note">
+    EJB &rarr; Spring &rarr; Spring Boot is a lineage, not a set of competitors. Spring was built to remove EJB's mandatory complexity. Spring Boot was built to remove the manual configuration that was still left over in Spring. Spring MVC is not a rival to any of them &mdash; it's the web layer that has lived inside Spring since the beginning, and Spring Boot simply auto-configures it for you.
+  </div>
+
+</div>
+</body>
+</html>
