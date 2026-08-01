@@ -1,0 +1,35 @@
+/* animations.css — the small set of motions used across the site */
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes paletteIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes blink {
+  0%, 45% { opacity: 1; }
+  50%, 95% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/* Staggered entrance for grid children, applied via inline --i custom property */
+.card-grid > * {
+  animation: fadeSlideIn var(--dur-slow) var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 35ms);
+}

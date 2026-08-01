@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Two Sum — Notes</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  :root{--bg:#0b0e14;--surface:#131824;--border:#232a38;--text:#e7eaf1;--muted:#9aa4b7;--accent:#5eead4;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+  .wrap{max-width:760px;margin:0 auto;padding:48px 24px;}
+  h1{font-size:2rem;margin-bottom:4px;}
+  .eyebrow{color:var(--accent);font-family:monospace;font-size:.85rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px;}
+  h2{margin-top:40px;font-size:1.25rem;border-left:3px solid var(--accent);padding-left:12px;}
+  p{color:var(--muted);}
+  pre{background:#0f131c;border:1px solid var(--border);border-radius:10px;padding:16px;overflow-x:auto;}
+  code{background:#0f131c;border:1px solid var(--border);border-radius:6px;padding:2px 6px;font-size:.9em;color:var(--accent);}
+  .badge{display:inline-block;font-family:monospace;font-size:.8rem;padding:2px 10px;border-radius:999px;border:1px solid var(--border);margin-right:8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">DSA &middot; Beginner</div>
+  <h1>Two Sum</h1>
+  <p>Given an array of integers and a target, return the indices of the two numbers that add up to it.</p>
+
+  <h2>Brute force</h2>
+  <p>Check every pair. <span class="badge">O(n&sup2;) time</span><span class="badge">O(1) space</span></p>
+  <pre><code>for (int i = 0; i < nums.length; i++) {
+    for (int j = i + 1; j < nums.length; j++) {
+        if (nums[i] + nums[j] == target) return new int[]{i, j};
+    }
+}</code></pre>
+
+  <h2>Optimized: hash map</h2>
+  <p>Instead of searching for the second number, remember every number you've already seen. Then for each new number, just check whether its "partner" (target - number) is already in the map. <span class="badge">O(n) time</span><span class="badge">O(n) space</span></p>
+  <pre><code>Map&lt;Integer, Integer&gt; seen = new HashMap&lt;&gt;();
+for (int i = 0; i < nums.length; i++) {
+    int complement = target - nums[i];
+    if (seen.containsKey(complement)) {
+        return new int[]{seen.get(complement), i};
+    }
+    seen.put(nums[i], i);
+}</code></pre>
+
+  <h2>Why this is optimal</h2>
+  <p>You can't do better than O(n) — you have to look at every number at least once. The hash map trick of "store what you've seen, look for its complement" reappears constantly: subarray sum problems, pair-difference problems, and more.</p>
+</div>
+</body>
+</html>

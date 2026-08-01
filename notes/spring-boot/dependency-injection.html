@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Dependency Injection — Notes</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  :root{--bg:#0b0e14;--surface:#131824;--border:#232a38;--text:#e7eaf1;--muted:#9aa4b7;--accent:#5eead4;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+  .wrap{max-width:760px;margin:0 auto;padding:48px 24px;}
+  h1{font-size:2rem;margin-bottom:4px;}
+  .eyebrow{color:var(--accent);font-family:monospace;font-size:.85rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px;}
+  h2{margin-top:40px;font-size:1.25rem;border-left:3px solid var(--accent);padding-left:12px;}
+  p{color:var(--muted);}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin:16px 0;}
+  code{background:#0f131c;border:1px solid var(--border);border-radius:6px;padding:2px 6px;font-size:.9em;color:var(--accent);}
+  pre{background:#0f131c;border:1px solid var(--border);border-radius:10px;padding:16px;overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;margin:16px 0;}
+  th,td{text-align:left;padding:10px;border-bottom:1px solid var(--border);font-size:.92rem;}
+  th{color:var(--accent);font-family:monospace;font-weight:500;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Spring Boot &middot; Beginner</div>
+  <h1>Dependency Injection</h1>
+  <p>The mechanism the IoC container uses to actually deliver dependencies into your objects.</p>
+
+  <h2>The core idea</h2>
+  <p>If IoC is the principle ("don't build your own dependencies"), DI is the implementation ("here's how the container hands them to you"). Spring supports three styles of injection.</p>
+
+  <table>
+    <tr><th>Style</th><th>How</th><th>When Spring recommends it</th></tr>
+    <tr><td>Constructor</td><td>Passed into the constructor</td><td>Default choice — makes dependencies explicit and required</td></tr>
+    <tr><td>Setter</td><td>Set via a setter method</td><td>Optional dependencies</td></tr>
+    <tr><td>Field</td><td><code>@Autowired</code> directly on a field</td><td>Convenient, but harder to test — avoid in new code</td></tr>
+  </table>
+
+  <div class="card">
+    <strong>Analogy:</strong> constructor injection is like a recipe that lists ingredients up front — you can't start cooking without them. Field injection is like grabbing ingredients out of the fridge mid-recipe: it works, but nobody can see what you actually needed just by reading the method.
+  </div>
+
+  <pre><code>@Service
+class OrderService {
+    private final PaymentClient paymentClient;
+
+    // Constructor injection — Spring supplies PaymentClient automatically
+    OrderService(PaymentClient paymentClient) {
+        this.paymentClient = paymentClient;
+    }
+}</code></pre>
+
+  <h2>Why constructor injection wins</h2>
+  <p>It makes dependencies visible and mandatory, plays well with <code>final</code> fields, and makes unit testing trivial — you just pass a mock into the constructor, no Spring context required.</p>
+</div>
+</body>
+</html>

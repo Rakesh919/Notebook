@@ -1,0 +1,102 @@
+{
+  "site": {
+    "title": "Notebook",
+    "subtitle": "A personal index of everything learned, one file at a time."
+  },
+  "categories": [
+    {
+      "id": "spring-boot",
+      "name": "Spring Boot",
+      "icon": "🚀",
+      "description": "Core framework concepts, container internals, and configuration.",
+      "notes": [
+        {
+          "id": "ioc",
+          "title": "IoC Container",
+          "file": "notes/spring-boot/ioc.html",
+          "tags": [
+            "ioc",
+            "container"
+          ],
+          "difficulty": "Beginner",
+          "lastUpdated": "2026-07-18"
+        },
+        {
+          "id": "dependency-injection",
+          "title": "Dependency Injection",
+          "file": "notes/spring-boot/dependency-injection.html",
+          "tags": [
+            "di",
+            "beans"
+          ],
+          "difficulty": "Beginner",
+          "lastUpdated": "2026-07-24"
+        }
+      ]
+    },
+    {
+      "id": "java",
+      "name": "Java",
+      "icon": "☕",
+      "description": "Core language mechanics and JVM internals.",
+      "notes": [
+        {
+          "id": "jvm",
+          "title": "JVM Memory Model",
+          "file": "notes/java/jvm.html",
+          "tags": [
+            "jvm",
+            "memory"
+          ],
+          "difficulty": "Intermediate",
+          "lastUpdated": "2026-06-02"
+        }
+      ]
+    },
+    {
+      "id": "dsa",
+      "name": "DSA",
+      "icon": "🧩",
+      "description": "One problem a day — brute force to optimal.",
+      "notes": [
+        {
+          "id": "two-sum",
+          "title": "Two Sum",
+          "file": "notes/dsa/two-sum.html",
+          "tags": [
+            "arrays",
+            "hashmap"
+          ],
+          "difficulty": "Beginner",
+          "lastUpdated": "2026-07-10"
+        }
+      ]
+    },
+    {
+      "id": "microservices",
+      "name": "Microservices",
+      "icon": "🧱",
+      "description": "Service boundaries, discovery, and gateway patterns.",
+      "notes": []
+    },
+    {
+      "id": "architecture",
+      "name": "Architecture",
+      "icon": "🏛️",
+      "description": "System design, patterns, and best practices.",
+      "notes": [
+        {
+          "id": "Ecommerce-Design",
+          "title": "Ecommerce System Design",
+          "file": "notes/architecture/ecommerce-design.html",
+          "tags": [
+            "system-design",
+            "ecommerce"
+          ],
+          "difficulty": "Beginner",
+          "lastUpdated": "2026-07-10"
+        }
+      ]
+    }
+  ]
+}

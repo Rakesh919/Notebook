@@ -1,0 +1,17 @@
+/*
+  themes.css
+  Color tokens themselves live in variables.css ([data-theme='dark'/'light']).
+  This file only holds the rare rule that needs to change shape (not just
+  color) between themes.
+*/
+
+/* Light mode: cards read better with a slightly crisper border, no glow */
+[data-theme='light'] .category-card:hover {
+  box-shadow: 0 12px 28px rgba(20, 24, 33, 0.08);
+}
+
+/* Light mode: the mono "path" text can look too heavy at full contrast */
+[data-theme='light'] .topbar__path,
+[data-theme='light'] .category-card__path {
+  opacity: 0.85;
+}

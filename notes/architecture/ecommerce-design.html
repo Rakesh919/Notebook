@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FinClient — System Architecture Spec</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EEF1F6;
+    --paper-raised:#FFFFFF;
+    --ink:#161B26;
+    --ink-soft:#4A5266;
+    --line:#C7CEDA;
+    --line-soft:#DDE2EA;
+    --navy:#1C2A4A;
+    --amber:#C8842A;
+    --amber-soft:#F1E0C4;
+    --code-bg:#10141F;
+    --code-text:#D7DCE8;
+    --code-amber:#E0A75E;
+    --green:#3C7A5C;
+    --radius:2px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    line-height:1.65;
+    font-size:16px;
+  }
+  h1,h2,h3,h4,.mono{font-family:'JetBrains Mono',monospace;}
+
+  /* ===== Layout ===== */
+  .shell{display:flex; max-width:1400px; margin:0 auto;}
+  nav.toc{
+    width:270px; flex-shrink:0; position:sticky; top:0; height:100vh;
+    overflow-y:auto; padding:36px 20px 36px 32px; border-right:1px solid var(--line);
+  }
+  main{flex:1; min-width:0; padding:0 56px 120px;}
+
+  /* ===== TOC ===== */
+  .toc-brand{font-family:'JetBrains Mono',monospace; font-weight:800; font-size:13px; letter-spacing:.14em; color:var(--navy); margin-bottom:4px;}
+  .toc-sub{font-size:11px; color:var(--ink-soft); letter-spacing:.08em; margin-bottom:28px; text-transform:uppercase;}
+  .toc-list{list-style:none; padding:0; margin:0;}
+  .toc-list li{margin-bottom:2px;}
+  .toc-list a{
+    display:flex; gap:10px; align-items:baseline; text-decoration:none; color:var(--ink-soft);
+    font-size:13px; padding:7px 10px; border-radius:var(--radius); transition:background .12s, color .12s;
+  }
+  .toc-list a:hover{background:var(--line-soft); color:var(--ink);}
+  .toc-list a.active{background:var(--navy); color:#fff;}
+  .toc-num{font-weight:700; color:var(--amber); font-size:11px; min-width:20px;}
+  .toc-list a.active .toc-num{color:var(--amber-soft);}
+
+  /* ===== Header / hero ===== */
+  .plate{
+    margin-top:56px; margin-bottom:56px; border:1px solid var(--navy); position:relative;
+    padding:40px 44px; background:var(--paper-raised);
+  }
+  .plate::before, .plate::after{
+    content:""; position:absolute; width:14px; height:14px; border:2px solid var(--amber);
+  }
+  .plate::before{top:-2px; left:-2px; border-right:none; border-bottom:none;}
+  .plate::after{bottom:-2px; right:-2px; border-left:none; border-top:none;}
+  .plate-tag{font-size:11px; letter-spacing:.18em; color:var(--amber); font-weight:700; margin-bottom:14px;}
+  .plate h1{font-size:34px; margin:0 0 14px; color:var(--navy); letter-spacing:-0.01em; line-height:1.2;}
+  .plate p.lede{font-family:'Inter',sans-serif; color:var(--ink-soft); font-size:16px; max-width:640px; margin:0;}
+  .plate-meta{display:flex; gap:28px; margin-top:26px; padding-top:22px; border-top:1px dashed var(--line);}
+  .plate-meta div{font-size:11px; color:var(--ink-soft);}
+  .plate-meta b{display:block; font-family:'JetBrains Mono',monospace; color:var(--ink); font-size:13px; margin-top:3px;}
+
+  /* ===== Sections ===== */
+  section{margin-bottom:64px; scroll-margin-top:24px;}
+  .sec-eyebrow{display:flex; align-items:center; gap:14px; margin-bottom:6px;}
+  .sec-eyebrow .num{font-family:'JetBrains Mono',monospace; font-weight:800; font-size:13px; color:var(--amber); border:1px solid var(--amber); padding:3px 9px;}
+  .sec-eyebrow .rule{flex:1; height:1px; background:var(--line);}
+  h2{font-size:22px; color:var(--navy); margin:0 0 22px; letter-spacing:-.01em;}
+  h3{font-size:16px; color:var(--navy); margin:30px 0 12px;}
+  p{color:var(--ink); font-size:15px;}
+  .note{color:var(--ink-soft); font-size:14px; margin-top:-6px;}
+
+  /* ===== Tables ===== */
+  table{width:100%; border-collapse:collapse; margin:14px 0 8px; font-size:13.5px;}
+  th{
+    text-align:left; font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.06em;
+    text-transform:uppercase; color:#fff; background:var(--navy); padding:10px 14px;
+  }
+  td{padding:10px 14px; border-bottom:1px solid var(--line-soft); vertical-align:top;}
+  tr:nth-child(even) td{background:#F6F8FB;}
+  td code, p code, li code{
+    font-family:'JetBrains Mono',monospace; background:#E7ECF3; color:var(--navy);
+    padding:1px 6px; border-radius:3px; font-size:.9em;
+  }
+
+  /* ===== Repo cards ===== */
+  .repo-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:16px 0;}
+  .repo-card{
+    border:1px solid var(--line); background:var(--paper-raised); padding:14px 16px; border-left:3px solid var(--amber);
+  }
+  .repo-card .rn{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--navy); font-weight:700;}
+  .repo-card .rd{font-size:13px; color:var(--ink-soft); margin-top:4px;}
+
+  /* ===== Code / tree blocks ===== */
+  pre{
+    background:var(--code-bg); color:var(--code-text); padding:22px 24px; overflow-x:auto;
+    font-family:'JetBrains Mono',monospace; font-size:12.6px; line-height:1.7; border-radius:var(--radius);
+    border-left:3px solid var(--amber);
+  }
+  pre .c1{color:var(--code-amber);}
+
+  /* ===== Lists ===== */
+  ul.clean{padding-left:0; list-style:none; margin:10px 0;}
+  ul.clean li{padding:8px 0 8px 26px; position:relative; border-bottom:1px dashed var(--line-soft); font-size:14.5px;}
+  ul.clean li::before{content:"→"; position:absolute; left:0; color:var(--amber); font-weight:700;}
+  ul.checklist{padding-left:0; list-style:none; margin:10px 0; columns:2; column-gap:28px;}
+  ul.checklist li{padding:6px 0 6px 26px; position:relative; font-size:13.8px; break-inside:avoid;}
+  ul.checklist li::before{content:"☐"; position:absolute; left:0; color:var(--navy);}
+
+  /* ===== Build order steps ===== */
+  .steps{counter-reset:step; margin-top:18px;}
+  .step{display:flex; gap:18px; padding:16px 0; border-bottom:1px solid var(--line-soft);}
+  .step:last-child{border-bottom:none;}
+  .step .sn{
+    counter-increment:step; font-family:'JetBrains Mono',monospace; font-weight:800; color:var(--amber);
+    font-size:22px; width:38px; flex-shrink:0;
+  }
+  .step .sn::before{content: counter(step, decimal-leading-zero);}
+  .step .st b{display:block; color:var(--navy); font-size:14.5px; margin-bottom:2px;}
+  .step .st span{color:var(--ink-soft); font-size:13.8px;}
+
+  .callout{
+    background:var(--amber-soft); border:1px solid var(--amber); padding:14px 18px; font-size:13.8px;
+    color:#5C3D0E; margin:16px 0;
+  }
+  .callout b{color:var(--navy);}
+
+  footer{border-top:1px solid var(--line); padding-top:24px; margin-top:60px; font-size:12px; color:var(--ink-soft); font-family:'JetBrains Mono',monospace;}
+
+  @media (max-width: 900px){
+    nav.toc{display:none;}
+    main{padding:0 20px 80px;}
+    .repo-grid{grid-template-columns:1fr;}
+    ul.checklist{columns:1;}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <nav class="toc">
+    <div class="toc-brand">FINCLIENT // SPEC</div>
+    <div class="toc-sub">Architecture Document — Rev. 1</div>
+    <ul class="toc-list" id="toc"></ul>
+  </nav>
+
+  <main>
+    <div class="plate">
+      <div class="plate-tag">SYSTEM DESIGN SPECIFICATION</div>
+      <h1>FinClient — Production-Grade Spring Boot Microservices Architecture</h1>
+      <p class="lede">A complete blueprint: tech stack, repository strategy, service boundaries, folder structure, infrastructure, CI/CD, and a build sequence — for taking this project from zero to production-ready.</p>
+      <div class="plate-meta">
+        <div>FRAMEWORK<b>Spring Boot 3 / Java 21</b></div>
+        <div>ORCHESTRATION<b>Kubernetes (EKS)</b></div>
+        <div>MESSAGING<b>Kafka</b></div>
+        <div>STATUS<b>Draft — v1</b></div>
+      </div>
+    </div>
+
+    <section id="s1">
+      <div class="sec-eyebrow"><span class="num">SEC.01</span><span class="rule"></span></div>
+      <h2>Tech Stack</h2>
+      <table>
+        <tr><th>Layer</th><th>Choice</th><th>Why</th></tr>
+        <tr><td>Language / Framework</td><td><code>Java 21</code> + <code>Spring Boot 3.x</code></td><td>LTS, virtual threads, native Spring Security 6 support</td></tr>
+        <tr><td>API Gateway</td><td>Spring Cloud Gateway</td><td>Reactive, integrates with the Spring ecosystem</td></tr>
+        <tr><td>Service Discovery</td><td>Kubernetes native DNS</td><td>K8s already does this — skip Eureka</td></tr>
+        <tr><td>Config</td><td>Spring Cloud Config / K8s ConfigMaps + Secrets</td><td>Centralized, per-environment config</td></tr>
+        <tr><td>Auth</td><td>Keycloak (OIDC) + Spring Security Resource Server</td><td>Don't hand-roll OAuth2 — use a proven IdP</td></tr>
+        <tr><td>Database</td><td>PostgreSQL — one DB per service</td><td>Strong consistency, mature K8s operators (CloudNativePG)</td></tr>
+        <tr><td>Caching</td><td>Redis</td><td>Distributed cache, sessions, rate limiting</td></tr>
+        <tr><td>Messaging</td><td><b>Kafka</b> (recommended over RabbitMQ)</td><td>Event-driven, replay, high throughput — see §5.4</td></tr>
+        <tr><td>Migrations</td><td>Flyway</td><td>Version-controlled schema changes</td></tr>
+        <tr><td>Containers</td><td>Docker</td><td>Standard</td></tr>
+        <tr><td>Orchestration</td><td>Kubernetes (EKS)</td><td>Industry standard</td></tr>
+        <tr><td>K8s packaging</td><td>Helm</td><td>Templated, versioned deployments</td></tr>
+        <tr><td>Metrics</td><td>Prometheus + Grafana</td><td>Native Spring Actuator integration</td></tr>
+        <tr><td>Logs</td><td>Loki + Promtail</td><td>Lightweight, pairs with Grafana</td></tr>
+        <tr><td>Tracing</td><td>OpenTelemetry + Tempo/Jaeger</td><td>Distributed trace correlation</td></tr>
+        <tr><td>CI/CD</td><td>GitHub Actions + ArgoCD (GitOps)</td><td>Automated build → test → deploy</td></tr>
+        <tr><td>Cloud</td><td>AWS — EKS, RDS, MSK, ALB, Route53, ECR, S3</td><td></td></tr>
+        <tr><td>API Docs</td><td>springdoc-openapi</td><td>Auto-generated Swagger UI per service</td></tr>
+        <tr><td>Resilience</td><td>Resilience4j</td><td>Circuit breaker, retry, rate limiter, bulkhead</td></tr>
+      </table>
+    </section>
+
+    <section id="s2">
+      <div class="sec-eyebrow"><span class="num">SEC.02</span><span class="rule"></span></div>
+      <h2>How Many Repositories Do You Need?</h2>
+      <p><b>Recommendation: polyrepo</b> (one repo per service) + 3 shared/infra repos. This is the real production pattern — not a monorepo — because teams deploy independently and CI/CD stays scoped per service.</p>
+      <div class="repo-grid">
+        <div class="repo-card"><div class="rn">01 · finclient-api-gateway</div><div class="rd">Spring Cloud Gateway, routing, rate limiting</div></div>
+        <div class="repo-card"><div class="rn">02 · finclient-auth-service</div><div class="rd">OAuth2/JWT integration layer, Keycloak config</div></div>
+        <div class="repo-card"><div class="rn">03 · finclient-user-service</div><div class="rd">User profiles, accounts</div></div>
+        <div class="repo-card"><div class="rn">04 · finclient-payment-service</div><div class="rd">Core transaction/payment logic</div></div>
+        <div class="repo-card"><div class="rn">05 · finclient-notification-service</div><div class="rd">Email/SMS/push, Kafka consumer</div></div>
+        <div class="repo-card"><div class="rn">06 · finclient-audit-logging-service</div><div class="rd">Compliance/event log store</div></div>
+        <div class="repo-card"><div class="rn">07 · finclient-common-libs</div><div class="rd">Shared DTOs, exception handlers — published as an internal artifact, never copy-pasted</div></div>
+        <div class="repo-card"><div class="rn">08 · finclient-infra</div><div class="rd">Terraform/CloudFormation, EKS cluster config</div></div>
+        <div class="repo-card"><div class="rn">09 · finclient-helm-charts</div><div class="rd">Helm charts for all services</div></div>
+        <div class="repo-card"><div class="rn">10 · finclient-ci-templates</div><div class="rd">Reusable GitHub Actions workflows</div></div>
+      </div>
+      <div class="callout"><b>Minimum viable set for learning solo:</b> repos 01, 03, 04, 07, 08 — five repos. Add the rest as the project grows; don't create ten repos on day one, that's how side projects die from ops overhead.</div>
+      <p class="note">Alternative: a single monorepo with <code>/services/*</code> folders, split into polyrepo once it gets real. Simpler CI early, painful access-control/git-blame later — document that tradeoff if you choose it.</p>
+    </section>
+
+    <section id="s3">
+      <div class="sec-eyebrow"><span class="num">SEC.03</span><span class="rule"></span></div>
+      <h2>Microservices Breakdown</h2>
+<pre>finclient/
+├── api-gateway            → single entry point, routing, auth token relay
+├── auth-service            → wraps Keycloak, issues/validates JWTs
+├── user-service            → user CRUD, profile, KYC data
+├── payment-service         → transactions, ledger, idempotency
+├── notification-service    → Kafka consumer → email/SMS/push
+└── audit-service           → immutable event log, compliance</pre>
+      <p>Each service owns its <b>own PostgreSQL schema</b> — no shared DB across services — and talks to others only via REST (sync) or Kafka events (async), never direct DB access. Every service exposes <code>/actuator/health</code> and <code>/actuator/prometheus</code>.</p>
+    </section>
+
+    <section id="s4">
+      <div class="sec-eyebrow"><span class="num">SEC.04</span><span class="rule"></span></div>
+      <h2>High-Level Request Flow</h2>
+<pre>Client → Route53 → ALB → API Gateway (JWT validation) → target microservice
+                                  ↓
+                       Keycloak (token issuance/refresh)
+
+Microservice → Redis (cache) / PostgreSQL (data) / Kafka (events)
+Kafka → Notification/Audit services (async consumers)
+
+All services → OpenTelemetry Collector → Tempo (traces) / Prometheus (metrics) / Loki (logs)
+                                                      ↓
+                                                  Grafana (dashboards)</pre>
+    </section>
+
+    <section id="s5">
+      <div class="sec-eyebrow"><span class="num">SEC.05</span><span class="rule"></span></div>
+      <h2>Cross-Cutting Concerns</h2>
+
+      <h3>5.1 — JWT + OAuth2</h3>
+      <ul class="clean">
+        <li>Run Keycloak as your Identity Provider (self-hosted, or AWS Cognito if you want managed).</li>
+        <li>Each microservice is a Spring Security OAuth2 <b>Resource Server</b> — validates JWT signature/claims only, doesn't issue tokens.</li>
+        <li>Gateway does coarse-grained auth (is the token valid?); each service does fine-grained authorization via <code>@PreAuthorize</code>.</li>
+        <li>Short-lived access tokens (~15 min) + refresh tokens.</li>
+      </ul>
+
+      <h3>5.2 — Caching (Redis)</h3>
+      <ul class="clean">
+        <li>Use <code>spring-boot-starter-data-redis</code> with <code>@Cacheable</code> / <code>@CacheEvict</code>.</li>
+        <li>Cache read-heavy, rarely-changing data — user profiles, config.</li>
+        <li>Also use Redis for rate limiting at the gateway and distributed locks.</li>
+      </ul>
+
+      <h3>5.3 — Logging</h3>
+      <ul class="clean">
+        <li>Structured JSON logging (logback + <code>logstash-logback-encoder</code>) — never plain text in production.</li>
+        <li>Include <code>traceId</code>/<code>spanId</code> in every log line for correlation with tracing.</li>
+        <li>Ship logs via Promtail → Loki, visualize alongside metrics in Grafana.</li>
+        <li>Never log PII or secrets — mask account numbers, tokens.</li>
+      </ul>
+
+      <h3>5.4 — Messaging: Kafka vs RabbitMQ</h3>
+      <p><b>Recommendation: Kafka</b>, given the fintech-style domain.</p>
+      <ul class="clean">
+        <li>Kafka: high throughput, event replay, log-based — fits payment/audit domains well.</li>
+        <li>RabbitMQ: simpler, better for task-queue/RPC-style messaging, lower ops overhead.</li>
+        <li>Use Kafka for domain events (payment created, user registered) in v1 — don't run both at once, that's infra sprawl for a learning project.</li>
+      </ul>
+
+      <h3>5.5 — Resilience</h3>
+      <p>Resilience4j on every inter-service HTTP call: circuit breaker, retries with backoff, bulkheads to isolate thread pools per downstream dependency.</p>
+    </section>
+
+    <section id="s6">
+      <div class="sec-eyebrow"><span class="num">SEC.06</span><span class="rule"></span></div>
+      <h2>Database Strategy</h2>
+      <ul class="clean">
+        <li>One PostgreSQL instance/schema per service (database-per-service pattern) — enforces service boundaries.</li>
+        <li>Flyway migrations versioned in each service's own repo, under <code>src/main/resources/db/migration</code>.</li>
+        <li>RDS Multi-AZ in AWS, or the CloudNativePG operator if self-managing Postgres in K8s.</li>
+        <li>No cross-service joins. For aggregated data, build a read model via Kafka events (CQRS-lite) or query each service's own API.</li>
+      </ul>
+    </section>
+
+    <section id="s7">
+      <div class="sec-eyebrow"><span class="num">SEC.07</span><span class="rule"></span></div>
+      <h2>Folder Structure (per microservice)</h2>
+      <p>Package-by-feature layout — scales better than package-by-layer:</p>
+<pre>payment-service/
+├── src/main/java/com/finclient/payment/
+│   ├── PaymentServiceApplication.java
+│   ├── config/                  <span class="c1">→ SecurityConfig, KafkaConfig, RedisConfig, OpenApiConfig</span>
+│   ├── transaction/              <span class="c1">→ feature module</span>
+│   │   ├── Transaction.java              (entity)
+│   │   ├── TransactionRepository.java
+│   │   ├── TransactionService.java
+│   │   ├── TransactionController.java
+│   │   ├── dto/
+│   │   │   ├── TransactionRequest.java
+│   │   │   └── TransactionResponse.java
+│   │   └── mapper/TransactionMapper.java
+│   ├── ledger/                   <span class="c1">→ another feature module (same pattern)</span>
+│   ├── event/                    <span class="c1">→ Kafka producers/consumers</span>
+│   │   ├── PaymentEventProducer.java
+│   │   └── PaymentEventListener.java
+│   ├── exception/
+│   │   ├── GlobalExceptionHandler.java
+│   │   └── custom exceptions
+│   └── common/                   <span class="c1">→ shared internal utils (not the shared lib)</span>
+├── src/main/resources/
+│   ├── application.yml
+│   ├── application-dev.yml
+│   ├── application-prod.yml
+│   └── db/migration/             <span class="c1">→ Flyway scripts (V1__init.sql, V2__add_index.sql)</span>
+├── src/test/java/...              <span class="c1">→ unit + integration tests (mirror main structure)</span>
+├── Dockerfile
+├── docker-compose.yml             <span class="c1">→ local dev only (Postgres, Redis, Kafka)</span>
+├── helm/                          <span class="c1">→ Helm chart for this service</span>
+│   ├── Chart.yaml
+│   ├── values.yaml
+│   ├── values-prod.yaml
+│   └── templates/
+├── .github/workflows/ci-cd.yml
+├── pom.xml (or build.gradle)
+└── README.md</pre>
+      <p><b>Rules of thumb:</b></p>
+      <ul class="clean">
+        <li>Controllers stay thin — validate, then delegate to the service.</li>
+        <li>Services hold business logic, never touch <code>HttpServletRequest</code>.</li>
+        <li>Repositories are Spring Data JPA interfaces only — no business logic.</li>
+        <li>DTOs in, DTOs out — never expose JPA entities directly over REST.</li>
+        <li>MapStruct for entity↔DTO mapping to avoid manual boilerplate.</li>
+      </ul>
+    </section>
+
+    <section id="s8">
+      <div class="sec-eyebrow"><span class="num">SEC.08</span><span class="rule"></span></div>
+      <h2>Containerization &amp; Local Dev</h2>
+      <p>Each service ships a multi-stage <code>Dockerfile</code> — build stage with Maven/Gradle, runtime stage on a slim JRE image (e.g. <code>eclipse-temurin:21-jre-alpine</code>). A root-level <code>docker-compose.yml</code> spins up Postgres, Redis, Kafka, and Keycloak locally so real AWS is never required for day-to-day development.</p>
+    </section>
+
+    <section id="s9">
+      <div class="sec-eyebrow"><span class="num">SEC.09</span><span class="rule"></span></div>
+      <h2>Kubernetes Layout</h2>
+<pre>Namespaces:
+  finclient-dev
+  finclient-staging
+  finclient-prod
+
+Per namespace:
+  Deployment + Service + HPA (autoscaling) per microservice
+  ConfigMap (non-secret config)
+  Secret (DB creds, API keys — synced from AWS Secrets Manager via External Secrets Operator)
+  Ingress → routes to API Gateway
+  ServiceMonitor (Prometheus scrape config)</pre>
+      <ul class="clean">
+        <li>Helm charts (one per service, or one umbrella chart) for repeatable deployments.</li>
+        <li>HPA tied to CPU/memory or custom metrics.</li>
+        <li>Readiness/liveness probes pointing to Spring Actuator health endpoints.</li>
+      </ul>
+    </section>
+
+    <section id="s10">
+      <div class="sec-eyebrow"><span class="num">SEC.10</span><span class="rule"></span></div>
+      <h2>CI/CD Pipeline (per service repo)</h2>
+<pre>1. Push/PR       → trigger GitHub Actions
+2. Build         → mvn/gradle build
+3. Test          → unit + integration tests (Testcontainers for Postgres/Kafka)
+4. Static checks → SonarQube/SonarCloud, dependency scan (Snyk/Trivy)
+5. Build image   → Docker build, tag with git SHA
+6. Push image    → AWS ECR
+7. Deploy        → ArgoCD detects new tag (GitOps) → syncs to EKS
+                    (or: GitHub Actions runs `helm upgrade` directly for something simpler)
+8. Post-deploy   → smoke test / synthetic check</pre>
+      <p>Environment promotion: <code>dev</code> (auto-deploy on merge to <code>main</code>) → <code>staging</code> (manual approval) → <code>prod</code> (manual approval).</p>
+    </section>
+
+    <section id="s11">
+      <div class="sec-eyebrow"><span class="num">SEC.11</span><span class="rule"></span></div>
+      <h2>AWS Hosting Architecture</h2>
+      <table>
+        <tr><th>Component</th><th>AWS Service</th></tr>
+        <tr><td>Compute</td><td>EKS (Elastic Kubernetes Service)</td></tr>
+        <tr><td>Container registry</td><td>ECR</td></tr>
+        <tr><td>Database</td><td>RDS PostgreSQL (Multi-AZ)</td></tr>
+        <tr><td>Cache</td><td>ElastiCache for Redis</td></tr>
+        <tr><td>Messaging</td><td>MSK (Managed Kafka), or self-hosted on EKS while learning</td></tr>
+        <tr><td>Load balancing</td><td>ALB + AWS Load Balancer Controller</td></tr>
+        <tr><td>DNS</td><td>Route53</td></tr>
+        <tr><td>Secrets</td><td>AWS Secrets Manager + External Secrets Operator</td></tr>
+        <tr><td>Object storage</td><td>S3</td></tr>
+        <tr><td>Observability</td><td>Managed Prometheus/Grafana (AMP/AMG), or self-hosted on EKS</td></tr>
+        <tr><td>IaC</td><td>Terraform (more portable than CloudFormation)</td></tr>
+      </table>
+      <div class="callout"><b>Cost tip while learning:</b> run one small EKS cluster and self-host Postgres/Kafka/Redis via K8s manifests instead of RDS/MSK/ElastiCache at first — swap to managed services once comfortable, to avoid a surprise bill.</div>
+    </section>
+
+    <section id="s12">
+      <div class="sec-eyebrow"><span class="num">SEC.12</span><span class="rule"></span></div>
+      <h2>Best Practices Checklist</h2>
+      <ul class="checklist">
+        <li>12-factor config — env vars/ConfigMaps, never hardcoded</li>
+        <li>Stateless services — session state in Redis, not memory</li>
+        <li>Idempotent APIs for payment-critical endpoints</li>
+        <li>Automated, versioned DB migrations (Flyway)</li>
+        <li>No secrets in git — ever</li>
+        <li>API versioning — <code>/api/v1/...</code></li>
+        <li>Global exception handler — RFC 7807 Problem Details</li>
+        <li>Input validation via <code>jakarta.validation</code></li>
+        <li>Rate limiting at the gateway</li>
+        <li>Correlation IDs propagated across service calls</li>
+        <li>Contract testing between services (Spring Cloud Contract / Pact)</li>
+        <li>Unit + integration (Testcontainers) + a few E2E tests</li>
+        <li>Blue/green or canary deploys (Argo Rollouts)</li>
+        <li>Documented backup / disaster-recovery plan</li>
+      </ul>
+    </section>
+
+    <section id="s13">
+      <div class="sec-eyebrow"><span class="num">SEC.13</span><span class="rule"></span></div>
+      <h2>Suggested Build Order (Learning Path)</h2>
+      <div class="steps">
+        <div class="step"><div class="sn"></div><div class="st"><b>Single service first</b><span>Build user-service fully — CRUD + Postgres + tests — before touching microservices complexity.</span></div></div>
+        <div class="step"><div class="sn"></div><div class="st"><b>Add auth</b><span>Wire up Keycloak + JWT resource server on that one service.</span></div></div>
+        <div class="step"><div class="sn"></div><div class="st"><b>Containerize it</b><span>Dockerfile, docker-compose with Postgres.</span></div></div>
+        <div class="step"><div class="sn"></div><div class="st"><b>Add a second service</b><span>payment-service, connected via REST — now the microservices tradeoffs become real.</span></div></div>
+        <div class="step"><div class="sn"></div><div class="st"><b>Add Kafka</b><span>payment-service publishes an event, notification-service consumes it.</span></div></div>
+        <div class="step"><div class="sn"></div><div class="st"><b>Add an API Gateway</b><span>In front of both services.</span></div></div>
+        <div class="step"><div class="sn"></div><div class="st"><b>Add Redis caching</b><span>To one hot endpoint.</span></div></div>
+        <div class="step"><div class="sn"></div><div class="st"><b>Add observability</b><span>Actuator + Prometheus + Grafana, then Loki for logs, then tracing.</span></div></div>
+        <div class="step"><div class="sn"></div><div class="st"><b>Containerize everything</b><span>Write Helm charts, deploy to local K8s (kind/minikube) first.</span></div></div>
+        <div class="step"><div class="sn"></div><div class="st"><b>Set up CI/CD</b><span>GitHub Actions for build/test/push, then ArgoCD for GitOps deploy.</span></div></div>
+        <div class="step"><div class="sn"></div><div class="st"><b>Move to AWS EKS last</b><span>Once the whole stack already works locally in Kubernetes.</span></div></div>
+      </div>
+      <p class="note">This order matters: it means you're never debugging Kubernetes, Kafka, and OAuth2 all at once — each new concept lands on a working foundation.</p>
+    </section>
+
+    <footer>FINCLIENT-ARCH-SPEC · REV.1 · GENERATED FOR REFERENCE USE</footer>
+  </main>
+</div>
+
+<script>
+  const sections = [
+    ["s1","01","Tech Stack"],
+    ["s2","02","Repository Strategy"],
+    ["s3","03","Microservices Breakdown"],
+    ["s4","04","Request Flow"],
+    ["s5","05","Cross-Cutting Concerns"],
+    ["s6","06","Database Strategy"],
+    ["s7","07","Folder Structure"],
+    ["s8","08","Containerization"],
+    ["s9","09","Kubernetes Layout"],
+    ["s10","10","CI/CD Pipeline"],
+    ["s11","11","AWS Hosting"],
+    ["s12","12","Best Practices"],
+    ["s13","13","Build Order"]
+  ];
+  const tocEl = document.getElementById('toc');
+  sections.forEach(([id,num,label])=>{
+    const li = document.createElement('li');
+    li.innerHTML = `<a href="#${id}"><span class="toc-num">${num}</span>${label}</a>`;
+    tocEl.appendChild(li);
+  });
+  const links = [...tocEl.querySelectorAll('a')];
+  const observer = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        links.forEach(l=>l.classList.remove('active'));
+        const active = tocEl.querySelector(`a[href="#${entry.target.id}"]`);
+        if(active) active.classList.add('active');
+      }
+    });
+  }, {rootMargin:"-10% 0px -75% 0px"});
+  sections.forEach(([id])=>{
+    const el = document.getElementById(id);
+    if(el) observer.observe(el);
+  });
+</script>
+</body>
+</html>

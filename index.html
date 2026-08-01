@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Notebook — technical notes</title>
+<meta name="description" content="A personal, static index of technical notes." />
+<link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="assets/css/variables.css" />
+<link rel="stylesheet" href="assets/css/base.css" />
+<link rel="stylesheet" href="assets/css/layout.css" />
+<link rel="stylesheet" href="assets/css/components.css" />
+<link rel="stylesheet" href="assets/css/animations.css" />
+<link rel="stylesheet" href="assets/css/themes.css" />
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ Sidebar ============ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar__brand">
+      <img class="sidebar__brand-mark" src="assets/icons/logo.svg" alt="" />
+      <span class="sidebar__brand-text">Notebook</span>
+    </div>
+    <nav aria-label="Categories">
+      <div class="nav-section-label">Categories</div>
+      <div class="sidebar__nav" id="sidebarNav"><!-- injected --></div>
+    </nav>
+  </aside>
+  <div class="sidebar-scrim" id="sidebarScrim"></div>
+
+  <!-- ============ Topbar ============ -->
+  <header class="topbar">
+    <button class="icon-btn hamburger" id="hamburger" aria-label="Open menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+
+    <span class="topbar__path mono" id="topbarPath">~/notebook</span>
+
+    <div class="topbar__actions">
+      <button class="search-trigger" id="searchTrigger" aria-label="Search notes">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <span>Search notes&hellip;</span>
+        <kbd>/</kbd>
+      </button>
+      <button class="icon-btn theme-toggle" id="themeToggle" aria-label="Toggle theme" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v1M12 20v1M4.2 4.2l.7.7M19.1 19.1l.7.7M3 12h1M20 12h1M4.2 19.8l.7-.7M19.1 4.9l.7-.7"/><circle cx="12" cy="12" r="4.5"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ============ Main content ============ -->
+  <main class="main">
+
+    <section class="view is-active" id="view-home">
+      <div class="page-head">
+        <h1 class="page-head__title">Notebook</h1>
+        <p class="page-head__subtitle" id="homeSubtitle">Loading&hellip;</p>
+      </div>
+      <div class="card-grid" id="homeGrid"><!-- injected --></div>
+    </section>
+
+    <section class="view" id="view-category"><!-- injected --></section>
+
+  </main>
+</div>
+
+<!-- ============ Note viewer overlay ============ -->
+<div class="viewer" id="viewer">
+  <div class="viewer__bar">
+    <a class="icon-btn" id="viewerBack" href="#/" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </a>
+    <span class="topbar__path mono" id="viewerPath">notes/&hellip;</span>
+    <div class="topbar__actions">
+      <a class="icon-btn" id="viewerOpenTab" href="#" target="_blank" rel="noopener" aria-label="Open in new tab" title="Open in new tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3h7v7"/><path d="M10 14L21 3"/><path d="M21 14v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h6"/></svg>
+      </a>
+    </div>
+  </div>
+  <iframe class="viewer__frame" id="viewerFrame" title="Note content" loading="eager"></iframe>
+</div>
+
+<!-- ============ Command palette ============ -->
+<div class="palette-backdrop" id="paletteBackdrop">
+  <div class="palette" role="dialog" aria-modal="true" aria-label="Search notes">
+    <div class="palette__input-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input class="palette__input" id="paletteInput" type="text" placeholder="Search by title, category, or tag" autocomplete="off" />
+      <span class="palette__caret"></span>
+    </div>
+    <div class="palette__results" id="paletteResults"><!-- injected --></div>
+  </div>
+</div>
+
+<script src="assets/js/dataLoader.js"></script>
+<script src="assets/js/search.js"></script>
+<script src="assets/js/theme.js"></script>
+<script src="assets/js/render.js"></script>
+<script src="assets/js/router.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

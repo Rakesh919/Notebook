@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>JVM Memory Model — Notes</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  :root{--bg:#0b0e14;--surface:#131824;--border:#232a38;--text:#e7eaf1;--muted:#9aa4b7;--accent:#f0b429;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+  .wrap{max-width:760px;margin:0 auto;padding:48px 24px;}
+  h1{font-size:2rem;margin-bottom:4px;}
+  .eyebrow{color:var(--accent);font-family:monospace;font-size:.85rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px;}
+  h2{margin-top:40px;font-size:1.25rem;border-left:3px solid var(--accent);padding-left:12px;}
+  p{color:var(--muted);}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;}
+  .card b{color:var(--accent);}
+  code{background:#0f131c;border:1px solid var(--border);border-radius:6px;padding:2px 6px;font-size:.9em;color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Java &middot; Intermediate</div>
+  <h1>JVM Memory Model</h1>
+  <p>Where objects actually live while your program runs, and why it matters for performance and interviews.</p>
+
+  <h2>The main regions</h2>
+  <div class="grid">
+    <div class="card"><b>Heap</b><p>Every object you create with <code>new</code> lives here. Shared across all threads. Garbage collected.</p></div>
+    <div class="card"><b>Stack</b><p>One per thread. Holds method call frames, local variables, and references to heap objects.</p></div>
+    <div class="card"><b>Metaspace</b><p>Class metadata — method bytecode, static fields. Replaced PermGen since Java 8.</p></div>
+    <div class="card"><b>PC Register &amp; native stacks</b><p>Per-thread bookkeeping for the instruction pointer and native method calls.</p></div>
+  </div>
+
+  <h2>Young vs Old generation</h2>
+  <p>The heap itself is split further. Most objects die young, so the JVM optimizes for that: new objects go into <b>Eden</b>, survive a collection into <b>Survivor</b> space, and only get promoted to the <b>Old generation</b> if they stick around. This is why minor GCs (young gen) are frequent and cheap, while major GCs (old gen) are rarer and more expensive.</p>
+
+  <h2>Why this comes up in interviews</h2>
+  <p>Common follow-ups: what causes a <code>StackOverflowError</code> vs an <code>OutOfMemoryError</code> (stack depth vs heap exhaustion), and how garbage collection decides an object is unreachable (reachability from GC roots, not just reference counting).</p>
+</div>
+</body>
+</html>
