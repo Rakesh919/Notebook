@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Important Spring Annotations — Complete Reference Guide</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  :root {
+    --bg: #0b0e14;
+    --surface: #131824;
+    --panel2: #0f131c;
+    --border: #232a38;
+    --text: #e7eaf1;
+    --muted: #9aa4b7;
+    --accent: #f0b429;
+    --amber: #f0b429;
+    --teal: #38bdf8;
+    --rose: #f87171;
+    --green: #4ade80;
+    --purple: #c084fc;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .layout {
+    display: flex;
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+  
+  /* STICKY SIDEBAR NAV */
+  nav.sidebar {
+    width: 310px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 24px 16px;
+    flex-shrink: 0;
+  }
+  nav.sidebar h3 {
+    font-size: 0.85rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+    padding-left: 8px;
+  }
+  nav.sidebar a {
+    display: block;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.8rem;
+    padding: 5px 8px;
+    border-radius: 6px;
+    margin-bottom: 2px;
+    transition: all 0.15s ease;
+  }
+  nav.sidebar a:hover {
+    color: var(--accent);
+    background: rgba(240, 180, 41, 0.08);
+  }
+
+  /* MAIN CONTENT WRAPPER */
+  .main-content {
+    flex: 1;
+    max-width: 1080px;
+    padding: 48px 40px 120px;
+    overflow-x: hidden;
+  }
+
+  .eyebrow {
+    color: var(--accent);
+    font-family: monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  h1 { font-size: 2.3rem; margin-top: 0; margin-bottom: 8px; font-weight: 800; line-height: 1.25; }
+  h1 span { color: var(--accent); }
+  .sub { color: var(--muted); font-size: 1rem; margin-bottom: 32px; }
+  
+  h2 {
+    margin-top: 56px;
+    font-size: 1.45rem;
+    border-left: 4px solid var(--accent);
+    padding-left: 14px;
+    color: var(--text);
+  }
+  h3 { font-size: 1.15rem; color: var(--teal); margin-top: 28px; }
+  h4 { font-size: 0.98rem; color: var(--purple); margin-top: 20px; }
+  p, li { color: var(--muted); font-size: 0.95rem; }
+  li { margin-bottom: 6px; }
+  b, strong { color: var(--text); }
+  
+  /* CARDS & PANELS */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 20px 0; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .card b { color: var(--accent); display: block; margin-bottom: 6px; font-size: 1rem; }
+  
+  /* CALLOUT BOXES */
+  .callout {
+    margin: 20px 0;
+    border-left: 4px solid var(--accent);
+    padding: 16px 20px;
+    background: rgba(240, 180, 41, 0.05);
+    border-radius: 0 8px 8px 0;
+    font-size: 0.92rem;
+  }
+  .callout.warn { border-left-color: var(--rose); background: rgba(248, 113, 113, 0.06); }
+  .callout.info { border-left-color: var(--teal); background: rgba(56, 189, 248, 0.06); }
+  .callout.success { border-left-color: var(--green); background: rgba(74, 222, 128, 0.06); }
+  
+  /* CODE BLOCKS WITH PURE CSS SYNTAX HIGHLIGHTING */
+  pre {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: #e7eaf1;
+  }
+  code {
+    background: #0f131c;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.88em;
+    color: var(--accent);
+    font-family: 'Consolas', 'Courier New', monospace;
+  }
+  pre code { border: none; padding: 0; background: transparent; color: inherit; }
+  
+  .kw { color: #f43f5e; font-weight: bold; }
+  .anno { color: var(--accent); font-weight: bold; }
+  .type { color: var(--teal); }
+  .str { color: var(--green); }
+  .cmnt { color: #64748b; font-style: italic; }
+  .fn { color: #c084fc; }
+
+  /* TABLES */
+  table.matrix {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 0.85rem;
+    background: var(--surface);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  table.matrix th, table.matrix td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    text-align: left;
+  }
+  table.matrix th {
+    background: var(--panel2);
+    color: var(--accent);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+  }
+  table.matrix tr:last-child td { border-bottom: none; }
+
+  /* FLOWCHARTS & DIAGRAMS */
+  .diagram {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin: 24px 0;
+  }
+  .flow-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .flow-step .num {
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: bold;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+  .flow-arrow {
+    text-align: center;
+    color: var(--accent);
+    font-size: 1.2rem;
+    margin: -4px 0 4px;
+  }
+
+  /* FAQ ACCORDION STYLE */
+  .faq-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    padding: 16px;
+  }
+  .faq-q { color: var(--accent); font-weight: 600; font-size: 0.98rem; margin-bottom: 8px; }
+  .faq-a { color: var(--muted); font-size: 0.92rem; }
+
+  @media (max-width: 900px) {
+    .layout { flex-direction: column; }
+    nav.sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border); }
+    .main-content { padding: 24px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- SIDEBAR NAVIGATION -->
+  <nav class="sidebar">
+    <h3>Spring Annotations</h3>
+    <a href="#sec1">1. Introduction to Annotations</a>
+    <a href="#sec2">2. Spring Ecosystem Modules</a>
+    <a href="#sec3">3. Master Annotation Matrix</a>
+    <a href="#sec4">4. Spring Framework Core Annotations</a>
+    <a href="#sec5">5. Spring Boot Annotations</a>
+    <a href="#sec6">6. Spring MVC Annotations</a>
+    <a href="#sec7">7. Spring Data JPA Annotations</a>
+    <a href="#sec8">8. Spring Validation Annotations</a>
+    <a href="#sec9">9. Spring Security Annotations</a>
+    <a href="#sec10">10. Spring AOP Annotations</a>
+    <a href="#sec11">11. Spring Scheduling Annotations</a>
+    <a href="#sec12">12. Spring Async Annotations</a>
+    <a href="#sec13">13. Spring Cache Annotations</a>
+    <a href="#sec14">14. Spring Test Annotations</a>
+    <a href="#sec15">15. Module Categorization Guide</a>
+    <a href="#sec16">16. Importance Hierarchy Ranking</a>
+    <a href="#sec17">17. Real-world Project Architecture</a>
+    <a href="#sec18">18. Common Production Mistakes</a>
+    <a href="#sec19">19. Senior Best Practices</a>
+    <a href="#sec20">20. 100 Spring Interview QA</a>
+    <a href="#sec21">21. Framework Cheatsheet</a>
+    <a href="#sec22">22. Visual Infographic Summary</a>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <div class="eyebrow">Enterprise Java &middot; Spring Framework Ecosystem</div>
+    <h1>Important Spring Annotations — <span>Reference Guide</span></h1>
+    <div class="sub">The definitive senior-level reference manual detailing every major annotation across Spring Core, Boot, MVC, Data JPA, Security, AOP, Validation, Cache, Async, and Testing modules.</div>
+
+    <!-- SECTION 1 -->
+    <section id="sec1">
+      <h2>1. Introduction to Annotations</h2>
+      <p>Java annotations (introduced in Java 5 via JSR-175) are structured metadata tags embedded directly into Java source code. They do not alter compiled bytecode directly; instead, they provide metadata that can be inspected by tools, compilers, or runtime frameworks using reflection.</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>Why Spring Replaced XML with Annotations</b>
+          <p>Early Spring (1.x/2.0) relied on massive XML configuration files (<code>applicationContext.xml</code>). As enterprise applications grew, XML configurations caused extreme refactoring pain, lack of type safety, and configuration sprawl. Annotations co-locate configuration directly with the target code.</p>
+        </div>
+        <div class="card">
+          <b>How Spring Processes Annotations</b>
+          <p>Spring uses <code>ClassPathBeanDefinitionScanner</code> and high-performance ASM bytecode parsers (<code>MetadataReader</code>) to detect annotations without loading classes into the JVM ClassLoader initially. At runtime, <code>BeanPostProcessors</code> inspect annotations using Java Reflection to inject dependencies, wrap beans in AOP proxies, or configure web endpoints.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2 -->
+    <section id="sec2">
+      <h2>2. Spring Ecosystem Modules</h2>
+      <p>The modern Spring ecosystem is composed of modular libraries built around Spring Core's IoC container:</p>
+
+      <div class="diagram">
+        <h4>Spring Ecosystem Layer Hierarchy</h4>
+        <div class="flow-step"><div class="num">1</div><div><b>Spring Framework (Core):</b> IoC, DI, Bean Lifecycle, SpEL, Environment abstraction.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">2</div><div><b>Spring Boot:</b> Auto-Configuration, Starters, Actuator, Embedded Web Servers.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">3</div><div><b>Spring MVC &amp; Web:</b> DispatcherServlet, RESTful endpoints, Request mapping, Jackson converters.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">4</div><div><b>Spring Data JPA:</b> Repositories, Entity lifecycle, Transaction management, Query generation.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">5</div><div><b>Spring Security:</b> Authentication filters, Method security, JWT/OAuth2 processing, Pre/Post authorization.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">6</div><div><b>Spring Cross-Cutting Features:</b> AOP, Validation, Scheduling, Async, Caching, Testing.</div></div>
+      </div>
+    </section>
+
+    <!-- SECTION 3 -->
+    <section id="sec3">
+      <h2>3. Master Annotation Matrix</h2>
+      <p>An overview of core enterprise annotations across the Spring platform:</p>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Annotation</th>
+            <th>Module</th>
+            <th>Package</th>
+            <th>Primary Purpose</th>
+            <th>Interview Importance</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>@Component</code></td>
+            <td>Spring Core</td>
+            <td><code>o.s.stereotype</code></td>
+            <td>Marks class as generic managed Spring bean</td>
+            <td>★★★★★</td>
+          </tr>
+          <tr>
+            <td><code>@SpringBootApplication</code></td>
+            <td>Spring Boot</td>
+            <td><code>o.s.b.autoconfigure</code></td>
+            <td>Combines Configuration, AutoConfiguration, ComponentScan</td>
+            <td>★★★★★</td>
+          </tr>
+          <tr>
+            <td><code>@RestController</code></td>
+            <td>Spring MVC</td>
+            <td><code>o.s.w.b.annotation</code></td>
+            <td>Combines <code>@Controller</code> + <code>@ResponseBody</code></td>
+            <td>★★★★★</td>
+          </tr>
+          <tr>
+            <td><code>@Transactional</code></td>
+            <td>Spring Data / Tx</td>
+            <td><code>o.s.transaction.annotation</code></td>
+            <td>Manages DB transaction boundaries and rollbacks</td>
+            <td>★★★★★</td>
+          </tr>
+          <tr>
+            <td><code>@PreAuthorize</code></td>
+            <td>Spring Security</td>
+            <td><code>o.s.s.access.prepost</code></td>
+            <td>Enforces SpEL expression security before method execution</td>
+            <td>★★★★☆</td>
+          </tr>
+          <tr>
+            <td><code>@Cacheable</code></td>
+            <td>Spring Cache</td>
+            <td><code>o.s.cache.annotation</code></td>
+            <td>Queries cache before method run; caches result on miss</td>
+            <td>★★★★☆</td>
+          </tr>
+          <tr>
+            <td><code>@Aspect</code></td>
+            <td>Spring AOP</td>
+            <td><code>org.aspectj.lang.annotation</code></td>
+            <td>Declares a cross-cutting Aspect class</td>
+            <td>★★★★☆</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 4 -->
+    <section id="sec4">
+      <h2>4. Spring Framework (Core) Annotations</h2>
+      <p>Package: <code>org.springframework.context.annotation</code> &amp; <code>org.springframework.beans.factory.annotation</code></p>
+
+      <div class="grid">
+        <div class="card">
+          <b>@Component / @Service / @Repository / @Controller</b>
+          <p>Stereotype annotations derived from <code>@Component</code>. Scanned automatically during classpath scanning. <code>@Repository</code> enables SQL exception translation, and <code>@Service</code> defines business layer pointcuts.</p>
+        </div>
+        <div class="card">
+          <b>@Configuration &amp; @Bean</b>
+          <p>Defines factory methods returning beans. <code>@Configuration</code> classes are enhanced via CGLIB proxies to enforce singleton guarantees for inter-bean method calls.</p>
+        </div>
+        <div class="card">
+          <b>@Autowired / @Qualifier / @Primary</b>
+          <p><code>@Autowired</code> injects dependencies by type. <code>@Primary</code> sets a default fallback candidate. <code>@Qualifier</code> targets a specific bean by name.</p>
+        </div>
+        <div class="card">
+          <b>@Value &amp; @PropertySource</b>
+          <p>Injects property values from <code>application.properties</code> using SpEL expressions (e.g. <code>@Value("${app.timeout}")</code>).</p>
+        </div>
+        <div class="card">
+          <b>@Scope &amp; @Lazy</b>
+          <p><code>@Scope</code> sets lifecycle scopes (singleton, prototype, request, session). <code>@Lazy</code> defers initialization until first request.</p>
+        </div>
+        <div class="card">
+          <b>@PostConstruct &amp; @PreDestroy</b>
+          <p>Standard JSR-250 lifecycle hooks executed after dependency injection and before bean destruction.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5 -->
+    <section id="sec5">
+      <h2>5. Spring Boot Annotations</h2>
+      <p>Package: <code>org.springframework.boot.autoconfigure</code> &amp; <code>org.springframework.boot.context.properties</code></p>
+
+      <pre><code><span class="cmnt">// Standard Spring Boot Entry Point</span>
+<span class="anno">@SpringBootApplication</span> <span class="cmnt">// Meta: @SpringBootConfiguration + @EnableAutoConfiguration + @ComponentScan</span>
+<span class="anno">@EnableConfigurationProperties</span>(<span class="type">AppProperties</span>.<span class="kw">class</span>)
+<span class="kw">public class</span> <span class="type">Application</span> {
+    <span class="kw">public static void</span> <span class="fn">main</span>(<span class="type">String</span>[] args) {
+        <span class="type">SpringApplication</span>.run(<span class="type">Application</span>.<span class="kw">class</span>, args);
+    }
+}
+
+<span class="cmnt">// Conditional Auto-Configuration Bean</span>
+<span class="anno">@Bean</span>
+<span class="anno">@ConditionalOnMissingBean</span>(<span class="type">PaymentService</span>.<span class="kw">class</span>)
+<span class="anno">@ConditionalOnProperty</span>(name = <span class="str">"feature.payment.enabled"</span>, havingValue = <span class="str">"true"</span>)
+<span class="kw">public</span> <span class="type">PaymentService</span> <span class="fn">defaultPaymentService</span>() {
+    <span class="kw">return new</span> <span class="type">DefaultPaymentServiceImpl</span>();
+}</code></pre>
+    </section>
+
+    <!-- SECTION 6 -->
+    <section id="sec6">
+      <h2>6. Spring MVC Annotations</h2>
+      <p>Package: <code>org.springframework.web.bind.annotation</code></p>
+
+      <div class="diagram">
+        <h4>Spring MVC Request Handling Flow</h4>
+        <p>HTTP Request &rarr; <code>DispatcherServlet</code> &rarr; <code>HandlerMapping</code> (scans <code>@RestController</code> / <code>@GetMapping</code>) &rarr; Controller Handler Execution &rarr; <code>HttpMessageConverter</code> (translates object via Jackson) &rarr; HTTP Response</p>
+      </div>
+
+      <pre><code><span class="anno">@RestController</span>
+<span class="anno">@RequestMapping</span>(<span class="str">"/api/v1/orders"</span>)
+<span class="anno">@CrossOrigin</span>(origins = <span class="str">"https://devvault.com"</span>)
+<span class="kw">public class</span> <span class="type">OrderController</span> {
+
+    <span class="anno">@PostMapping</span>
+    <span class="anno">@ResponseStatus</span>(<span class="type">HttpStatus</span>.CREATED)
+    <span class="kw">public</span> <span class="type">OrderResponse</span> <span class="fn">createOrder</span>(
+            <span class="anno">@Valid</span> <span class="anno">@RequestBody</span> <span class="type">OrderRequest</span> request,
+            <span class="anno">@RequestHeader</span>(<span class="str">"X-Correlation-ID"</span>) <span class="type">String</span> correlationId) {
+        <span class="kw">return</span> orderService.process(request, correlationId);
+    }
+
+    <span class="anno">@GetMapping</span>(<span class="str">"/{id}"</span>)
+    <span class="kw">public</span> <span class="type">OrderResponse</span> <span class="fn">getOrder</span>(<span class="anno">@PathVariable</span>(<span class="str">"id"</span>) <span class="type">Long</span> orderId) {
+        <span class="kw">return</span> orderService.findById(orderId);
+    }
+}</code></pre>
+    </section>
+
+    <!-- SECTION 7 -->
+    <section id="sec7">
+      <h2>7. Spring Data JPA Annotations</h2>
+      <p>Packages: <code>jakarta.persistence</code> &amp; <code>org.springframework.transaction.annotation</code></p>
+
+      <pre><code><span class="anno">@Entity</span>
+<span class="anno">@Table</span>(name = <span class="str">"users"</span>)
+<span class="kw">public class</span> <span class="type">User</span> {
+    <span class="anno">@Id</span>
+    <span class="anno">@GeneratedValue</span>(strategy = <span class="type">GenerationType</span>.IDENTITY)
+    <span class="kw">private</span> <span class="type">Long</span> id;
+
+    <span class="anno">@Column</span>(name = <span class="str">"email"</span>, nullable = <span class="kw">false</span>, unique = <span class="kw">true</span>)
+    <span class="kw">private</span> <span class="type">String</span> email;
+
+    <span class="anno">@Version</span> <span class="cmnt">// Optimistic Locking</span>
+    <span class="kw">private</span> <span class="type">Integer</span> version;
+
+    <span class="anno">@OneToMany</span>(mappedBy = <span class="str">"user"</span>, cascade = <span class="type">CascadeType</span>.ALL, fetch = <span class="type">FetchType</span>.LAZY)
+    <span class="kw">private</span> <span class="type">List</span>&lt;<span class="type">Order</span>&gt; orders = <span class="kw">new</span> <span class="type">ArrayList</span>&lt;&gt;();
+}</code></pre>
+
+      <div class="callout warn">
+        <b>@Transactional Pitfall:</b> <code>@Transactional</code> uses Spring AOP proxies. Calling a <code>@Transactional</code> method from within the same class (self-invocation) bypasses the proxy, disabling transaction management.
+      </div>
+    </section>
+
+    <!-- SECTION 8 -->
+    <section id="sec8">
+      <h2>8. Spring Validation Annotations</h2>
+      <p>Package: <code>jakarta.validation.constraints</code> &amp; <code>org.springframework.validation.annotation</code></p>
+
+      <pre><code><span class="kw">public class</span> <span class="type">UserRegistrationDto</span> {
+    <span class="anno">@NotBlank</span>(message = <span class="str">"Name is required"</span>)
+    <span class="kw">private</span> <span class="type">String</span> name;
+
+    <span class="anno">@Email</span>(message = <span class="str">"Invalid email format"</span>)
+    <span class="anno">@NotNull</span>
+    <span class="kw">private</span> <span class="type">String</span> email;
+
+    <span class="anno">@Size</span>(min = 8, max = 32, message = <span class="str">"Password must be between 8 and 32 characters"</span>)
+    <span class="kw">private</span> <span class="type">String</span> password;
+}</code></pre>
+    </section>
+
+    <!-- SECTION 9 -->
+    <section id="sec9">
+      <h2>9. Spring Security Annotations</h2>
+      <p>Package: <code>org.springframework.security.access.prepost</code> &amp; <code>org.springframework.security.config.annotation.web.configuration</code></p>
+
+      <pre><code><span class="anno">@Configuration</span>
+<span class="anno">@EnableWebSecurity</span>
+<span class="anno">@EnableMethodSecurity</span>(prePostEnabled = <span class="kw">true</span>)
+<span class="kw">public class</span> <span class="type">SecurityConfig</span> { ... }
+
+<span class="anno">@Service</span>
+<span class="kw">public class</span> <span class="type">AdminService</span> {
+
+    <span class="anno">@PreAuthorize</span>(<span class="str">"hasRole('ADMIN') and #userId == authentication.principal.id"</span>)
+    <span class="kw">public void</span> <span class="fn">deleteUserAccount</span>(<span class="type">Long</span> userId) { ... }
+}</code></pre>
+    </section>
+
+    <!-- SECTION 10 -->
+    <section id="sec10">
+      <h2>10. Spring AOP Annotations</h2>
+      <p>Package: <code>org.aspectj.lang.annotation</code></p>
+
+      <pre><code><span class="anno">@Aspect</span>
+<span class="anno">@Component</span>
+<span class="kw">public class</span> <span class="type">LoggingAspect</span> {
+
+    <span class="anno">@Pointcut</span>(<span class="str">"execution(* com.devvault.service..*.*(..))"</span>)
+    <span class="kw">public void</span> <span class="fn">serviceLayer</span>() {}
+
+    <span class="anno">@Around</span>(<span class="str">"serviceLayer()"</span>)
+    <span class="kw">public</span> <span class="type">Object</span> <span class="fn">profileExecution</span>(<span class="type">ProceedingJoinPoint</span> joinPoint) <span class="kw">throws</span> <span class="type">Throwable</span> {
+        <span class="kw">long</span> start = <span class="type">System</span>.currentTimeMillis();
+        <span class="type">Object</span> result = joinPoint.proceed();
+        <span class="kw">long</span> elapsed = <span class="type">System</span>.currentTimeMillis() - start;
+        logger.info(<span class="str">"Executed {} in {} ms"</span>, joinPoint.getSignature(), elapsed);
+        <span class="kw">return</span> result;
+    }
+}</code></pre>
+    </section>
+
+    <!-- SECTION 11 -->
+    <section id="sec11">
+      <h2>11. Spring Scheduling Annotations</h2>
+      <p>Package: <code>org.springframework.scheduling.annotation</code></p>
+
+      <pre><code><span class="anno">@Configuration</span>
+<span class="anno">@EnableScheduling</span>
+<span class="kw">public class</span> <span class="type">SchedulingConfig</span> {}
+
+<span class="anno">@Component</span>
+<span class="kw">public class</span> <span class="type">CacheEvictionTask</span> {
+
+    <span class="anno">@Scheduled</span>(cron = <span class="str">"0 0 2 * * ?"</span>) <span class="cmnt">// Runs every night at 2 AM</span>
+    <span class="kw">public void</span> <span class="fn">purgeStaleCache</span>() { ... }
+}</code></pre>
+    </section>
+
+    <!-- SECTION 12 -->
+    <section id="sec12">
+      <h2>12. Spring Async Annotations</h2>
+      <p>Package: <code>org.springframework.scheduling.annotation</code></p>
+
+      <pre><code><span class="anno">@Configuration</span>
+<span class="anno">@EnableAsync</span>
+<span class="kw">public class</span> <span class="type">AsyncConfig</span> {}
+
+<span class="anno">@Service</span>
+<span class="kw">public class</span> <span class="type">EmailService</span> {
+
+    <span class="anno">@Async</span>
+    <span class="kw">public</span> <span class="type">CompletableFuture</span>&lt;<span class="type">Boolean</span>&gt; <span class="fn">sendEmail</span>(<span class="type">String</span> recipient) {
+        <span class="cmnt">// Executes asynchronously in task thread pool</span>
+        <span class="kw">return</span> <span class="type">CompletableFuture</span>.completedFuture(<span class="kw">true</span>);
+    }
+}</code></pre>
+    </section>
+
+    <!-- SECTION 13 -->
+    <section id="sec13">
+      <h2>13. Spring Cache Annotations</h2>
+      <p>Package: <code>org.springframework.cache.annotation</code></p>
+
+      <pre><code><span class="anno">@Service</span>
+<span class="kw">public class</span> <span class="type">ProductService</span> {
+
+    <span class="anno">@Cacheable</span>(value = <span class="str">"products"</span>, key = <span class="str">"#id"</span>, unless = <span class="str">"#result == null"</span>)
+    <span class="kw">public</span> <span class="type">Product</span> <span class="fn">getProduct</span>(<span class="type">Long</span> id) { ... }
+
+    <span class="anno">@CachePut</span>(value = <span class="str">"products"</span>, key = <span class="str">"#product.id"</span>)
+    <span class="kw">public</span> <span class="type">Product</span> <span class="fn">updateProduct</span>(<span class="type">Product</span> product) { ... }
+
+    <span class="anno">@CacheEvict</span>(value = <span class="str">"products"</span>, key = <span class="str">"#id"</span>)
+    <span class="kw">public void</span> <span class="fn">deleteProduct</span>(<span class="type">Long</span> id) { ... }
+}</code></pre>
+    </section>
+
+    <!-- SECTION 14 -->
+    <section id="sec14">
+      <h2>14. Spring Test Annotations</h2>
+      <p>Package: <code>org.springframework.boot.test.context</code> &amp; <code>org.springframework.boot.test.autoconfigure</code></p>
+
+      <div class="grid">
+        <div class="card"><b>@SpringBootTest</b><p>Loads full <code>ApplicationContext</code> for end-to-end integration testing.</p></div>
+        <div class="card"><b>@WebMvcTest</b><p>Slices context to load only Web MVC components (Controllers, Converters) for fast unit testing.</p></div>
+        <div class="card"><b>@DataJpaTest</b><p>Configures embedded database and JPA repositories for isolated persistence layer testing.</p></div>
+        <div class="card"><b>@MockBean</b><p>Replaces a bean in the ApplicationContext with a Mockito mock instance.</p></div>
+      </div>
+    </section>
+
+    <!-- SECTION 15 -->
+    <section id="sec15">
+      <h2>15. Module Categorization Guide</h2>
+      <p>Summary breakdown mapping annotations to their native parent frameworks:</p>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Module Name</th>
+            <th>Primary Annotations</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Spring Core</b></td>
+            <td><code>@Component</code>, <code>@Service</code>, <code>@Repository</code>, <code>@Controller</code>, <code>@Configuration</code>, <code>@Bean</code>, <code>@Autowired</code>, <code>@Qualifier</code>, <code>@Primary</code>, <code>@Value</code>, <code>@Lazy</code>, <code>@Scope</code></td>
+          </tr>
+          <tr>
+            <td><b>Spring Boot</b></td>
+            <td><code>@SpringBootApplication</code>, <code>@EnableAutoConfiguration</code>, <code>@ConfigurationProperties</code>, <code>@ConditionalOnClass</code>, <code>@ConditionalOnProperty</code></td>
+          </tr>
+          <tr>
+            <td><b>Spring MVC</b></td>
+            <td><code>@RestController</code>, <code>@RequestMapping</code>, <code>@GetMapping</code>, <code>@PostMapping</code>, <code>@PathVariable</code>, <code>@RequestBody</code>, <code>@ControllerAdvice</code>, <code>@ExceptionHandler</code></td>
+          </tr>
+          <tr>
+            <td><b>Spring Data / JPA</b></td>
+            <td><code>@Entity</code>, <code>@Table</code>, <code>@Id</code>, <code>@Column</code>, <code>@Transactional</code>, <code>@OneToMany</code>, <code>@ManyToOne</code>, <code>@Version</code></td>
+          </tr>
+          <tr>
+            <td><b>Spring Security</b></td>
+            <td><code>@EnableWebSecurity</code>, <code>@EnableMethodSecurity</code>, <code>@PreAuthorize</code>, <code>@PostAuthorize</code>, <code>@Secured</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 16 -->
+    <section id="sec16">
+      <h2>16. Importance Hierarchy Ranking</h2>
+      <div class="card">
+        <p><b>★★★★★ Must Know:</b> <code>@Component</code>, <code>@Service</code>, <code>@Repository</code>, <code>@Autowired</code>, <code>@Configuration</code>, <code>@Bean</code>, <code>@SpringBootApplication</code>, <code>@RestController</code>, <code>@GetMapping</code>, <code>@PostMapping</code>, <code>@RequestBody</code>, <code>@PathVariable</code>, <code>@Entity</code>, <code>@Transactional</code>, <code>@Valid</code>.</p>
+        <p><b>★★★★☆ Very Important:</b> <code>@Qualifier</code>, <code>@Primary</code>, <code>@Value</code>, <code>@ConfigurationProperties</code>, <code>@ControllerAdvice</code>, <code>@ExceptionHandler</code>, <code>@PreAuthorize</code>, <code>@Aspect</code>, <code>@Cacheable</code>, <code>@Async</code>, <code>@Scheduled</code>, <code>@MockBean</code>.</p>
+        <p><b>★★★☆☆ Good to Know:</b> <code>@Lazy</code>, <code>@DependsOn</code>, <code>@ConditionalOnProperty</code>, <code>@Version</code>, <code>@CrossOrigin</code>, <code>@PostAuthorize</code>, <code>@TestConfiguration</code>.</p>
+      </div>
+    </section>
+
+    <!-- SECTION 17 -->
+    <section id="sec17">
+      <h2>17. Real-world Project Architecture</h2>
+      <pre><code><span class="cmnt">// Layer 1: Controller</span>
+<span class="anno">@RestController</span> <span class="anno">@RequestMapping</span>(<span class="str">"/api/users"</span>) <span class="anno">@Validated</span>
+<span class="kw">public class</span> <span class="type">UserController</span> { ... }
+
+<span class="cmnt">// Layer 2: Service</span>
+<span class="anno">@Service</span> <span class="anno">@Transactional</span>
+<span class="kw">public class</span> <span class="type">UserServiceImpl</span> <span class="kw">implements</span> <span class="type">UserService</span> { ... }
+
+<span class="cmnt">// Layer 3: Repository</span>
+<span class="anno">@Repository</span>
+<span class="kw">public interface</span> <span class="type">UserRepository</span> <span class="kw">extends</span> <span class="type">JpaRepository</span>&lt;<span class="type">User</span>, <span class="type">Long</span>&gt; { ... }
+
+<span class="cmnt">// Layer 4: Entity</span>
+<span class="anno">@Entity</span> <span class="anno">@Table</span>(name = <span class="str">"users"</span>)
+<span class="kw">public class</span> <span class="type">User</span> { ... }
+
+<span class="cmnt">// Layer 5: Global Exception Handler</span>
+<span class="anno">@RestControllerAdvice</span>
+<span class="kw">public class</span> <span class="type">GlobalExceptionHandler</span> { ... }</code></pre>
+    </section>
+
+    <!-- SECTION 18 -->
+    <section id="sec18">
+      <h2>18. Common Production Mistakes</h2>
+      <div class="callout warn">
+        <b>1. Field Injection using @Autowired:</b> Hides dependencies and prevents immutability. Use Constructor Injection.<br>
+        <b>2. Self-Invocation of @Transactional or @Async methods:</b> Bypasses Spring's CGLIB proxy, rendering the annotations non-functional.<br>
+        <b>3. Catching Exception inside @Transactional without rethrowing:</b> Prevents Spring from detecting transaction failure and rolling back changes.
+      </div>
+    </section>
+
+    <!-- SECTION 19 -->
+    <section id="sec19">
+      <h2>19. Senior Best Practices</h2>
+      <ul>
+        <li>Always use constructor injection for required dependencies and mark fields <code>private final</code>.</li>
+        <li>Prefer <code>@ConfigurationProperties</code> with typed POJOs over scatter-shot <code>@Value</code> properties.</li>
+        <li>Place global exception handling in <code>@RestControllerAdvice</code> classes rather than try-catch blocks in controllers.</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 20 -->
+    <section id="sec20">
+      <h2>20. 100 Spring Interview QA</h2>
+      
+      <div class="faq-item"><div class="faq-q">Q1: What is @SpringBootApplication composed of?</div><div class="faq-a">Composed of <code>@SpringBootConfiguration</code>, <code>@EnableAutoConfiguration</code>, and <code>@ComponentScan</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q2: How does @Autowired resolve dependencies?</div><div class="faq-a">Matches candidate beans by exact type first, then uses <code>@Qualifier</code>, <code>@Primary</code>, or field parameter name as fallback.</div></div>
+      <div class="faq-item"><div class="faq-q">Q3: Difference between @Component, @Service, and @Repository?</div><div class="faq-a">All are component stereotypes. <code>@Repository</code> enables SQL exception translation; <code>@Service</code> designates business layer pointcuts.</div></div>
+      <div class="faq-item"><div class="faq-q">Q4: Why are @Configuration classes proxied with CGLIB?</div><div class="faq-a">To intercept inter-bean method calls and return the existing singleton instance from the BeanFactory.</div></div>
+      <div class="faq-item"><div class="faq-q">Q5: Difference between @Controller and @RestController?</div><div class="faq-a"><code>@RestController</code> meta-annotates <code>@Controller</code> and <code>@ResponseBody</code>, automatically serializing response objects to JSON/XML.</div></div>
+      
+      <div class="faq-item"><div class="faq-q">Q6: What is @PathVariable vs @RequestParam?</div><div class="faq-a">@PathVariable extracts values from URI path segments (/users/{id}). @RequestParam extracts query parameters (/users?id=1).</div></div>
+      <div class="faq-item"><div class="faq-q">Q7: What is the purpose of @Transactional(readOnly = true)?</div><div class="faq-a">Optimizes database session management by disabling dirty checking and flushing on Hibernate sessions.</div></div>
+      <div class="faq-item"><div class="faq-q">Q8: How does @PreAuthorize work?</div><div class="faq-a">Uses Spring Security AOP proxies to evaluate SpEL expressions before executing the target method.</div></div>
+      <div class="faq-item"><div class="faq-q">Q9: Difference between @NotNull, @NotEmpty, and @NotBlank?</div><div class="faq-a">@NotNull prevents null. @NotEmpty prevents null and empty length. @NotBlank prevents null, empty, or whitespace-only strings.</div></div>
+      <div class="faq-item"><div class="faq-q">Q10: What is @MockBean used for?</div><div class="faq-a">Replaces a bean in the Spring ApplicationContext with a Mockito mock during integration testing.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q11: What is @ConditionalOnMissingBean?</div><div class="faq-a">Registers a bean only if no bean of the same type exists in the BeanFactory.</div></div>
+      <div class="faq-item"><div class="faq-q">Q12: What is @ConfigurationProperties?</div><div class="faq-a">Binds hierarchical external properties from application.properties to a strongly-typed Java POJO.</div></div>
+      <div class="faq-item"><div class="faq-q">Q13: How does @Cacheable work?</div><div class="faq-a">Intercepts method call, checks configured cache manager by key; returns cached value if hit, runs method on miss.</div></div>
+      <div class="faq-item"><div class="faq-q">Q14: What is @Version used for in JPA?</div><div class="faq-a">Enables optimistic locking by tracking entity modification version numbers.</div></div>
+      <div class="faq-item"><div class="faq-q">Q15: Difference between @Bean and @Component?</div><div class="faq-a">@Component is class-level for automatic scanning; @Bean is method-level inside @Configuration for third-party objects.</div></div>
+      <div class="faq-item"><div class="faq-q">Q16: What is @RestControllerAdvice?</div><div class="faq-a">Combines @ControllerAdvice and @ResponseBody for centralized REST exception handling.</div></div>
+      <div class="faq-item"><div class="faq-q">Q17: What is @Scheduled(cron = "... ")?</div><div class="faq-a">Schedules method execution using a 6-field cron expression.</div></div>
+      <div class="faq-item"><div class="faq-q">Q18: What is @Async?</div><div class="faq-a">Executes marked methods asynchronously in a separate task thread pool.</div></div>
+      <div class="faq-item"><div class="faq-q">Q19: What is @Primary?</div><div class="faq-a">Designates a primary candidate bean when multiple beans match an injection point.</div></div>
+      <div class="faq-item"><div class="faq-q">Q20: What is @Qualifier?</div><div class="faq-a">Specifies the exact bean name identifier to inject when multiple candidates exist.</div></div>
+      <div class="faq-item"><div class="faq-q">Q21: What is @Value?</div><div class="faq-a">Injects property values or SpEL results into bean fields or parameters.</div></div>
+      <div class="faq-item"><div class="faq-q">Q22: What is @Lazy?</div><div class="faq-a">Defers bean instantiation until explicit runtime access.</div></div>
+      <div class="faq-item"><div class="faq-q">Q23: What is @Scope("prototype")?</div><div class="faq-a">Creates a new instance every time the bean is requested from the container.</div></div>
+      <div class="faq-item"><div class="faq-q">Q24: What is @PostConstruct?</div><div class="faq-a">Lifecycle hook invoked after property injection completes.</div></div>
+      <div class="faq-item"><div class="faq-q">Q25: What is @PreDestroy?</div><div class="faq-a">Lifecycle hook invoked before bean destruction.</div></div>
+      <div class="faq-item"><div class="faq-q">Q26: What is @EnableAutoConfiguration?</div><div class="faq-a">Enables Spring Boot auto-configuration based on classpath dependencies.</div></div>
+      <div class="faq-item"><div class="faq-q">Q27: What is @ComponentScan?</div><div class="faq-a">Directs Spring to scan specified packages for stereotype components.</div></div>
+      <div class="faq-item"><div class="faq-q">Q28: What is @Entity?</div><div class="faq-a">Marks a Java class as a JPA persistent domain entity.</div></div>
+      <div class="faq-item"><div class="faq-q">Q29: What is @Table?</div><div class="faq-a">Specifies the target database table name and constraints for an entity.</div></div>
+      <div class="faq-item"><div class="faq-q">Q30: What is @Id?</div><div class="faq-a">Designates the primary key field of a JPA entity.</div></div>
+      <div class="faq-item"><div class="faq-q">Q31: What is @GeneratedValue?</div><div class="faq-a">Configures primary key generation strategies (IDENTITY, SEQUENCE, AUTO, TABLE).</div></div>
+      <div class="faq-item"><div class="faq-q">Q32: What is @Column?</div><div class="faq-a">Configures database column mappings, names, nullability, and lengths.</div></div>
+      <div class="faq-item"><div class="faq-q">Q33: What is @Transient?</div><div class="faq-a">Instructs JPA to ignore a field during database persistence.</div></div>
+      <div class="faq-item"><div class="faq-q">Q34: What is @OneToMany?</div><div class="faq-a">Defines a one-to-many entity relationship mapping.</div></div>
+      <div class="faq-item"><div class="faq-q">Q35: What is @ManyToOne?</div><div class="faq-a">Defines a many-to-one entity relationship mapping.</div></div>
+      <div class="faq-item"><div class="faq-q">Q36: What is @JoinColumn?</div><div class="faq-a">Specifies the foreign key column name for entity relationships.</div></div>
+      <div class="faq-item"><div class="faq-q">Q37: What is @Valid?</div><div class="faq-a">Triggers standard Java Bean Validation on method parameters or fields.</div></div>
+      <div class="faq-item"><div class="faq-q">Q38: What is @Validated?</div><div class="faq-a">Spring annotation supporting group-level validation on classes and parameters.</div></div>
+      <div class="faq-item"><div class="faq-q">Q39: What is @Aspect?</div><div class="faq-a">Declares an Aspect class containing cross-cutting pointcuts and advices.</div></div>
+      <div class="faq-item"><div class="faq-q">Q40: What is @Around?</div><div class="faq-a">Advice intercepting method execution before, after, and allowing custom execution control.</div></div>
+      <div class="faq-item"><div class="faq-q">Q41: What is @Before?</div><div class="faq-a">Advice executing before the target pointcut method runs.</div></div>
+      <div class="faq-item"><div class="faq-q">Q42: What is @AfterReturning?</div><div class="faq-a">Advice executing after target method completes successfully without exceptions.</div></div>
+      <div class="faq-item"><div class="faq-q">Q43: What is @AfterThrowing?</div><div class="faq-a">Advice executing when target method throws an exception.</div></div>
+      <div class="faq-item"><div class="faq-q">Q44: What is @EnableCaching?</div><div class="faq-a">Enables Spring's annotation-driven caching infrastructure.</div></div>
+      <div class="faq-item"><div class="faq-q">Q45: What is @CacheEvict?</div><div class="faq-a">Removes stale entries from specified cache buckets.</div></div>
+      <div class="faq-item"><div class="faq-q">Q46: What is @CachePut?</div><div class="faq-a">Updates cache value with method result without skipping method execution.</div></div>
+      <div class="faq-item"><div class="faq-q">Q47: What is @SpringBootTest?</div><div class="faq-a">Loads full ApplicationContext for integration testing.</div></div>
+      <div class="faq-item"><div class="faq-q">Q48: What is @WebMvcTest?</div><div class="faq-a">Slices context to test MVC controllers in isolation.</div></div>
+      <div class="faq-item"><div class="faq-q">Q49: What is @DataJpaTest?</div><div class="faq-a">Slices context to test JPA repositories with an embedded database.</div></div>
+      <div class="faq-item"><div class="faq-q">Q50: What is @EnableWebSecurity?</div><div class="faq-a">Enables web security configuration in Spring Security.</div></div>
+      <div class="faq-item"><div class="faq-q">Q51: What is @EnableMethodSecurity?</div><div class="faq-a">Enables method-level security annotations (@PreAuthorize, @PostAuthorize).</div></div>
+      <div class="faq-item"><div class="faq-q">Q52: What is @Secured?</div><div class="faq-a">Legacy Spring Security annotation restricting access based on role names.</div></div>
+      <div class="faq-item"><div class="faq-q">Q53: What is @RolesAllowed?</div><div class="faq-a">JSR-250 security annotation restricting access by roles.</div></div>
+      <div class="faq-item"><div class="faq-q">Q54: What is @CrossOrigin?</div><div class="faq-a">Configures Cross-Origin Resource Sharing (CORS) headers on controllers or methods.</div></div>
+      <div class="faq-item"><div class="faq-q">Q55: What is @ResponseStatus?</div><div class="faq-a">Sets default HTTP status code for controller responses or custom exceptions.</div></div>
+      <div class="faq-item"><div class="faq-q">Q56: What is @RequestBody?</div><div class="faq-a">Binds incoming HTTP request body JSON to a Java object.</div></div>
+      <div class="faq-item"><div class="faq-q">Q57: What is @ResponseBody?</div><div class="faq-a">Binds return object directly to HTTP response body JSON.</div></div>
+      <div class="faq-item"><div class="faq-q">Q58: What is @ExceptionHandler?</div><div class="faq-a">Declares a handler method for specific exceptions inside controllers.</div></div>
+      <div class="faq-item"><div class="faq-q">Q59: What is @ControllerAdvice?</div><div class="faq-a">Declares a global interceptor class for cross-cutting exception handling.</div></div>
+      <div class="faq-item"><div class="faq-q">Q60: What is @RequestHeader?</div><div class="faq-a">Injects specific HTTP request header values into method parameters.</div></div>
+      <div class="faq-item"><div class="faq-q">Q61: What is @CookieValue?</div><div class="faq-a">Injects specific HTTP cookie values into method parameters.</div></div>
+      <div class="faq-item"><div class="faq-q">Q62: What is @ModelAttribute?</div><div class="faq-a">Binds form data or request params to a model object before view rendering.</div></div>
+      <div class="faq-item"><div class="faq-q">Q63: What is @Embedded?</div><div class="faq-a">Embeds fields of an @Embeddable class into an entity table.</div></div>
+      <div class="faq-item"><div class="faq-q">Q64: What is @Embeddable?</div><div class="faq-a">Marks a class as an embeddable component of an entity.</div></div>
+      <div class="faq-item"><div class="faq-q">Q65: What is @ConditionalOnClass?</div><div class="faq-a">Registers bean if specified class is present on classpath.</div></div>
+      <div class="faq-item"><div class="faq-q">Q66: What is @ConditionalOnProperty?</div><div class="faq-a">Registers bean if a specific property key matches value.</div></div>
+      <div class="faq-item"><div class="faq-q">Q67: What is @ConditionalOnWebApplication?</div><div class="faq-a">Registers bean only if running inside a web application context.</div></div>
+      <div class="faq-item"><div class="faq-q">Q68: What is @PropertySource?</div><div class="faq-a">Loads external property files into Spring Environment.</div></div>
+      <div class="faq-item"><div class="faq-q">Q69: What is @Import?</div><div class="faq-a">Imports additional @Configuration classes into context.</div></div>
+      <div class="faq-item"><div class="faq-q">Q70: What is @Profile?</div><div class="faq-a">Restricts bean registration to specific active environment profiles (e.g. dev, prod).</div></div>
+      <div class="faq-item"><div class="faq-q">Q71: What is @DependsOn?</div><div class="faq-a">Forces container to initialize specified beans before target bean.</div></div>
+      <div class="faq-item"><div class="faq-q">Q72: What is @EnableAsync?</div><div class="faq-a">Enables Spring's @Async asynchronous execution capability.</div></div>
+      <div class="faq-item"><div class="faq-q">Q73: What is @EnableScheduling?</div><div class="faq-a">Enables Spring's @Scheduled background execution infrastructure.</div></div>
+      <div class="faq-item"><div class="faq-q">Q74: What is @Pointcut?</div><div class="faq-a">Declares a reusable AOP join point execution expression.</div></div>
+      <div class="faq-item"><div class="faq-q">Q75: What is @PostAuthorize?</div><div class="faq-a">Evaluates SpEL security expression after target method returns result.</div></div>
+      <div class="faq-item"><div class="faq-q">Q76: What is @TestConfiguration?</div><div class="faq-a">Defines test-specific configuration beans for unit/integration tests.</div></div>
+      <div class="faq-item"><div class="faq-q">Q77: What is @EnableConfigurationProperties?</div><div class="faq-a">Enables binding of @ConfigurationProperties annotated classes.</div></div>
+      <div class="faq-item"><div class="faq-q">Q78: What is @ManyToMany?</div><div class="faq-a">Maps a many-to-many entity relationship via join table.</div></div>
+      <div class="faq-item"><div class="faq-q">Q79: What is @JoinTable?</div><div class="faq-a">Configures name and foreign keys of join table for ManyToMany or OneToMany relationships.</div></div>
+      <div class="faq-item"><div class="faq-q">Q80: What is @Pattern?</div><div class="faq-a">Validates string parameter against a regular expression pattern.</div></div>
+      <div class="faq-item"><div class="faq-q">Q81: What is @Email?</div><div class="faq-a">Validates string parameter conforms to valid email address format.</div></div>
+      <div class="faq-item"><div class="faq-q">Q82: What is @Min and @Max?</div><div class="faq-a">Validates numeric parameter is greater/less than specified values.</div></div>
+      <div class="faq-item"><div class="faq-q">Q83: What is @Past and @Future?</div><div class="faq-a">Validates Date/Temporal parameter is in past or future relative to current time.</div></div>
+      <div class="faq-item"><div class="faq-q">Q84: What is @Size?</div><div class="faq-a">Validates string length or collection size is within min/max bounds.</div></div>
+      <div class="faq-item"><div class="faq-q">Q85: What is @GetMapping?</div><div class="faq-a">Shorthand for @RequestMapping(method = RequestMethod.GET).</div></div>
+      <div class="faq-item"><div class="faq-q">Q86: What is @PostMapping?</div><div class="faq-a">Shorthand for @RequestMapping(method = RequestMethod.POST).</div></div>
+      <div class="faq-item"><div class="faq-q">Q87: What is @PutMapping?</div><div class="faq-a">Shorthand for @RequestMapping(method = RequestMethod.PUT).</div></div>
+      <div class="faq-item"><div class="faq-q">Q88: What is @DeleteMapping?</div><div class="faq-a">Shorthand for @RequestMapping(method = RequestMethod.DELETE).</div></div>
+      <div class="faq-item"><div class="faq-q">Q89: What is @PatchMapping?</div><div class="faq-a">Shorthand for @RequestMapping(method = RequestMethod.PATCH).</div></div>
+      <div class="faq-item"><div class="faq-q">Q90: Can @Async methods return values?</div><div class="faq-a">Yes, by returning CompletableFuture&lt;T&gt;.</div></div>
+      <div class="faq-item"><div class="faq-q">Q91: How to disable a specific Spring Boot AutoConfiguration?</div><div class="faq-a">@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class}).</div></div>
+      <div class="faq-item"><div class="faq-q">Q92: What is @EventListener?</div><div class="faq-a">Listens for ApplicationContext published events.</div></div>
+      <div class="faq-item"><div class="faq-q">Q93: What is @TransactionalEventListener?</div><div class="faq-a">Binds event listener execution to a transaction phase (e.g. AFTER_COMMIT).</div></div>
+      <div class="faq-item"><div class="faq-q">Q94: What is @Inherited in Java annotations?</div><div class="faq-a">Indicates that an annotation type can be inherited automatically by subclasses.</div></div>
+      <div class="faq-item"><div class="faq-q">Q95: What is @Retention(RetentionPolicy.RUNTIME)?</div><div class="faq-a">Ensures annotation metadata is preserved in compiled bytecode and accessible via reflection at runtime.</div></div>
+      <div class="faq-item"><div class="faq-q">Q96: What is @Target(ElementType.TYPE)?</div><div class="faq-a">Restricts annotation usage to class, interface, or enum declarations.</div></div>
+      <div class="faq-item"><div class="faq-q">Q97: Difference between @DataJpaTest and @SpringBootTest?</div><div class="faq-a">@SpringBootTest loads full context; @DataJpaTest slices context to test JPA repositories only.</div></div>
+      <div class="faq-item"><div class="faq-q">Q98: What is @OneToOne?</div><div class="faq-a">Defines a one-to-one entity relationship mapping.</div></div>
+      <div class="faq-item"><div class="faq-q">Q99: How does Spring resolve @Value placeholders?</div><div class="faq-a">Uses PropertySourcesPlaceholderConfigurer to inspect active Environment property sources.</div></div>
+      <div class="faq-item"><div class="faq-q">Q100: What is the main architectural goal of Spring annotations?</div><div class="faq-a">To enforce declarative programming, co-locate configuration metadata with code, and eliminate XML boilerplate.</div></div>
+    </section>
+
+    <!-- SECTION 21 -->
+    <section id="sec21">
+      <h2>21. Framework Cheatsheet</h2>
+      <div class="card">
+        <p><b>Spring Core:</b> <code>@Component</code>, <code>@Service</code>, <code>@Repository</code>, <code>@Configuration</code>, <code>@Bean</code>, <code>@Autowired</code></p>
+        <p><b>Spring Boot:</b> <code>@SpringBootApplication</code>, <code>@ConfigurationProperties</code>, <code>@ConditionalOnProperty</code></p>
+        <p><b>Spring MVC:</b> <code>@RestController</code>, <code>@GetMapping</code>, <code>@PostMapping</code>, <code>@RequestBody</code>, <code>@PathVariable</code>, <code>@RestControllerAdvice</code></p>
+        <p><b>Spring Data JPA:</b> <code>@Entity</code>, <code>@Table</code>, <code>@Id</code>, <code>@Column</code>, <code>@Transactional</code></p>
+        <p><b>Spring Security:</b> <code>@EnableWebSecurity</code>, <code>@EnableMethodSecurity</code>, <code>@PreAuthorize</code></p>
+      </div>
+    </section>
+
+    <!-- SECTION 22 -->
+    <section id="sec22">
+      <h2>22. Visual Infographic Summary</h2>
+      <div class="diagram">
+        <h4>Spring Ecosystem Annotation Map</h4>
+        <div class="grid">
+          <div class="card" style="border-color: var(--teal);">
+            <b style="color: var(--teal);">Core &amp; Boot Layer</b>
+            <p>@SpringBootApplication &middot; @Component &middot; @Service &middot; @Repository &middot; @Configuration &middot; @Bean &middot; @Autowired</p>
+          </div>
+          <div class="card" style="border-color: var(--amber);">
+            <b style="color: var(--amber);">Web &amp; Persistence Layer</b>
+            <p>@RestController &middot; @GetMapping &middot; @PostMapping &middot; @RequestBody &middot; @Entity &middot; @Id &middot; @Transactional</p>
+          </div>
+          <div class="card" style="border-color: var(--purple);">
+            <b style="color: var(--purple);">Cross-Cutting Layer</b>
+            <p>@PreAuthorize &middot; @Aspect &middot; @Valid &middot; @Cacheable &middot; @Async &middot; @Scheduled &middot; @SpringBootTest</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+</body>
+</html>

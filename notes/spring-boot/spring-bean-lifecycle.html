@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Spring Bean Lifecycle — Complete Deep Dive</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  :root {
+    --bg: #0b0e14;
+    --surface: #131824;
+    --panel2: #0f131c;
+    --border: #232a38;
+    --text: #e7eaf1;
+    --muted: #9aa4b7;
+    --accent: #f0b429;
+    --amber: #f0b429;
+    --teal: #38bdf8;
+    --rose: #f87171;
+    --green: #4ade80;
+    --purple: #c084fc;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .layout {
+    display: flex;
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+  
+  /* STICKY SIDEBAR NAV */
+  nav.sidebar {
+    width: 310px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 24px 16px;
+    flex-shrink: 0;
+  }
+  nav.sidebar h3 {
+    font-size: 0.85rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+    padding-left: 8px;
+  }
+  nav.sidebar a {
+    display: block;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.8rem;
+    padding: 5px 8px;
+    border-radius: 6px;
+    margin-bottom: 2px;
+    transition: all 0.15s ease;
+  }
+  nav.sidebar a:hover {
+    color: var(--accent);
+    background: rgba(240, 180, 41, 0.08);
+  }
+
+  /* MAIN CONTENT WRAPPER */
+  .main-content {
+    flex: 1;
+    max-width: 1080px;
+    padding: 48px 40px 120px;
+    overflow-x: hidden;
+  }
+
+  .eyebrow {
+    color: var(--accent);
+    font-family: monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  h1 { font-size: 2.3rem; margin-top: 0; margin-bottom: 8px; font-weight: 800; line-height: 1.25; }
+  h1 span { color: var(--accent); }
+  .sub { color: var(--muted); font-size: 1rem; margin-bottom: 32px; }
+  
+  h2 {
+    margin-top: 56px;
+    font-size: 1.45rem;
+    border-left: 4px solid var(--accent);
+    padding-left: 14px;
+    color: var(--text);
+  }
+  h3 { font-size: 1.15rem; color: var(--teal); margin-top: 28px; }
+  h4 { font-size: 0.98rem; color: var(--purple); margin-top: 20px; }
+  p, li { color: var(--muted); font-size: 0.95rem; }
+  li { margin-bottom: 6px; }
+  b, strong { color: var(--text); }
+  
+  /* CARDS & PANELS */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 20px 0; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .card b { color: var(--accent); display: block; margin-bottom: 6px; font-size: 1rem; }
+  
+  /* CALLOUT BOXES */
+  .callout {
+    margin: 20px 0;
+    border-left: 4px solid var(--accent);
+    padding: 16px 20px;
+    background: rgba(240, 180, 41, 0.05);
+    border-radius: 0 8px 8px 0;
+    font-size: 0.92rem;
+  }
+  .callout.warn { border-left-color: var(--rose); background: rgba(248, 113, 113, 0.06); }
+  .callout.info { border-left-color: var(--teal); background: rgba(56, 189, 248, 0.06); }
+  .callout.success { border-left-color: var(--green); background: rgba(74, 222, 128, 0.06); }
+  
+  /* CODE BLOCKS WITH PURE CSS SYNTAX HIGHLIGHTING */
+  pre {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: #e7eaf1;
+  }
+  code {
+    background: #0f131c;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.88em;
+    color: var(--accent);
+    font-family: 'Consolas', 'Courier New', monospace;
+  }
+  pre code { border: none; padding: 0; background: transparent; color: inherit; }
+  
+  .kw { color: #f43f5e; font-weight: bold; }
+  .anno { color: var(--accent); font-weight: bold; }
+  .type { color: var(--teal); }
+  .str { color: var(--green); }
+  .cmnt { color: #64748b; font-style: italic; }
+  .fn { color: #c084fc; }
+
+  /* TABLES */
+  table.matrix {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 0.85rem;
+    background: var(--surface);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  table.matrix th, table.matrix td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    text-align: left;
+  }
+  table.matrix th {
+    background: var(--panel2);
+    color: var(--accent);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+  }
+  table.matrix tr:last-child td { border-bottom: none; }
+
+  /* FLOWCHARTS & DIAGRAMS */
+  .diagram {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin: 24px 0;
+  }
+  .flow-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .flow-step .num {
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: bold;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+  .flow-arrow {
+    text-align: center;
+    color: var(--accent);
+    font-size: 1.2rem;
+    margin: -4px 0 4px;
+  }
+
+  /* FAQ ACCORDION STYLE */
+  .faq-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    padding: 16px;
+  }
+  .faq-q { color: var(--accent); font-weight: 600; font-size: 0.98rem; margin-bottom: 8px; }
+  .faq-a { color: var(--muted); font-size: 0.92rem; }
+
+  @media (max-width: 900px) {
+    .layout { flex-direction: column; }
+    nav.sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border); }
+    .main-content { padding: 24px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- SIDEBAR NAVIGATION -->
+  <nav class="sidebar">
+    <h3>Bean Lifecycle Guide</h3>
+    <a href="#sec1">1. Introduction &amp; Purpose</a>
+    <a href="#sec2">2. Complete Lifecycle Flowchart</a>
+    <a href="#sec3">3. Step-by-Step Lifecycle Execution</a>
+    <a href="#sec4">4. BeanFactoryPostProcessor Mechanics</a>
+    <a href="#sec5">5. BeanPostProcessor Deep Dive</a>
+    <a href="#sec6">6. Initialization Callbacks Comparison</a>
+    <a href="#sec7">7. Destruction Callbacks Comparison</a>
+    <a href="#sec8">8. Aware Interfaces Mechanics</a>
+    <a href="#sec9">9. Singleton vs. Prototype Lifecycle</a>
+    <a href="#sec10">10. Internal Spring Classes Involved</a>
+    <a href="#sec11">11. Real-World Production Example</a>
+    <a href="#sec12">12. Performance &amp; Startup Optimization</a>
+    <a href="#sec13">13. Common Production Mistakes</a>
+    <a href="#sec14">14. Senior Best Practices</a>
+    <a href="#sec15">15. 50+ Senior Interview Questions</a>
+    <a href="#sec16">16. Quick Revision Cheatsheet</a>
+    <a href="#sec17">17. Visual Summary Infographic</a>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <div class="eyebrow">Enterprise Java &middot; Spring Framework Core</div>
+    <h1>Spring Bean Lifecycle — <span>Complete Deep Dive</span></h1>
+    <div class="sub">The exhaustive, senior-level architectural guide to the Spring Bean Lifecycle: from Classpath Component Scanning, BeanDefinition Registration, Instantiation, and Aware Interception to BeanPostProcessors, Proxy Creation, and Destruction Handlers.</div>
+
+    <!-- SECTION 1 -->
+    <section id="sec1">
+      <h2>1. Introduction &amp; Purpose</h2>
+      <p>A Spring Bean is an object that is instantiated, assembled, managed, and destroyed by the Spring Inversion of Control (IoC) container. Unlike plain Java objects created using the <code>new</code> operator (where memory management and initialization are strictly controlled by the developer), Spring-managed beans undergo a rigorous, deterministic lifecycle.</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>Why Does the Bean Lifecycle Exist?</b>
+          <p>The lifecycle gives developers hook points to intercept bean creation at precise phases. This allows running custom validation, injecting environment metadata, wrapping objects in AOP dynamic proxies, establishing external connection pools, and releasing OS resources cleanly upon context shutdown.</p>
+        </div>
+        <div class="card">
+          <b>Container Responsibilities</b>
+          <p>The Spring IoC container acts as an orchestrator. It manages dependency resolution, lifecycle phase callbacks, scope storage (Singleton, Prototype, Request, Session), and shutdown hooks without leaking framework code into domain entities.</p>
+        </div>
+      </div>
+
+      <div class="callout info">
+        <b>Core Architecture Principle:</b><br>
+        Spring decouples class instantiation from initialization. Instantiation creates the raw Java heap object via reflection or constructors; Property Population wires dependencies; Initialization executes domain-specific startup logic and applies cross-cutting concerns (such as AOP proxies for <code>@Transactional</code> or <code>@Async</code>).
+      </div>
+    </section>
+
+    <!-- SECTION 2 -->
+    <section id="sec2">
+      <h2>2. Complete Lifecycle Flowchart</h2>
+      <p>Every Spring bean follows a well-defined sequence from application startup to shutdown:</p>
+
+      <div class="diagram">
+        <h4>The Master Spring Bean Lifecycle Timeline</h4>
+        <div class="flow-step"><div class="num">1</div><div><b>Application Startup &amp; Component Scan:</b> Spring scans base packages and parses configuration annotations.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">2</div><div><b>BeanDefinition Creation:</b> Parses target metadata into <code>BeanDefinition</code> objects.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">3</div><div><b>BeanFactory Registration:</b> Stores <code>BeanDefinition</code> instances inside <code>DefaultListableBeanFactory</code>.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">4</div><div><b>BeanFactoryPostProcessor Execution:</b> Modifies bean metadata prior to object creation (e.g. <code>PropertySourcesPlaceholderConfigurer</code>).</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">5</div><div><b>Bean Instantiation:</b> Constructs raw object instance via constructor, factory method, or CGLIB subclass.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">6</div><div><b>Dependency Injection (Property Population):</b> Injects dependencies via setters, fields, or constructor args.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">7</div><div><b>Aware Interfaces Callbacks:</b> Invokes framework injection hooks (<code>BeanNameAware</code>, <code>BeanFactoryAware</code>, <code>ApplicationContextAware</code>).</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">8</div><div><b>BeanPostProcessor (Before Initialization):</b> Executes <code>postProcessBeforeInitialization()</code> (triggers <code>@PostConstruct</code>).</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">9</div><div><b>InitializingBean Callback:</b> Invokes <code>afterPropertiesSet()</code>.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">10</div><div><b>Custom Init-Method:</b> Executes custom <code>initMethod</code> configured via <code>@Bean(initMethod = "...")</code> or XML.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">11</div><div><b>BeanPostProcessor (After Initialization):</b> Executes <code>postProcessAfterInitialization()</code> (wraps bean in AOP dynamic proxies).</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">12</div><div><b>Bean Ready:</b> Fully configured, operational bean is cached in <code>singletonObjects</code> map for application usage.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">13</div><div><b>Application Running:</b> Serves application requests.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">14</div><div><b>Context Shutdown Initiated:</b> JVM shutdown hook triggers <code>AbstractApplicationContext.close()</code>.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">15</div><div><b>@PreDestroy Callback:</b> Executes methods annotated with <code>@PreDestroy</code>.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">16</div><div><b>DisposableBean Callback:</b> Invokes <code>destroy()</code>.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">17</div><div><b>Custom Destroy-Method:</b> Executes custom <code>destroyMethod</code> configured via <code>@Bean(destroyMethod = "...")</code> or XML.</div></div>
+      </div>
+    </section>
+
+    <!-- SECTION 3 -->
+    <section id="sec3">
+      <h2>3. Step-by-Step Lifecycle Execution</h2>
+      <p>Let's examine each phase of the lifecycle in depth:</p>
+
+      <h3>Phase 1: Bootstrapping &amp; Metadata Parsing</h3>
+      <p>During startup, <code>ClassPathBeanDefinitionScanner</code> uses ASM bytecode reading to parse target <code>.class</code> files without initializing classes in the JVM. It wraps parsed class metadata into a <code>BeanDefinition</code> object and registers it inside the <code>BeanDefinitionRegistry</code>.</p>
+
+      <h3>Phase 2: Instantiation &amp; Dependency Injection</h3>
+      <p>The container instantiates the raw bean via reflection or constructor invocation. Immediately after, <code>AutowiredAnnotationBeanPostProcessor</code> scans and injects required dependencies into fields, setters, or constructors.</p>
+
+      <h3>Phase 3: Aware Interception</h3>
+      <p>If the bean implements any Spring <code>Aware</code> interfaces, Spring injects internal container infrastructure references before initialization.</p>
+
+      <h3>Phase 4: Initialization Callbacks &amp; Proxying</h3>
+      <p>Spring executes three distinct initialization callbacks in strict sequential order:</p>
+      <ol>
+        <li><code>@PostConstruct</code> (Processed by <code>InitDestroyAnnotationBeanPostProcessor</code>)</li>
+        <li><code>InitializingBean.afterPropertiesSet()</code></li>
+        <li>Custom <code>initMethod</code> configured in <code>@Bean</code></li>
+      </ol>
+      <p>Finally, <code>AnnotationAwareAspectJAutoProxyCreator</code> executes <code>postProcessAfterInitialization()</code> to generate CGLIB or JDK dynamic proxies for classes requiring transactional, caching, or security aspects.</p>
+
+      <h3>Phase 5: Teardown &amp; Destruction</h3>
+      <p>When the application context shuts down, destruction callbacks execute in strict reverse order:</p>
+      <ol>
+        <li><code>@PreDestroy</code></li>
+        <li><code>DisposableBean.destroy()</code></li>
+        <li>Custom <code>destroyMethod</code></li>
+      </ol>
+    </section>
+
+    <!-- SECTION 4 -->
+    <section id="sec4">
+      <h2>4. BeanFactoryPostProcessor Mechanics</h2>
+      <p>A <code>BeanFactoryPostProcessor</code> (BFPP) operates on the <code>BeanDefinition</code> metadata <b>before</b> any bean instances are created on the heap. This allows modifying configuration parameters, reading external property files, or adding dynamic bean definitions programmatically.</p>
+
+      <pre><code><span class="anno">@Component</span>
+<span class="kw">public class</span> <span class="type">CustomMetadataModifier</span> <span class="kw">implements</span> <span class="type">BeanFactoryPostProcessor</span> {
+
+    <span class="anno">@Override</span>
+    <span class="kw">public void</span> <span class="fn">postProcessBeanFactory</span>(<span class="type">ConfigurableListableBeanFactory</span> beanFactory) 
+            <span class="kw">throws</span> <span class="type">BeansException</span> {
+        
+        <span class="type">BeanDefinition</span> bd = beanFactory.getBeanDefinition(<span class="str">"orderService"</span>);
+        <span class="cmnt">// Dynamically force OrderService to be lazily initialized</span>
+        bd.setLazyInit(<span class="kw">true</span>);
+    }
+}</code></pre>
+
+      <div class="callout warn">
+        <b>Critical Difference:</b><br>
+        <code>BeanFactoryPostProcessor</code> modifies <b>Bean Definitions</b> (blueprints).<br>
+        <code>BeanPostProcessor</code> modifies <b>Bean Instances</b> (created heap objects).<br>
+        Never inject standard beans into a <code>BeanFactoryPostProcessor</code> class—doing so forces premature instantiation of those beans before <code>BeanPostProcessors</code> are ready, bypassing lifecycle callbacks!
+      </div>
+    </section>
+
+    <!-- SECTION 5 -->
+    <section id="sec5">
+      <h2>5. BeanPostProcessor Deep Dive</h2>
+      <p><code>BeanPostProcessor</code> (BPP) is the core extension hook inside Spring. It intercepts every bean instance after property population, allowing custom modification or wrapping beans in proxy objects.</p>
+
+      <pre><code><span class="anno">@Component</span>
+<span class="kw">public class</span> <span class="type">CustomProxyBeanPostProcessor</span> <span class="kw">implements</span> <span class="type">BeanPostProcessor</span> {
+
+    <span class="anno">@Override</span>
+    <span class="kw">public</span> <span class="type">Object</span> <span class="fn">postProcessBeforeInitialization</span>(<span class="type">Object</span> bean, <span class="type">String</span> beanName) <span class="kw">throws</span> <span class="type">BeansException</span> {
+        <span class="cmnt">// Runs before @PostConstruct and initMethod</span>
+        <span class="kw">if</span> (bean <span class="kw">instanceof</span> <span class="type">AuditAware</span>) {
+            ((<span class="type">AuditAware</span>) bean).setAuditTimestamp(<span class="type">System</span>.currentTimeMillis());
+        }
+        <span class="kw">return</span> bean;
+    }
+
+    <span class="anno">@Override</span>
+    <span class="kw">public</span> <span class="type">Object</span> <span class="fn">postProcessAfterInitialization</span>(<span class="type">Object</span> bean, <span class="type">String</span> beanName) <span class="kw">throws</span> <span class="type">BeansException</span> {
+        <span class="cmnt">// Runs after all initialization callbacks. Used for AOP Proxy generation.</span>
+        <span class="kw">return</span> bean;
+    }
+}</code></pre>
+    </section>
+
+    <!-- SECTION 6 -->
+    <section id="sec6">
+      <h2>6. Initialization Callbacks Comparison</h2>
+      <p>Spring offers three distinct options to execute initialization logic after dependency injection. Here is how they compare:</p>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Mechanism</th>
+            <th>Sample Code Syntax</th>
+            <th>Coupling to Spring</th>
+            <th>Execution Order</th>
+            <th>Production Recommendation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>@PostConstruct</b></td>
+            <td><code>@PostConstruct public void init()</code></td>
+            <td>None (Standard JSR-250 / Jakarta annotation)</td>
+            <td><b>1st</b> (Highest Priority)</td>
+            <td><b>Recommended</b> (Clean, readable, decoupled from Spring APIs)</td>
+          </tr>
+          <tr>
+            <td><b>InitializingBean</b></td>
+            <td><code>public void afterPropertiesSet()</code></td>
+            <td>High (Tightly coupled to Spring <code>InitializingBean</code> interface)</td>
+            <td><b>2nd</b></td>
+            <td>Avoid in domain code (useful for framework developers)</td>
+          </tr>
+          <tr>
+            <td><b>Custom initMethod</b></td>
+            <td><code>@Bean(initMethod = "customInit")</code></td>
+            <td>None (Declared in configuration class)</td>
+            <td><b>3rd</b></td>
+            <td><b>Recommended</b> for 3rd-party library bean configurations</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 7 -->
+    <section id="sec7">
+      <h2>7. Destruction Callbacks Comparison</h2>
+      <p>Similarly, Spring provides three callbacks to release external resources (close database connections, flush buffers, shut down thread pools) upon application context termination:</p>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Mechanism</th>
+            <th>Sample Code Syntax</th>
+            <th>Coupling to Spring</th>
+            <th>Execution Order</th>
+            <th>Production Recommendation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>@PreDestroy</b></td>
+            <td><code>@PreDestroy public void cleanup()</code></td>
+            <td>None (Standard JSR-250 / Jakarta annotation)</td>
+            <td><b>1st</b> (Highest Priority)</td>
+            <td><b>Recommended</b> for standard bean components</td>
+          </tr>
+          <tr>
+            <td><b>DisposableBean</b></td>
+            <td><code>public void destroy()</code></td>
+            <td>High (Coupled to Spring <code>DisposableBean</code> interface)</td>
+            <td><b>2nd</b></td>
+            <td>Avoid in domain code</td>
+          </tr>
+          <tr>
+            <td><b>Custom destroyMethod</b></td>
+            <td><code>@Bean(destroyMethod = "close")</code></td>
+            <td>None (Declared in configuration class)</td>
+            <td><b>3rd</b></td>
+            <td><b>Recommended</b> for 3rd-party client resource cleanups</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 8 -->
+    <section id="sec8">
+      <h2>8. Aware Interfaces Mechanics</h2>
+      <p>Spring's <code>Aware</code> interfaces act as marker callbacks allowing a bean to request a reference to container infrastructure objects. They run right before <code>BeanPostProcessor</code> pre-initialization.</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>Common Aware Interfaces</b>
+          <ul>
+            <li><code>BeanNameAware</code>: Injects the string ID assigned to the bean in the container.</li>
+            <li><code>BeanFactoryAware</code>: Injects the owning <code>BeanFactory</code> container instance.</li>
+            <li><code>ApplicationContextAware</code>: Injects the full <code>ApplicationContext</code> instance.</li>
+            <li><code>EnvironmentAware</code>: Injects active environment profiles and property sources.</li>
+            <li><code>ResourceLoaderAware</code>: Injects resource loaders for reading classpath/file assets.</li>
+          </ul>
+        </div>
+      </div>
+
+      <pre><code><span class="anno">@Component</span>
+<span class="kw">public class</span> <span class="type">ContainerAwareService</span> <span class="kw">implements</span> <span class="type">BeanNameAware</span>, <span class="type">ApplicationContextAware</span> {
+    <span class="kw">private</span> <span class="type">String</span> beanName;
+    <span class="kw">private</span> <span class="type">ApplicationContext</span> context;
+
+    <span class="anno">@Override</span>
+    <span class="kw">public void</span> <span class="fn">setBeanName</span>(<span class="type">String</span> name) {
+        <span class="kw">this</span>.beanName = name;
+    }
+
+    <span class="anno">@Override</span>
+    <span class="kw">public void</span> <span class="fn">setApplicationContext</span>(<span class="type">ApplicationContext</span> context) {
+        <span class="kw">this</span>.context = context;
+    }
+}</code></pre>
+    </section>
+
+    <!-- SECTION 9 -->
+    <section id="sec9">
+      <h2>9. Singleton vs. Prototype Lifecycle</h2>
+      <p>The scope of a bean completely alters how the Spring container manages its lifecycle:</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>Singleton Scope Lifecycle</b>
+          <p>Managed completely from birth to death by Spring. Instantiated once at startup, initialized, cached in <code>singletonObjects</code>, and destroyed cleanly when the context shuts down.</p>
+        </div>
+        <div class="card">
+          <b>Prototype Scope Lifecycle</b>
+          <p>Spring instantiates, injects dependencies, and executes initialization callbacks (<code>@PostConstruct</code>, <code>initMethod</code>). However, <b>Spring does NOT manage destruction for prototype beans</b>. Once initialized, the instance is handed to the client, and the container forgets it.</p>
+        </div>
+      </div>
+
+      <div class="callout warn">
+        <b>Memory Leak Warning on Prototype Beans:</b><br>
+        Because Spring does not track prototype instances after initialization, <code>@PreDestroy</code> and <code>DisposableBean.destroy()</code> <b>will never be executed by Spring</b> for prototype beans! If your prototype bean allocates heavy resources (e.g. database connections, file handles), the caller code must manage cleanup manually.
+      </div>
+    </section>
+
+    <!-- SECTION 10 -->
+    <section id="sec10">
+      <h2>10. Internal Spring Classes Involved</h2>
+      <p>The lifecycle is executed under the hood by these core internal Spring classes:</p>
+
+      <ul>
+        <li><code>AbstractApplicationContext</code>: Coordinates startup via <code>refresh()</code> and shutdown via <code>close()</code>.</li>
+        <li><code>DefaultListableBeanFactory</code>: Primary container map holding bean definitions and singleton object instances.</li>
+        <li><code>AbstractAutowireCapableBeanFactory</code>: Executes the actual creation algorithms: <code>createBean()</code>, <code>doCreateBean()</code>, <code>instantiateBean()</code>, <code>populateBean()</code>, and <code>initializeBean()</code>.</li>
+        <li><code>AutowiredAnnotationBeanPostProcessor</code>: Processes <code>@Autowired</code> and <code>@Value</code> injections.</li>
+        <li><code>InitDestroyAnnotationBeanPostProcessor</code>: Processes <code>@PostConstruct</code> and <code>@PreDestroy</code> annotations.</li>
+        <li><code>AnnotationAwareAspectJAutoProxyCreator</code>: Creates CGLIB/JDK dynamic proxies during post-processing.</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 11 -->
+    <section id="sec11">
+      <h2>11. Real-World Production Example</h2>
+      <p>Below is an enterprise-grade component demonstrating proper resource setup and teardown in a Redis connection pool manager:</p>
+
+      <pre><code><span class="anno">@Component</span>
+<span class="kw">public class</span> <span class="type">RedisCacheManager</span> <span class="kw">implements</span> <span class="type">BeanNameAware</span> {
+    <span class="kw">private</span> <span class="type">String</span> beanName;
+    <span class="kw">private</span> <span class="type">JedisPool</span> jedisPool;
+
+    <span class="anno">@Override</span>
+    <span class="kw">public void</span> <span class="fn">setBeanName</span>(<span class="type">String</span> name) {
+        <span class="kw">this</span>.beanName = name;
+    }
+
+    <span class="anno">@PostConstruct</span>
+    <span class="kw">public void</span> <span class="fn">initPool</span>() {
+        <span class="type">System</span>.out.println(<span class="str">"Initializing Redis pool for bean: "</span> + beanName);
+        <span class="type">JedisPoolConfig</span> config = <span class="kw">new</span> <span class="type">JedisPoolConfig</span>();
+        config.setMaxTotal(<span class="num">128</span>);
+        <span class="kw">this</span>.jedisPool = <span class="kw">new</span> <span class="type">JedisPool</span>(config, <span class="str">"localhost"</span>, <span class="num">6379</span>);
+    }
+
+    <span class="kw">public</span> <span class="type">Jedis</span> <span class="fn">getResource</span>() {
+        <span class="kw">return</span> jedisPool.getResource();
+    }
+
+    <span class="anno">@PreDestroy</span>
+    <span class="kw">public void</span> <span class="fn">closePool</span>() {
+        <span class="type">System</span>.out.println(<span class="str">"Closing Redis connection pool..."</span>);
+        <span class="kw">if</span> (jedisPool != <span class="kw">null</span> &amp;&amp; !jedisPool.isClosed()) {
+            jedisPool.close();
+        }
+    }
+}</code></pre>
+    </section>
+
+    <!-- SECTION 12 -->
+    <section id="sec12">
+      <h2>12. Performance &amp; Startup Optimization</h2>
+      <ul>
+        <li><b>Minimize Heavy Work in @PostConstruct:</b> Running blocking network calls or slow operations inside <code>@PostConstruct</code> freezes the entire application context startup thread. Offload slow initialization tasks to asynchronous threads or background events (e.g., <code>ApplicationReadyEvent</code>).</li>
+        <li><b>Avoid Unnecessary Post-Processors:</b> Every registered <code>BeanPostProcessor</code> intercepts <b>every single bean</b> in the container. Complex logic inside custom BPPs drastically inflates boot times.</li>
+        <li><b>Spring AOT (Ahead-Of-Time):</b> In Spring Boot 3, AOT pre-calculates component scanning, proxy generation, and bean definition registration at build time, eliminating dynamic reflection during startup.</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 13 -->
+    <section id="sec13">
+      <h2>13. Common Production Mistakes</h2>
+      <div class="callout warn">
+        <b>1. Accessing Injected Dependencies in Constructors:</b> Inside a constructor, field/setter injection has not happened yet! Referencing <code>@Autowired</code> fields inside a constructor throws a <code>NullPointerException</code>. Move initialization logic to <code>@PostConstruct</code>.<br><br>
+        <b>2. Self-Invocation of @PostConstruct Methods:</b> Expecting manual initialization by calling <code>init()</code> explicitly bypasses Spring container state management.<br><br>
+        <b>3. Expecting @PreDestroy on Prototype Beans:</b> As noted earlier, Spring does not track prototype instances post-initialization. Destruction callbacks will never fire for prototype beans.
+      </div>
+    </section>
+
+    <!-- SECTION 14 -->
+    <section id="sec14">
+      <h2>14. Senior Best Practices</h2>
+      <ul>
+        <li><b>Prefer @PostConstruct / @PreDestroy:</b> Use JSR-250 annotations for component classes to keep code decoupled from Spring interfaces.</li>
+        <li><b>Use @Bean(initMethod, destroyMethod) for 3rd Party Libraries:</b> When registering external objects from third-party JARs, configure init/destroy callbacks inside the <code>@Bean</code> annotation.</li>
+        <li><b>Register Shutdown Hooks:</b> In non-web standalone Spring applications, explicitly invoke <code>context.registerShutdownHook()</code> to ensure <code>@PreDestroy</code> handlers run on JVM termination.</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 15 -->
+    <section id="sec15">
+      <h2>15. 50+ Senior Interview Questions</h2>
+      
+      <div class="faq-item">
+        <div class="faq-q">Q1: What is the exact execution order of initialization callbacks in Spring?</div>
+        <div class="faq-a">1. Methods annotated with <code>@PostConstruct</code><br>2. <code>InitializingBean.afterPropertiesSet()</code><br>3. Custom <code>initMethod</code> configured in <code>@Bean</code></div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q2: What is the exact execution order of destruction callbacks in Spring?</div>
+        <div class="faq-a">1. Methods annotated with <code>@PreDestroy</code><br>2. <code>DisposableBean.destroy()</code><br>3. Custom <code>destroyMethod</code> configured in <code>@Bean</code></div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q3: Why shouldn't heavy initialization logic be placed inside a bean's constructor?</div>
+        <div class="faq-a">Inside a constructor, dependency injection has not taken place yet. All <code>@Autowired</code> fields and setters are null. Furthermore, constructors cannot be intercepted by <code>BeanPostProcessors</code> or proxied by AOP.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q4: What is the difference between BeanFactoryPostProcessor and BeanPostProcessor?</div>
+        <div class="faq-a"><code>BeanFactoryPostProcessor</code> operates on <b>BeanDefinition metadata</b> before any beans are created. <code>BeanPostProcessor</code> operates on <b>bean heap instances</b> after instantiation and property population.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q5: Does Spring manage the destruction lifecycle of Prototype-scoped beans?</div>
+        <div class="faq-a">No. Spring instantiates, injects dependencies, and runs initialization callbacks for prototype beans, but hands the instance to the caller and forgets it. Destruction callbacks like <code>@PreDestroy</code> are never executed by Spring for prototype beans.</div>
+      </div>
+
+      <div class="faq-item"><div class="faq-q">Q6: Which BeanPostProcessor processes @PostConstruct and @PreDestroy annotations?</div><div class="faq-a"><code>InitDestroyAnnotationBeanPostProcessor</code> (or <code>CommonAnnotationBeanPostProcessor</code>).</div></div>
+      <div class="faq-item"><div class="faq-q">Q7: Which BeanPostProcessor generates AOP dynamic proxies for @Transactional or @Async?</div><div class="faq-a"><code>AnnotationAwareAspectJAutoProxyCreator</code> (executing in <code>postProcessAfterInitialization</code>).</div></div>
+      <div class="faq-item"><div class="faq-q">Q8: What happens if a @PostConstruct method throws a RuntimeException?</div><div class="faq-a">The <code>ApplicationContext</code> startup fails immediately, throwing a <code>BeanCreationException</code> and terminating initialization.</div></div>
+      <div class="faq-item"><div class="faq-q">Q9: What are Aware interfaces in Spring?</div><div class="faq-a">Marker interfaces (e.g. <code>BeanNameAware</code>, <code>ApplicationContextAware</code>) that allow beans to request infrastructure references from the container.</div></div>
+      <div class="faq-item"><div class="faq-q">Q10: When are Aware interface methods executed in the lifecycle?</div><div class="faq-a">Right after property population (dependency injection) and before <code>BeanPostProcessor</code> pre-initialization.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q11: How to ensure @PreDestroy runs in a standalone desktop Spring app?</div><div class="faq-a">By calling <code>ConfigurableApplicationContext.registerShutdownHook()</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q12: Can a @PostConstruct method be private or static?</div><div class="faq-a">It can be private, package-private, or public, but it MUST NOT be <code>static</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q13: Can a @PostConstruct method take arguments?</div><div class="faq-a">No. A <code>@PostConstruct</code> method must accept zero parameters.</div></div>
+      <div class="faq-item"><div class="faq-q">Q14: What is the purpose of InitializingBean interface?</div><div class="faq-a">Provides <code>afterPropertiesSet()</code> to execute custom initialization after the container sets all bean properties.</div></div>
+      <div class="faq-item"><div class="faq-q">Q15: Why is @PostConstruct preferred over InitializingBean?</div><div class="faq-a">It decouples application code from Spring-specific interfaces (JSR-250 standard).</div></div>
+      <div class="faq-item"><div class="faq-q">Q16: What is BeanDefinition?</div><div class="faq-a">An internal metadata object describing a bean's class, scope, dependencies, and lifecycle methods before instantiation.</div></div>
+      <div class="faq-item"><div class="faq-q">Q17: What is DefaultListableBeanFactory?</div><div class="faq-a">The default full-featured <code>BeanFactory</code> implementation holding bean definitions and singleton caches.</div></div>
+      <div class="faq-item"><div class="faq-q">Q18: How does Spring avoid circular dependencies during initialization?</div><div class="faq-a">Using its Three-Level Cache (<code>singletonObjects</code>, <code>earlySingletonObjects</code>, <code>singletonFactories</code>) for setter/field injection loops.</div></div>
+      <div class="faq-item"><div class="faq-q">Q19: What happens if two init methods are specified with identical names?</div><div class="faq-a">Spring deduplicates and executes the initialization logic once for that phase.</div></div>
+      <div class="faq-item"><div class="faq-q">Q20: Can we have multiple @PostConstruct methods in a single class?</div><div class="faq-a">Yes, but the order of execution between multiple <code>@PostConstruct</code> methods in the same class is not guaranteed.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q21: What is the role of PropertySourcesPlaceholderConfigurer?</div><div class="faq-a">It is a <code>BeanFactoryPostProcessor</code> that resolves <code>${...}</code> placeholders in bean definitions.</div></div>
+      <div class="faq-item"><div class="faq-q">Q22: Is @PostConstruct called on lazy singletons at container startup?</div><div class="faq-a">No. Lazy singletons are instantiated and initialized only when requested for the first time.</div></div>
+      <div class="faq-item"><div class="faq-q">Q23: What is the default destroyMethod behavior in @Bean in modern Spring?</div><div class="faq-a">Modern Spring automatically infers and calls <code>close()</code> or <code>shutdown()</code> methods on third-party beans unless disabled using <code>destroyMethod = ""</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q24: What is the purpose of DestructionAwareBeanPostProcessor?</div><div class="faq-a">A sub-interface of <code>BeanPostProcessor</code> that adds callbacks (<code>requiresDestruction</code>, <code>postProcessBeforeDestruction</code>) before a bean is destroyed.</div></div>
+      <div class="faq-item"><div class="faq-q">Q25: What is the difference between Instantiation and Initialization?</div><div class="faq-a">Instantiation allocates memory and calls the constructor. Initialization populates properties, runs callbacks, and applies proxies.</div></div>
+      <div class="faq-item"><div class="faq-q">Q26: What happens if a BeanPostProcessor returns null from postProcessBeforeInitialization?</div><div class="faq-a">Subsequent <code>BeanPostProcessors</code> are skipped, and the original bean instance is used as-is.</div></div>
+      <div class="faq-item"><div class="faq-q">Q27: Which Spring internal class invokes createBean() and doCreateBean()?</div><div class="faq-a"><code>AbstractAutowireCapableBeanFactory</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q28: How does Spring process @PreDestroy on application shutdown?</div><div class="faq-a">During context closure, <code>DisposableBeanAdapter</code> runs registered destruction processors on singletons.</div></div>
+      <div class="faq-item"><div class="faq-q">Q29: What is SmartInitializingSingleton?</div><div class="faq-a">A callback interface whose <code>afterSingletonsInstantiated()</code> method triggers after <b>all</b> non-lazy singletons are fully initialized.</div></div>
+      <div class="faq-item"><div class="faq-q">Q30: How to control BeanPostProcessor execution order?</div><div class="faq-a">By implementing <code>org.springframework.core.Ordered</code> or using <code>@Order</code>.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q31: What is the purpose of InstantiationAwareBeanPostProcessor?</div><div class="faq-a">Sub-interface of BPP allowing interception <b>before</b> instantiation (e.g. returning a custom proxy directly).</div></div>
+      <div class="faq-item"><div class="faq-q">Q32: Can we call @Async methods inside @PostConstruct?</div><div class="faq-a">No! The AOP proxy that enables <code>@Async</code> is created in <code>postProcessAfterInitialization</code>, which runs <b>after</b> <code>@PostConstruct</code>. Calling it inside <code>@PostConstruct</code> executes it synchronously on the main startup thread.</div></div>
+      <div class="faq-item"><div class="faq-q">Q33: Can a @Transactional method run properly inside @PostConstruct?</div><div class="faq-a">No! Similar to <code>@Async</code>, the transactional AOP proxy wrapper is created after <code>@PostConstruct</code> completes.</div></div>
+      <div class="faq-item"><div class="faq-q">Q34: How to execute code safely after AOP proxies and all singletons are ready?</div><div class="faq-a">Listen for <code>ContextRefreshedEvent</code> or <code>ApplicationReadyEvent</code> using <code>@EventListener</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q35: What is MethodValidationPostProcessor?</div><div class="faq-a">A <code>BeanPostProcessor</code> that creates AOP proxies for beans annotated with <code>@Validated</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q36: What is the lifetime of a Request-scoped bean?</div><div class="faq-a">Created at the start of an HTTP request and destroyed when the HTTP request completes.</div></div>
+      <div class="faq-item"><div class="faq-q">Q37: Does Spring run @PreDestroy on Request-scoped beans?</div><div class="faq-a">Yes, when the Servlet request completes, the web ApplicationContext destroys request-scoped beans cleanly.</div></div>
+      <div class="faq-item"><div class="faq-q">Q38: What is MergedBeanDefinitionPostProcessor?</div><div class="faq-a">A BPP sub-interface used to post-process merged bean definitions (e.g. discovering <code>@Autowired</code> and <code>@Value</code> annotations).</div></div>
+      <div class="faq-item"><div class="faq-q">Q39: What is the role of CustomScopeConfigurer?</div><div class="faq-a">A <code>BeanFactoryPostProcessor</code> used to register custom user-defined bean scopes in Spring.</div></div>
+      <div class="faq-item"><div class="faq-q">Q40: Why should we avoid implementing InitializingBean and DisposableBean together?</div><div class="faq-a">It tightly couples domain components to Spring container interfaces without adding functional benefits over annotations.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q41: What is the difference between SmartInstantiationAwareBeanPostProcessor and InstantiationAwareBeanPostProcessor?</div><div class="faq-a">Smart variant adds capabilities to predict bean types, determine candidate constructors, and retrieve early bean references.</div></div>
+      <div class="faq-item"><div class="faq-q">Q42: Where are fully initialized singleton beans stored in Spring?</div><div class="faq-a">In the <code>singletonObjects</code> ConcurrentHashMap inside <code>DefaultSingletonBeanRegistry</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q43: What happens if custom init-method name specified in @Bean does not exist?</div><div class="faq-a">Spring throws a <code>NoSuchMethodException</code> wrapped inside a <code>BeanCreationException</code> during startup.</div></div>
+      <div class="faq-item"><div class="faq-q">Q44: Can @PreDestroy methods throw checked exceptions?</div><div class="faq-a">They can, but exceptions thrown during shutdown are logged and swallowed so remaining singletons can shut down.</div></div>
+      <div class="faq-item"><div class="faq-q">Q45: What is the primary advantage of Spring AOT in Boot 3 regarding lifecycle?</div><div class="faq-a">Eliminates dynamic reflection and classpath scanning during application startup.</div></div>
+      <div class="faq-item"><div class="faq-q">Q46: How does Spring handle lifecycle callbacks for inherited superclasses?</div><div class="faq-a">Spring processes lifecycle annotations on superclasses first, then proceeds down the inheritance hierarchy.</div></div>
+      <div class="faq-item"><div class="faq-q">Q47: What is ApplicationListener?</div><div class="faq-a">An interface/annotation mechanism to listen for container lifecycle events (e.g., startup, refresh, shutdown).</div></div>
+      <div class="faq-item"><div class="faq-q">Q48: Does @Bean(initMethod) work for component-scanned classes?</div><div class="faq-a">No, <code>initMethod</code> is an attribute of the <code>@Bean</code> factory annotation, not <code>@Component</code>. Use <code>@PostConstruct</code> for components.</div></div>
+      <div class="faq-item"><div class="faq-q">Q49: What is Lifecycle interface in Spring?</div><div class="faq-a">An interface (<code>start()</code>, <code>stop()</code>, <code>isRunning()</code>) for containers/beans managing background asynchronous tasks.</div></div>
+      <div class="faq-item"><div class="faq-q">Q50: What is the ultimate architectural benefit of understanding the Spring Bean Lifecycle?</div><div class="faq-a">It empowers developers to extend framework capabilities, write custom infrastructure starters, prevent startup bugs, and optimize application performance.</div></div>
+    </section>
+
+    <!-- SECTION 16 -->
+    <section id="sec16">
+      <h2>16. Quick Revision Cheatsheet</h2>
+      <div class="card">
+        <p><b>BeanFactoryPostProcessor:</b> Modifies Bean Definitions (Blueprints) BEFORE any beans are instantiated.</p>
+        <p><b>Bean Instantiation:</b> Constructor execution allocates heap space for raw object.</p>
+        <p><b>Property Population:</b> Field, setter, or constructor Dependency Injection.</p>
+        <p><b>Aware Callbacks:</b> Injects container references (<code>BeanNameAware</code>, <code>ApplicationContextAware</code>).</p>
+        <p><b>BeanPostProcessor (Pre-Init):</b> Executes <code>@PostConstruct</code> methods.</p>
+        <p><b>Initialization:</b> Executes <code>afterPropertiesSet()</code> &amp; custom <code>initMethod</code>.</p>
+        <p><b>BeanPostProcessor (Post-Init):</b> Generates AOP Proxies (<code>@Transactional</code>, <code>@Async</code>).</p>
+        <p><b>Destruction Order:</b> <code>@PreDestroy</code> &rarr; <code>DisposableBean.destroy()</code> &rarr; custom <code>destroyMethod</code>.</p>
+      </div>
+    </section>
+
+    <!-- SECTION 17 -->
+    <section id="sec17">
+      <h2>17. Visual Summary Infographic</h2>
+      <div class="diagram">
+        <h4>Spring Bean Lifecycle Architectural Architecture Map</h4>
+        <div class="grid">
+          <div class="card" style="border-color: var(--teal);">
+            <b style="color: var(--teal);">1. Definition Phase</b>
+            <p>Classpath Scan &middot; ASM Bytecode &middot; <code>BeanDefinition</code> &middot; <code>BeanFactoryPostProcessor</code></p>
+          </div>
+          <div class="card" style="border-color: var(--amber);">
+            <b style="color: var(--amber);">2. Creation &amp; Init Phase</b>
+            <p>Instantiation &middot; Dependency Injection &middot; Aware Callbacks &middot; <code>@PostConstruct</code> &middot; AOP Proxies</p>
+          </div>
+          <div class="card" style="border-color: var(--purple);">
+            <b style="color: var(--purple);">3. Ready &amp; Teardown Phase</b>
+            <p>Cached in <code>singletonObjects</code> &middot; App Running &middot; Context Close &middot; <code>@PreDestroy</code> &middot; Heap GC</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+</body>
+</html>

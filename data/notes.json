@@ -53,6 +53,29 @@
           ],
           "difficulty": "Beginner",
           "lastUpdated": "2026-07-18"
+        },
+                {
+          "id": "important-spring-annotations",
+          "title": "Important Spring Annotations",
+          "file": "notes/spring-boot/important-spring-annotations.html",
+          "tags": [
+            "annotations","most used",
+            "spring"
+          ],
+          "difficulty": "Beginner",
+          "lastUpdated": "2026-07-18"
+        },
+                        {
+          "id": "spring-bean-lifecycle",
+          "title": "Spring Bean Lifecycle",
+          "file": "notes/spring-boot/spring-bean-lifecycle.html",
+          "tags": [
+            "beans",
+            "lifecycle",
+            "spring"
+          ],
+          "difficulty": "Beginner",
+          "lastUpdated": "2026-07-18"
         }
       ]
     },
@@ -78,7 +101,9 @@
           "title": "String Handling",
           "file": "notes/java/string-deepdive.html",
           "tags": [
-            "strings","stringbuilder","stringbuffer",
+            "strings",
+            "stringbuilder",
+            "stringbuffer",
             "memory"
           ],
           "difficulty": "Intermediate",
@@ -91,6 +116,17 @@
           "tags": [
             "java",
             "collections"
+          ],
+          "difficulty": "Intermediate",
+          "lastUpdated": "2026-06-02"
+        },
+        {
+          "id": "java-eight-features",
+          "title": "Java 8 Features",
+          "file": "notes/java/java-eight-features.html",
+          "tags": [
+            "java",
+            "stream-api"
           ],
           "difficulty": "Intermediate",
           "lastUpdated": "2026-06-02"

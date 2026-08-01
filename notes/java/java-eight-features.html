@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Java 8 Features — Complete Deep Dive Handbook</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  :root {
+    --bg: #0b0e14;
+    --surface: #131824;
+    --panel2: #0f131c;
+    --border: #232a38;
+    --text: #e7eaf1;
+    --muted: #9aa4b7;
+    --accent: #f0b429;
+    --amber: #f0b429;
+    --teal: #38bdf8;
+    --rose: #f87171;
+    --green: #4ade80;
+    --purple: #c084fc;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .layout {
+    display: flex;
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+  
+  /* STICKY SIDEBAR NAV */
+  nav.sidebar {
+    width: 310px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 24px 16px;
+    flex-shrink: 0;
+  }
+  nav.sidebar h3 {
+    font-size: 0.85rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+    padding-left: 8px;
+  }
+  nav.sidebar a {
+    display: block;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.8rem;
+    padding: 5px 8px;
+    border-radius: 6px;
+    margin-bottom: 2px;
+    transition: all 0.15s ease;
+  }
+  nav.sidebar a:hover {
+    color: var(--accent);
+    background: rgba(240, 180, 41, 0.08);
+  }
+
+  /* MAIN CONTENT WRAPPER */
+  .main-content {
+    flex: 1;
+    max-width: 1080px;
+    padding: 48px 40px 120px;
+    overflow-x: hidden;
+  }
+
+  .eyebrow {
+    color: var(--accent);
+    font-family: monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  h1 { font-size: 2.3rem; margin-top: 0; margin-bottom: 8px; font-weight: 800; line-height: 1.25; }
+  h1 span { color: var(--accent); }
+  .sub { color: var(--muted); font-size: 1rem; margin-bottom: 32px; }
+  
+  h2 {
+    margin-top: 56px;
+    font-size: 1.45rem;
+    border-left: 4px solid var(--accent);
+    padding-left: 14px;
+    color: var(--text);
+  }
+  h3 { font-size: 1.15rem; color: var(--teal); margin-top: 28px; }
+  h4 { font-size: 0.98rem; color: var(--purple); margin-top: 20px; }
+  p, li { color: var(--muted); font-size: 0.95rem; }
+  li { margin-bottom: 6px; }
+  b, strong { color: var(--text); }
+  
+  /* CARDS & PANELS */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 20px 0; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .card b { color: var(--accent); display: block; margin-bottom: 6px; font-size: 1rem; }
+  
+  /* CALLOUT BOXES */
+  .callout {
+    margin: 20px 0;
+    border-left: 4px solid var(--accent);
+    padding: 16px 20px;
+    background: rgba(240, 180, 41, 0.05);
+    border-radius: 0 8px 8px 0;
+    font-size: 0.92rem;
+  }
+  .callout.warn { border-left-color: var(--rose); background: rgba(248, 113, 113, 0.06); }
+  .callout.info { border-left-color: var(--teal); background: rgba(56, 189, 248, 0.06); }
+  .callout.success { border-left-color: var(--green); background: rgba(74, 222, 128, 0.06); }
+  
+  /* CODE BLOCKS WITH PURE CSS SYNTAX HIGHLIGHTING */
+  pre {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: #e7eaf1;
+  }
+  code {
+    background: #0f131c;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.88em;
+    color: var(--accent);
+    font-family: 'Consolas', 'Courier New', monospace;
+  }
+  pre code { border: none; padding: 0; background: transparent; color: inherit; }
+  
+  .kw { color: #f43f5e; font-weight: bold; }
+  .anno { color: var(--accent); font-weight: bold; }
+  .type { color: var(--teal); }
+  .str { color: var(--green); }
+  .cmnt { color: #64748b; font-style: italic; }
+  .fn { color: #c084fc; }
+
+  /* TABLES */
+  table.matrix {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 0.85rem;
+    background: var(--surface);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  table.matrix th, table.matrix td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    text-align: left;
+  }
+  table.matrix th {
+    background: var(--panel2);
+    color: var(--accent);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+  }
+  table.matrix tr:last-child td { border-bottom: none; }
+
+  /* FLOWCHARTS & DIAGRAMS */
+  .diagram {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin: 24px 0;
+  }
+  .flow-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .flow-step .num {
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: bold;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+  .flow-arrow {
+    text-align: center;
+    color: var(--accent);
+    font-size: 1.2rem;
+    margin: -4px 0 4px;
+  }
+
+  /* FAQ ACCORDION STYLE */
+  .faq-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    padding: 16px;
+  }
+  .faq-q { color: var(--accent); font-weight: 600; font-size: 0.98rem; margin-bottom: 8px; }
+  .faq-a { color: var(--muted); font-size: 0.92rem; }
+
+  @media (max-width: 900px) {
+    .layout { flex-direction: column; }
+    nav.sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border); }
+    .main-content { padding: 24px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- SIDEBAR NAVIGATION -->
+  <nav class="sidebar">
+    <h3>Java 8 Handbook</h3>
+    <a href="#sec1">1. Introduction</a>
+    <a href="#sec2">2. Overview of Java 8 Features</a>
+    <a href="#sec3">3. Lambda Expressions & invokedynamic</a>
+    <a href="#sec4">4. Functional Interfaces</a>
+    <a href="#sec5">5. Method References</a>
+    <a href="#sec6">6. Streams API Deep Dive</a>
+    <a href="#sec7">7. Collectors API</a>
+    <a href="#sec8">8. Optional API</a>
+    <a href="#sec9">9. Default Methods & Diamond Problem</a>
+    <a href="#sec10">10. Static Methods in Interfaces</a>
+    <a href="#sec11">11. Date & Time API (java.time)</a>
+    <a href="#sec12">12. CompletableFuture & Async Programming</a>
+    <a href="#sec13">13. Parallel Streams & ForkJoinPool</a>
+    <a href="#sec14">14. Base64 Encoding API</a>
+    <a href="#sec15">15. Nashorn JavaScript Engine</a>
+    <a href="#sec16">16. Repeating & Type Annotations</a>
+    <a href="#sec17">17. JVM & Performance Optimizations</a>
+    <a href="#sec18">18. Real-world Production Usage</a>
+    <a href="#sec19">19. Java 7 vs Java 8 Comparison</a>
+    <a href="#sec20">20. Common Production Pitfalls</a>
+    <a href="#sec21">21. Best Practices</a>
+    <a href="#sec22">22. 75+ Senior Interview QA</a>
+    <a href="#sec23">23. Quick Revision Cheatsheet</a>
+    <a href="#sec24">24. Visual Summary Infographic</a>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <div class="eyebrow">Java Core &middot; Modern Backend Development</div>
+    <h1>Java 8 Features — <span>Complete Deep Dive Handbook</span></h1>
+    <div class="sub">The definitive senior-level guide to Lambdas, Streams, Functional Interfaces, CompletableFuture, new Date & Time API, JVM invokedynamic mechanics, and production best practices.</div>
+
+    <!-- SECTION 1 -->
+    <section id="sec1">
+      <h2>1. Introduction</h2>
+      <p>Released in March 2014, Java 8 was the single biggest paradigm shift in the history of Java. Before Java 8, Java was strictly an object-oriented, imperative programming language. Java 8 introduced functional programming capabilities, enabling developers to write clean, concise, declarative, and easily parallelized code.</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>Problems in Java 7</b>
+          <p>Verbose, boilerplate code (e.g., anonymous inner classes). Lack of declarative collection processing. Frequent <code>NullPointerException</code> crashes without standard containers. Flawed <code>java.util.Date</code> API. Difficult multi-core parallelism.</p>
+        </div>
+        <div class="card">
+          <b>Goals of Java 8</b>
+          <p>Introduce functional programming concepts. Modernize multi-core concurrency using Streams and <code>ForkJoinPool</code>. Standardize null-safety wrappers (<code>Optional</code>) and introduce an immutable thread-safe Date/Time API.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2 -->
+    <section id="sec2">
+      <h2>2. Overview of Java 8 Features</h2>
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Primary Purpose</th>
+            <th>Key Benefit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Lambda Expressions</b></td>
+            <td>Treat functions as method arguments / first-class citizens.</td>
+            <td>Removes anonymous inner class boilerplate; enables functional programming.</td>
+          </tr>
+          <tr>
+            <td><b>Functional Interfaces</b></td>
+            <td>Single Abstract Method (SAM) contracts target for Lambdas.</td>
+            <td>Strict compile-time type safety for functional expressions.</td>
+          </tr>
+          <tr>
+            <td><b>Method References</b></td>
+            <td>Shorthand syntax for Lambdas invoking existing methods.</td>
+            <td>Improves code readability (e.g., <code>System.out::println</code>).</td>
+          </tr>
+          <tr>
+            <td><b>Streams API</b></td>
+            <td>Declarative pipelines for processing sequences of data.</td>
+            <td>Eliminates manual <code>for</code> loops; supports lazy evaluation & parallel processing.</td>
+          </tr>
+          <tr>
+            <td><b>Optional API</b></td>
+            <td>Container object representing value presence or absence.</td>
+            <td>Eliminates explicit null checks and prevents <code>NullPointerException</code>.</td>
+          </tr>
+          <tr>
+            <td><b>Default Methods</b></td>
+            <td>Interface methods with concrete default body implementation.</td>
+            <td>Allows evolving interfaces without breaking backward compatibility.</td>
+          </tr>
+          <tr>
+            <td><b>Date & Time API</b></td>
+            <td>Immutable, thread-safe date/time domain model in <code>java.time</code>.</td>
+            <td>Replaces mutable, error-prone legacy <code>java.util.Date</code>.</td>
+          </tr>
+          <tr>
+            <td><b>CompletableFuture</b></td>
+            <td>Non-blocking, event-driven asynchronous programming pipeline.</td>
+            <td>Simplifies async task chaining, callbacks, and exception handling.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 3 -->
+    <section id="sec3">
+      <h2>3. Lambda Expressions & invokedynamic</h2>
+      <p>A Lambda Expression is an anonymous function—a block of code with parameters and a body that can be passed around and executed on demand.</p>
+
+      <pre><code><span class="cmnt">// Old Java 7 Anonymous Inner Class</span>
+<span class="type">Runnable</span> r1 = <span class="kw">new</span> <span class="type">Runnable</span>() {
+    <span class="anno">@Override</span>
+    <span class="kw">public void</span> <span class="fn">run</span>() {
+        <span class="type">System</span>.out.println(<span class="str">"Running in Java 7"</span>);
+    }
+};
+
+<span class="cmnt">// Modern Java 8 Lambda Expression</span>
+<span class="type">Runnable</span> r2 = () -&gt; <span class="type">System</span>.out.println(<span class="str">"Running in Java 8"</span>);</code></pre>
+
+      <h3>JVM Internal Implementation: invokedynamic</h3>
+      <p>Unlike anonymous inner classes (which generate a new <code>.class</code> file on disk at compile time like <code>Outer$1.class</code>), Lambdas do <b>not</b> generate extra class files. Instead, the Java compiler emits an <code>invokedynamic</code> (INDY) bytecode instruction. At runtime, <code>LambdaMetafactory</code> dynamically generates a lightweight call site that links directly to the implementation method via MethodHandles. This saves memory and speeds up class loading.</p>
+
+      <div class="callout info">
+        <b>Variable Capture & Effectively Final:</b><br>
+        Lambdas can capture variables from their enclosing scope. However, any captured local variable must be <b>final</b> or <b>effectively final</b> (meaning its value is never modified after initialization). This prevents thread race conditions when Lambdas run concurrently.
+      </div>
+    </section>
+
+    <!-- SECTION 4 -->
+    <section id="sec4">
+      <h2>4. Functional Interfaces</h2>
+      <p>A Functional Interface is an interface that contains <b>exactly one abstract method</b> (SAM - Single Abstract Method). It can contain any number of <code>default</code> or <code>static</code> methods.</p>
+
+      <pre><code><span class="anno">@FunctionalInterface</span>
+<span class="kw">public interface</span> <span class="type">Calculator</span> {
+    <span class="kw">int</span> <span class="fn">compute</span>(<span class="kw">int</span> a, <span class="kw">int</span> b); <span class="cmnt">// SAM</span>
+    
+    <span class="kw">default void</span> <span class="fn">log</span>(<span class="type">String</span> msg) {
+        <span class="type">System</span>.out.println(msg);
+    }
+}</code></pre>
+
+      <h3>Built-in Standard Functional Interfaces (java.util.function)</h3>
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Interface</th>
+            <th>Method Signature</th>
+            <th>Input &rarr; Output</th>
+            <th>Primary Use Case</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>Predicate&lt;T&gt;</code></td>
+            <td><code>boolean test(T t)</code></td>
+            <td>T &rarr; boolean</td>
+            <td>Filtering data matching conditions.</td>
+          </tr>
+          <tr>
+            <td><code>Function&lt;T, R&gt;</code></td>
+            <td><code>R apply(T t)</code></td>
+            <td>T &rarr; R</td>
+            <td>Transforming/mapping an object from one type to another.</td>
+          </tr>
+          <tr>
+            <td><code>Consumer&lt;T&gt;</code></td>
+            <td><code>void accept(T t)</code></td>
+            <td>T &rarr; void</td>
+            <td>Consuming data without returning a result (e.g., logging).</td>
+          </tr>
+          <tr>
+            <td><code>Supplier&lt;T&gt;</code></td>
+            <td><code>T get()</code></td>
+            <td>void &rarr; T</td>
+            <td>Factory methods or lazy value evaluation.</td>
+          </tr>
+          <tr>
+            <td><code>UnaryOperator&lt;T&gt;</code></td>
+            <td><code>T apply(T t)</code></td>
+            <td>T &rarr; T</td>
+            <td>Specialized Function where input and output types are identical.</td>
+          </tr>
+          <tr>
+            <td><code>BiFunction&lt;T, U, R&gt;</code></td>
+            <td><code>R apply(T t, U u)</code></td>
+            <td>(T, U) &rarr; R</td>
+            <td>Combining two input objects to produce a result.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 5 -->
+    <section id="sec5">
+      <h2>5. Method References</h2>
+      <p>Method References provide a compact syntax for Lambdas that simply invoke an existing method by name using the <code>::</code> double colon operator.</p>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Syntax Shorthand</th>
+            <th>Equivalent Lambda Expression</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Static Method</b></td>
+            <td><code>Math::max</code></td>
+            <td><code>(a, b) -&gt; Math.max(a, b)</code></td>
+          </tr>
+          <tr>
+            <td><b>Instance Method (Specific Object)</b></td>
+            <td><code>logger::info</code></td>
+            <td><code>msg -&gt; logger.info(msg)</code></td>
+          </tr>
+          <tr>
+            <td><b>Instance Method (Arbitrary Object)</b></td>
+            <td><code>String::compareTo</code></td>
+            <td><code>(s1, s2) -&gt; s1.compareTo(s2)</code></td>
+          </tr>
+          <tr>
+            <td><b>Constructor Reference</b></td>
+            <td><code>ArrayList::new</code></td>
+            <td><code>() -&gt; new ArrayList()</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 6 -->
+    <section id="sec6">
+      <h2>6. Streams API Deep Dive</h2>
+      <p>A Stream is a sequence of elements supporting sequential and parallel aggregate operations. Streams do <b>not</b> store data; they process data from a source (Collections, Arrays, I/O) through a pipeline.</p>
+
+      <div class="diagram">
+        <h4>Stream Pipeline Structure</h4>
+        <div class="flow-step"><div class="num">1</div><div><b>Stream Source:</b> <code>list.stream()</code> creates the initial Stream wrapper.</div></div>
+        <div class="flow-step"><div class="num">2</div><div><b>Intermediate Operations (Lazy):</b> <code>.filter()</code> &rarr; <code>.map()</code> &rarr; <code>.sorted()</code>. These form a pipeline and do not execute until a terminal operation is called.</div></div>
+        <div class="flow-step"><div class="num">3</div><div><b>Terminal Operation (Eager):</b> <code>.collect(Collectors.toList())</code> triggers pipeline execution and returns a final result.</div></div>
+      </div>
+
+      <pre><code><span class="type">List</span>&lt;<span class="type">String</span>&gt; names = <span class="type">Arrays</span>.asList(<span class="str">"Alice"</span>, <span class="str">"Bob"</span>, <span class="str">"Charlie"</span>, <span class="str">"David"</span>);
+
+<span class="type">List</span>&lt;<span class="type">String</span>&gt; result = names.stream()
+    .filter(name -&gt; name.length() &gt; 3)   <span class="cmnt">// Intermediate</span>
+    .map(<span class="type">String</span>::toUpperCase)            <span class="cmnt">// Intermediate</span>
+    .sorted()                            <span class="cmnt">// Intermediate (Stateful)</span>
+    .collect(<span class="type">Collectors</span>.toList());       <span class="cmnt">// Terminal (Triggers processing)</span></code></pre>
+
+      <h3>Key Core Stream Operations</h3>
+      <ul>
+        <li><b>map() vs flatMap():</b> <code>map()</code> performs 1-to-1 transformation. <code>flatMap()</code> performs 1-to-N transformation, flattening nested structures (e.g., <code>Stream&lt;List&lt;T&gt;&gt;</code> &rarr; <code>Stream&lt;T&gt;</code>).</li>
+        <li><b>findFirst() vs findAny():</b> <code>findFirst()</code> returns the exact first element in order. <code>findAny()</code> returns any matching element (faster in parallel streams).</li>
+        <li><b>Stateless vs Stateful:</b> <code>filter</code> and <code>map</code> are stateless (process elements independently). <code>sorted</code> and <code>distinct</code> are stateful (must buffer all elements in memory before producing output).</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 7 -->
+    <section id="sec7">
+      <h2>7. Collectors API</h2>
+      <p>The <code>Collectors</code> utility class provides terminal reduction implementations for transforming streams into collections, maps, or aggregated statistics.</p>
+
+      <pre><code><span class="type">List</span>&lt;<span class="type">Employee</span>&gt; employees = getEmployees();
+
+<span class="cmnt">// 1. Group employees by Department</span>
+<span class="type">Map</span>&lt;<span class="type">String</span>, <span class="type">List</span>&lt;<span class="type">Employee</span>&gt;&gt; byDept = employees.stream()
+    .collect(<span class="type">Collectors</span>.groupingBy(<span class="type">Employee</span>::getDepartment));
+
+<span class="cmnt">// 2. Partition into High Earners vs Low Earners</span>
+<span class="type">Map</span>&lt;<span class="type">Boolean</span>, <span class="type">List</span>&lt;<span class="type">Employee</span>&gt;&gt; partitioned = employees.stream()
+    .collect(<span class="type">Collectors</span>.partitioningBy(e -&gt; e.getSalary() &gt; 100000));
+
+<span class="cmnt">// 3. Calculate Average Salary by Department</span>
+<span class="type">Map</span>&lt;<span class="type">String</span>, <span class="type">Double</span>&gt; avgSalary = employees.stream()
+    .collect(<span class="type">Collectors</span>.groupingBy(
+        <span class="type">Employee</span>::getDepartment, 
+        <span class="type">Collectors</span>.averagingDouble(<span class="type">Employee</span>::getSalary)
+    ));</code></pre>
+    </section>
+
+    <!-- SECTION 8 -->
+    <section id="sec8">
+      <h2>8. Optional API</h2>
+      <p><code>Optional&lt;T&gt;</code> is a single-value container that either contains a non-null value or is empty. It explicitly signals that a method return value may be absent.</p>
+
+      <pre><code><span class="kw">public</span> <span class="type">Optional</span>&lt;<span class="type">User</span>&gt; <span class="fn">findUserById</span>(<span class="type">String</span> id) {
+    <span class="type">User</span> user = database.find(id);
+    <span class="kw">return</span> <span class="type">Optional</span>.ofNullable(user); <span class="cmnt">// Returns empty Optional if user is null</span>
+}
+
+<span class="cmnt">// Idiomatic Usage</span>
+<span class="type">String</span> username = findUserById(<span class="str">"101"</span>)
+    .map(<span class="type">User</span>::getName)
+    .orElse(<span class="str">"Guest User"</span>);</code></pre>
+
+      <div class="callout warn">
+        <b>Difference Between orElse() and orElseGet():</b><br>
+        <code>orElse(defaultValue)</code> evaluates <code>defaultValue</code> <b>immediately</b> whether the Optional is empty or not. <code>orElseGet(() -&gt; defaultValue)</code> evaluates the Supplier <b>lazily</b> only if the Optional is empty. Always use <code>orElseGet()</code> for expensive computations or database calls!
+      </div>
+    </section>
+
+    <!-- SECTION 9 -->
+    <section id="sec9">
+      <h2>9. Default Methods & Diamond Problem</h2>
+      <p>Default methods allow adding new methods to existing interfaces with a default concrete implementation without breaking backward compatibility in existing implementing classes.</p>
+
+      <h3>The Diamond Problem & Resolution Rules</h3>
+      <pre><code><span class="kw">interface</span> <span class="type">A</span> { <span class="kw">default void</span> <span class="fn">show</span>() { <span class="type">System</span>.out.println(<span class="str">"A"</span>); } }
+<span class="kw">interface</span> <span class="type">B</span> { <span class="kw">default void</span> <span class="fn">show</span>() { <span class="type">System</span>.out.println(<span class="str">"B"</span>); } }
+
+<span class="kw">class</span> <span class="type">C</span> <span class="kw">implements</span> <span class="type">A</span>, <span class="type">B</span> {
+    <span class="cmnt">// Must explicitly override to resolve collision</span>
+    <span class="anno">@Override</span>
+    <span class="kw">public void</span> <span class="fn">show</span>() {
+        <span class="type">A</span>.<span class="kw">super</span>.show(); <span class="cmnt">// Or provide custom implementation</span>
+    }
+}</code></pre>
+
+      <div class="callout success">
+        <b>Conflict Resolution Rules:</b><br>
+        1. <b>Classes always win:</b> A method in a superclass or class hierarchy takes priority over any interface default method.<br>
+        2. <b>Sub-interfaces win:</b> If interface <code>B</code> extends <code>A</code>, <code>B</code>'s default method wins.<br>
+        3. <b>Explicit Resolution:</b> If two unrelated interfaces provide the same default method, the implementing class must explicitly override it.
+      </div>
+    </section>
+
+    <!-- SECTION 10 -->
+    <section id="sec10">
+      <h2>10. Static Methods in Interfaces</h2>
+      <p>Java 8 allows interfaces to declare <code>static</code> helper methods. Unlike default methods, static methods are <b>not inherited</b> by implementing classes and can only be invoked directly via the interface name (e.g., <code>MyInterface.helperMethod()</code>).</p>
+    </section>
+
+    <!-- SECTION 11 -->
+    <section id="sec11">
+      <h2>11. Date & Time API (java.time)</h2>
+      <p>Java 8 replaced the flawed, thread-unsafe, mutable <code>java.util.Date</code> with the JSR-310 <code>java.time</code> package, modeled after Joda-Time.</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>LocalDate / LocalTime / LocalDateTime</b>
+          <p>Represents context without timezones (e.g. 2026-08-01). Thread-safe and immutable.</p>
+        </div>
+        <div class="card">
+          <b>ZonedDateTime / Instant</b>
+          <p><code>Instant</code> represents a machine timestamp in UTC. <code>ZonedDateTime</code> tracks full timezones using <code>ZoneId</code>.</p>
+        </div>
+        <div class="card">
+          <b>Duration vs Period</b>
+          <p><code>Duration</code> measures time in seconds/nanoseconds. <code>Period</code> measures time in date units (years, months, days).</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 12 -->
+    <section id="sec12">
+      <h2>12. CompletableFuture & Async Programming</h2>
+      <p><code>CompletableFuture</code> implements <code>Future</code> and <code>CompletionStage</code>, providing a non-blocking framework to compose asynchronous pipeline tasks.</p>
+
+      <pre><code><span class="type">CompletableFuture</span>.supplyAsync(() -&gt; fetchUserData(userId))
+    .thenApply(user -&gt; enrichOrderHistory(user))
+    .thenAccept(enrichedUser -&gt; sendNotification(enrichedUser))
+    .exceptionally(ex -&gt; {
+        logger.error(<span class="str">"Async failure"</span>, ex);
+        <span class="kw">return null</span>;
+    });</code></pre>
+    </section>
+
+    <!-- SECTION 13 -->
+    <section id="sec13">
+      <h2>13. Parallel Streams & ForkJoinPool</h2>
+      <p>Parallel Streams partition a data source into multiple chunks using <code>Spliterator</code>, executing pipeline tasks across threads in the common <code>ForkJoinPool.commonPool()</code>.</p>
+
+      <div class="callout warn">
+        <b>When NOT to use Parallel Streams:</b>
+        <ul>
+          <li><b>Small Datasets:</b> Splitting and merging overhead exceeds execution time.</li>
+          <li><b>I/O Bound Tasks:</b> Common ForkJoinPool has threads equal to <code>Runtime.getRuntime().availableProcessors() - 1</code>. Blocking I/O exhausts the pool for the entire JVM!</li>
+          <li><b>Stateful Operations:</b> Avoid operations using shared mutable state, <code>sorted()</code>, or <code>limit()</code> in parallel streams.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- SECTION 14 -->
+    <section id="sec14">
+      <h2>14. Base64 Encoding API</h2>
+      <p>Java 8 introduced an official <code>java.util.Base64</code> encoder and decoder utility class, eliminating dependencies on 3rd party libraries like Apache Commons Codec.</p>
+    </section>
+
+    <!-- SECTION 15 -->
+    <section id="sec15">
+      <h2>15. Nashorn JavaScript Engine</h2>
+      <p>Nashorn replaced the legacy Rhino JavaScript engine, allowing running JavaScript dynamically on the JVM via <code>jjs</code> or <code>ScriptEngineManager</code>. <i>Note: Deprecated in Java 11 and removed in Java 15.</i></p>
+    </section>
+
+    <!-- SECTION 16 -->
+    <section id="sec16">
+      <h2>16. Repeating & Type Annotations</h2>
+      <p>Java 8 added <code>@Repeatable</code> allowing applying the same annotation multiple times to a declaration, and introduced Type Annotations (e.g. <code>@NonNull String str</code>) for static analysis tools.</p>
+    </section>
+
+    <!-- SECTION 17 -->
+    <section id="sec17">
+      <h2>17. JVM & Performance Improvements</h2>
+      <ul>
+        <li><b>PermGen Removed & Metaspace Added:</b> Class metadata moved from contiguous fixed-size PermGen heap memory to native memory (Metaspace), eliminating <code>java.lang.OutOfMemoryError: PermGen space</code>.</li>
+        <li><b>HashMap Treeification:</b> When a bucket chain exceeds 8 entries, HashMap converts the bucket from a linked list ($O(N)$) to a Red-Black Tree ($O(\log N)$).</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 18 -->
+    <section id="sec18">
+      <h2>18. Real-world Production Examples</h2>
+      <pre><code><span class="cmnt">// DTO Conversion Pipeline in Spring Boot Controller</span>
+<span class="anno">@GetMapping</span>(<span class="str">"/users"</span>)
+<span class="kw">public</span> <span class="type">List</span>&lt;<span class="type">UserResponseDto</span>&gt; <span class="fn">getActiveUsers</span>() {
+    <span class="kw">return</span> userRepository.findAllByStatus(<span class="type">UserStatus</span>.ACTIVE).stream()
+        .map(userMapper::toDto)
+        .collect(<span class="type">Collectors</span>.toList());
+}</code></pre>
+    </section>
+
+    <!-- SECTION 19 -->
+    <section id="sec19">
+      <h2>19. Java 7 vs Java 8</h2>
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Feature Area</th>
+            <th>Java 7</th>
+            <th>Java 8</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Paradigm</td>
+            <td>Imperative, Object-Oriented</td>
+            <td>Object-Oriented + Functional</td>
+          </tr>
+          <tr>
+            <td>Collection Iteration</td>
+            <td>External iteration (<code>for</code> loop)</td>
+            <td>Internal iteration (Streams API)</td>
+          </tr>
+          <tr>
+            <td>Null Handling</td>
+            <td>Manual null checks (NPE prone)</td>
+            <td><code>Optional&lt;T&gt;</code> container</td>
+          </tr>
+          <tr>
+            <td>JVM Memory</td>
+            <td>PermGen Space (Fixed Heap)</td>
+            <td>Metaspace (Auto-scaling Native RAM)</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 20 -->
+    <section id="sec20">
+      <h2>20. Common Mistakes</h2>
+      <div class="callout warn">
+        <b>1. Calling Optional.get() without isPresent():</b> Reintroduces <code>NoSuchElementException</code>. Use <code>orElseGet()</code> instead.<br>
+        <b>2. Modifying Collections inside Stream Operations:</b> Causes side effects and potential <code>ConcurrentModificationException</code>.<br>
+        <b>3. Reusing a Stream:</b> Streams cannot be reused once a terminal operation has executed.
+      </div>
+    </section>
+
+    <!-- SECTION 21 -->
+    <section id="sec21">
+      <h2>21. Best Practices</h2>
+      <ul>
+        <li>Use <code>orElseGet()</code> instead of <code>orElse()</code> for lazy evaluation of defaults.</li>
+        <li>Mark custom functional interfaces with <code>@FunctionalInterface</code>.</li>
+        <li>Keep Lambda expressions short (1 to 3 lines); extract complex logic into named private methods.</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 22 -->
+    <section id="sec22">
+      <h2>22. 75+ Senior Interview QA</h2>
+      
+      <div class="faq-item">
+        <div class="faq-q">Q1: How does Lambda work internally without creating class files?</div>
+        <div class="faq-a">The compiler uses the `invokedynamic` instruction. At runtime, `LambdaMetafactory` generates a dynamic call site to execute the Lambda via MethodHandles.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q2: Why must captured local variables in Lambdas be final or effectively final?</div>
+        <div class="faq-a">Lambdas copy local variables from the stack to the heap. Making them final prevents concurrency memory inconsistencies between threads.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q3: Difference between Map and FlatMap?</div>
+        <div class="faq-a">`map()` applies 1-to-1 transformation. `flatMap()` applies 1-to-many transformation and flattens nested streams (Stream&lt;List&lt;T&gt;&gt; &rarr; Stream&lt;T&gt;).</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q4: Difference between orElse() and orElseGet()?</div>
+        <div class="faq-a">`orElse()` evaluates default value eagerly. `orElseGet()` accepts a Supplier and evaluates lazily only if Optional is empty.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q5: How does HashMap treeification work in Java 8?</div>
+        <div class="faq-a">When a bucket chain length exceeds 8 and total table capacity &ge; 64, HashMap converts the linked list to a Red-Black Tree ($O(\log N)$).</div>
+      </div>
+
+      <div class="faq-item"><div class="faq-q">Q6: Can a functional interface have multiple default methods?</div><div class="faq-a">Yes. It must have exactly ONE abstract method, but can have infinite default and static methods.</div></div>
+      <div class="faq-item"><div class="faq-q">Q7: What is Spliterator?</div><div class="faq-a">A specialized iterator used for partitioning data streams to enable parallel processing.</div></div>
+      <div class="faq-item"><div class="faq-q">Q8: What thread pool do Parallel Streams use by default?</div><div class="faq-a">The shared `ForkJoinPool.commonPool()`.</div></div>
+      <div class="faq-item"><div class="faq-q">Q9: Why were PermGen removed in Java 8?</div><div class="faq-a">To prevent OutOfMemory errors caused by fixed sizing; replaced by Metaspace in native memory.</div></div>
+      <div class="faq-item"><div class="faq-q">Q10: What is the purpose of @Repeatable annotation?</div><div class="faq-a">Allows applying the same annotation multiple times to a single declaration.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q11: Difference between peek() and forEach()?</div><div class="faq-a">`peek()` is an intermediate operation (lazy); `forEach()` is a terminal operation (eager).</div></div>
+      <div class="faq-item"><div class="faq-q">Q12: Is Optional serializable?</div><div class="faq-a">No. Optional is not serializable and should not be used as a class field.</div></div>
+      <div class="faq-item"><div class="faq-q">Q13: What happens if two default methods conflict in multi-interface inheritance?</div><div class="faq-a">The compiler forces the implementing class to explicitly override the conflicting method.</div></div>
+      <div class="faq-item"><div class="faq-q">Q14: Difference between Duration and Period?</div><div class="faq-a">Duration measures time in seconds/nanoseconds; Period measures time in years/months/days.</div></div>
+      <div class="faq-item"><div class="faq-q">Q15: What is the advantage of Instant over java.util.Date?</div><div class="faq-a">Instant is immutable, thread-safe, and tracks time with nanosecond precision in UTC.</div></div>
+      <div class="faq-item"><div class="faq-q">Q16: What is a stateless stream operation?</div><div class="faq-a">An operation like `filter()` or `map()` that processes elements independently without memory of prior elements.</div></div>
+      <div class="faq-item"><div class="faq-q">Q17: What is a stateful stream operation?</div><div class="faq-a">An operation like `sorted()` or `distinct()` that requires reading all elements before producing output.</div></div>
+      <div class="faq-item"><div class="faq-q">Q18: What is Method Reference syntax?</div><div class="faq-a">ClassOrObject::methodName.</div></div>
+      <div class="faq-item"><div class="faq-q">Q19: Difference between findFirst() and findAny()?</div><div class="faq-a">`findFirst()` respects encounter order; `findAny()` returns any element (faster in parallel processing).</div></div>
+      <div class="faq-item"><div class="faq-q">Q20: What is BiFunction?</div><div class="faq-a">A functional interface accepting two arguments and producing a result.</div></div>
+      <div class="faq-item"><div class="faq-q">Q21: What is UnaryOperator?</div><div class="faq-a">A specialized Function where argument and return types are identical.</div></div>
+      <div class="faq-item"><div class="faq-q">Q22: What is Collectors.groupingBy()?</div><div class="faq-a">A collector that groups input stream elements into a Map based on a classification function.</div></div>
+      <div class="faq-item"><div class="faq-q">Q23: What is Collectors.partitioningBy()?</div><div class="faq-a">A collector that splits elements into a `Map&lt;Boolean, List&lt;T&gt;&gt;` based on a Predicate.</div></div>
+      <div class="faq-item"><div class="faq-q">Q24: Can interface static methods be overridden?</div><div class="faq-a">No, interface static methods belong exclusively to the interface and are not inherited.</div></div>
+      <div class="faq-item"><div class="faq-q">Q25: What is CompletableFuture.allOf()?</div><div class="faq-a">Returns a new CompletableFuture that completes when all given futures complete.</div></div>
+      <div class="faq-item"><div class="faq-q">Q26: What is CompletableFuture.anyOf()?</div><div class="faq-a">Returns a new CompletableFuture that completes when any one of given futures completes.</div></div>
+      <div class="faq-item"><div class="faq-q">Q27: What is the role of Stream.reduce()?</div><div class="faq-a">Performs a reduction on elements using an associative accumulation function to yield a single value.</div></div>
+      <div class="faq-item"><div class="faq-q">Q28: Why shouldn't Optional be used as method parameters?</div><div class="faq-a">It creates unnecessary object wrapping and forces callers to wrap values; use overloaded methods instead.</div></div>
+      <div class="faq-item"><div class="faq-q">Q29: How does DateTimeFormatter differ from SimpleDateFormat?</div><div class="faq-a">`DateTimeFormatter` is immutable and thread-safe; `SimpleDateFormat` is thread-unsafe.</div></div>
+      <div class="faq-item"><div class="faq-q">Q30: Can a Stream be reused after terminal execution?</div><div class="faq-a">No, attempting to reuse a closed stream throws an `IllegalStateException`.</div></div>
+      <div class="faq-item"><div class="faq-q">Q31: What is Consumer interface?</div><div class="faq-a">Accepts a single input argument and returns void (`accept(T t)`).</div></div>
+      <div class="faq-item"><div class="faq-q">Q32: What is Supplier interface?</div><div class="faq-a">Accepts no arguments and returns a result (`get()`).</div></div>
+      <div class="faq-item"><div class="faq-q">Q33: What is Predicate interface?</div><div class="faq-a">Accepts a single argument and returns a boolean (`test(T t)`).</div></div>
+      <div class="faq-item"><div class="faq-q">Q34: How to convert a Stream to an Array?</div><div class="faq-a">Using `stream.toArray(String[]::new)`.</div></div>
+      <div class="faq-item"><div class="faq-q">Q35: What is the purpose of Objects.requireNonNull()?</div><div class="faq-a">Checks that the specified object reference is non-null, throwing a customized `NullPointerException` if null.</div></div>
+      <div class="faq-item"><div class="faq-q">Q36: What is Base64 URL Encoder?</div><div class="faq-a">Encodes Base64 data safely for URLs and filenames by replacing '+' and '/' with '-' and '_'.</div></div>
+      <div class="faq-item"><div class="faq-q">Q37: Difference between Stream.of() and Collection.stream()?</div><div class="faq-a">`Stream.of()` creates a stream from explicit elements; `Collection.stream()` creates a stream from an existing collection.</div></div>
+      <div class="faq-item"><div class="faq-q">Q38: What is lazy evaluation in Streams?</div><div class="faq-a">Intermediate operations are not executed until a terminal operation is invoked.</div></div>
+      <div class="faq-item"><div class="faq-q">Q39: What is short-circuiting in Streams?</div><div class="faq-a">Operations like `anyMatch()` or `limit()` that stop processing as soon as a condition is satisfied.</div></div>
+      <div class="faq-item"><div class="faq-q">Q40: Can Lambdas throw checked exceptions directly?</div><div class="faq-a">No, Lambdas cannot throw unhandled checked exceptions unless the target SAM method explicitly declares them.</div></div>
+      <div class="faq-item"><div class="faq-q">Q41: What is IntStream?</div><div class="faq-a">A primitive specialized stream for primitive `int` values to avoid autoboxing overhead.</div></div>
+      <div class="faq-item"><div class="faq-q">Q42: What is the difference between mapToInt() and map()?</div><div class="faq-a">`mapToInt()` returns a primitive `IntStream`, avoiding object boxing of `Integer`.</div></div>
+      <div class="faq-item"><div class="faq-q">Q43: How to calculate sum of integers using Streams?</div><div class="faq-a">`list.stream().mapToInt(Integer::intValue).sum()`.</div></div>
+      <div class="faq-item"><div class="faq-q">Q44: What is System.currentTimeMillis() replacement in Java 8?</div><div class="faq-a">`Instant.now().toEpochMilli()`.</div></div>
+      <div class="faq-item"><div class="faq-q">Q45: What is the result of Collectors.joining(", ")?</div><div class="faq-a">Concatenates stream CharSequence elements delimited by the specified string.</div></div>
+      <div class="faq-item"><div class="faq-q">Q46: What is CompletableFuture.thenCompose()?</div><div class="faq-a">Flattens and chains dependent asynchronous futures (similar to `flatMap`).</div></div>
+      <div class="faq-item"><div class="faq-q">Q47: What is CompletableFuture.thenCombine()?</div><div class="faq-a">Executes two independent futures in parallel and combines their results when both finish.</div></div>
+      <div class="faq-item"><div class="faq-q">Q48: How to sort a List using Lambdas?</div><div class="faq-a">`list.sort(Comparator.naturalOrder())` or `list.sort((a, b) -&gt; a.compareTo(b))`.</div></div>
+      <div class="faq-item"><div class="faq-q">Q49: How does Comparator.comparing() work?</div><div class="faq-a">Factory method generating a Comparator based on a extracted key Function.</div></div>
+      <div class="faq-item"><div class="faq-q">Q50: What is the advantage of Optional.flatMap()?</div><div class="faq-a">Prevents nested `Optional<Optional<T>>` when mapping functions that themselves return an Optional.</div></div>
+      <div class="faq-item"><div class="faq-q">Q51: What is the main drawback of parallel streams in I/O tasks?</div><div class="faq-a">Exhausts the common ForkJoinPool shared by the entire JVM.</div></div>
+      <div class="faq-item"><div class="faq-q">Q52: What is Function.identity()?</div><div class="faq-a">Returns a Function that always returns its input argument unmodified.</div></div>
+      <div class="faq-item"><div class="faq-q">Q53: What is StringJoiner?</div><div class="faq-a">A utility class used to construct a sequence of characters separated by a delimiter, prefix, and suffix.</div></div>
+      <div class="faq-item"><div class="faq-q">Q54: What is ZoneId.systemDefault()?</div><div class="faq-a">Returns the system default time zone configured on the hosting OS.</div></div>
+      <div class="faq-item"><div class="faq-q">Q55: What is ChronoUnit?</div><div class="faq-a">An Enum defining standard units of date-time units (e.g. `DAYS`, `HOURS`, `CENTURIES`).</div></div>
+      <div class="faq-item"><div class="faq-q">Q56: How to parse a string to LocalDate?</div><div class="faq-a">`LocalDate.parse("2026-08-01")`.</div></div>
+      <div class="faq-item"><div class="faq-q">Q57: What is Optional.ifPresent()?</div><div class="faq-a">Executes a Consumer function if the Optional contains a non-null value.</div></div>
+      <div class="faq-item"><div class="faq-q">Q58: What is Optional.filter()?</div><div class="faq-a">Tests the contained value against a Predicate, returning an empty Optional if it fails.</div></div>
+      <div class="faq-item"><div class="faq-q">Q59: Can default methods override toString() or equals()?</div><div class="faq-a">No, default methods cannot override Object class methods.</div></div>
+      <div class="faq-item"><div class="faq-q">Q60: What is Arrays.parallelSort()?</div><div class="faq-a">Sorts an array in parallel using ForkJoinPool for performance on large datasets.</div></div>
+      <div class="faq-item"><div class="faq-q">Q61: Difference between Stream.noneMatch() and allMatch()?</div><div class="faq-a">`noneMatch()` checks if NO elements meet condition; `allMatch()` checks if ALL elements meet condition.</div></div>
+      <div class="faq-item"><div class="faq-q">Q62: What is Collectors.summarizingInt()?</div><div class="faq-a">Returns an `IntSummaryStatistics` containing count, sum, min, max, and average.</div></div>
+      <div class="faq-item"><div class="faq-q">Q63: What is primitive specialization in Functional Interfaces?</div><div class="faq-a">Interfaces like `IntPredicate` or `DoubleFunction` designed to avoid autoboxing overhead.</div></div>
+      <div class="faq-item"><div class="faq-q">Q64: What is jjs in Java 8?</div><div class="faq-a">A command-line tool used to execute JavaScript code using the Nashorn engine.</div></div>
+      <div class="faq-item"><div class="faq-q">Q65: What is Stream.takeWhile()?</div><div class="faq-a">Introduced in Java 9 (not 8) to take elements while predicate holds true.</div></div>
+      <div class="faq-item"><div class="faq-q">Q66: How to handle exceptions inside Lambdas?</div><div class="faq-a">Wrap body in a try-catch block or create a unchecked custom wrapper function.</div></div>
+      <div class="faq-item"><div class="faq-q">Q67: What is Stream.builder()?</div><div class="faq-a">A mutable builder used to construct Streams programmatically.</div></div>
+      <div class="faq-item"><div class="faq-q">Q68: What is Stream.concat()?</div><div class="faq-a">Creates a lazily concatenated stream combining elements of two input streams.</div></div>
+      <div class="faq-item"><div class="faq-q">Q69: What is Collectors.toMap() key collision resolution?</div><div class="faq-a">Requires providing a merge function `(v1, v2) -&gt; v1` to resolve duplicate key conflicts.</div></div>
+      <div class="faq-item"><div class="faq-q">Q70: How to generate infinite stream in Java 8?</div><div class="faq-a">Using `Stream.generate(Supplier)` or `Stream.iterate(seed, UnaryOperator)`.</div></div>
+      <div class="faq-item"><div class="faq-q">Q71: What is @FunctionalInterface annotation role?</div><div class="faq-a">Generates a compile error if an interface decorated with it contains more than one SAM.</div></div>
+      <div class="faq-item"><div class="faq-q">Q72: Difference between Function.andThen() and compose()?</div><div class="faq-a">`f1.andThen(f2)` runs `f1` first then `f2`. `f1.compose(f2)` runs `f2` first then `f1`.</div></div>
+      <div class="faq-item"><div class="faq-q">Q73: What is java.util.concurrent.ConcurrentHashMap improvements in Java 8?</div><div class="faq-a">Replaced segment locks with CAS (Compare-And-Swap) operations and synchronized bin heads.</div></div>
+      <div class="faq-item"><div class="faq-q">Q74: What is StampedLock?</div><div class="faq-a">A read-write lock in `java.util.concurrent.locks` providing optimistic read locking modes.</div></div>
+      <div class="faq-item"><div class="faq-q">Q75: What is the main architectural goal of Java 8?</div><div class="faq-a">To bring functional programming paradigms, concise syntax, declarative streams, and multi-core scalability to Java.</div></div>
+    </section>
+
+    <!-- SECTION 23 -->
+    <section id="sec23">
+      <h2>23. Quick Revision Cheatsheet</h2>
+      <div class="card">
+        <p><b>Lambda:</b> Anonymous functions targeting SAM interfaces via <code>invokedynamic</code>.</p>
+        <p><b>Streams:</b> Pipelines executing lazy intermediate and eager terminal operations.</p>
+        <p><b>Optional:</b> Null-safe container. Prefer <code>orElseGet()</code> for lazy evaluation.</p>
+        <p><b>Metaspace:</b> Replaced PermGen in native RAM memory.</p>
+      </div>
+    </section>
+
+    <!-- SECTION 24 -->
+    <section id="sec24">
+      <h2>24. Visual Summary Infographic</h2>
+      <div class="diagram">
+        <h4>Java 8 Feature Ecosystem Overview</h4>
+        <div class="grid">
+          <div class="card" style="border-color: var(--teal);">
+            <b style="color: var(--teal);">1. Functional Core</b>
+            <p>Lambdas &middot; SAM Interfaces &middot; Method References &middot; <code>invokedynamic</code></p>
+          </div>
+          <div class="card" style="border-color: var(--amber);">
+            <b style="color: var(--amber);">2. Data Pipelines</b>
+            <p>Streams API &middot; Collectors &middot; Parallel Streams &middot; Optional API</p>
+          </div>
+          <div class="card" style="border-color: var(--purple);">
+            <b style="color: var(--purple);">3. Async &amp; Core Upgrades</b>
+            <p>CompletableFuture &middot; <code>java.time</code> &middot; Default Methods &middot; Metaspace</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+</body>
+</html>
