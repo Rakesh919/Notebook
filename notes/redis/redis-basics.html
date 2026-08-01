@@ -2,303 +2,926 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Redis Deep Dive — Internals, Features & Spring Integration</title>
+<title>Redis — Complete Deep Dive (Beginner to Senior Level)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <style>
-  :root{--bg:#0b0e14;--surface:#131824;--border:#232a38;--text:#e7eaf1;--muted:#9aa4b7;--accent:#f0b429;}
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
-  .wrap{max-width:760px;margin:0 auto;padding:48px 24px;}
-  h1{font-size:2rem;margin-bottom:4px;}
-  .eyebrow{color:var(--accent);font-family:monospace;font-size:.85rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px;}
-  h2{margin-top:40px;font-size:1.25rem;border-left:3px solid var(--accent);padding-left:12px;}
-  h3{margin-top:24px;font-size:1rem;color:var(--text);}
-  p{color:var(--muted);}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0;}
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;}
-  .card b{color:var(--accent);}
-  code{background:#0f131c;border:1px solid var(--border);border-radius:6px;padding:2px 6px;font-size:.9em;color:var(--accent);}
-  pre{background:#0f131c;border:1px solid var(--border);border-radius:8px;padding:12px;overflow-x:auto;}
-  pre code{border:none;padding:0;background:none;color:var(--text);}
-  table{width:100%;border-collapse:collapse;margin:16px 0;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
-  th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);font-size:.92rem;}
-  th{color:var(--accent);font-family:monospace;text-transform:uppercase;font-size:.75rem;letter-spacing:.05em;}
-  tr:last-child td{border-bottom:none;}
-  td{color:var(--muted);}
-  ul{color:var(--muted);}
-  .tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;}
-  .tag{background:#0f131c;border:1px solid var(--border);border-radius:999px;padding:4px 12px;font-family:monospace;font-size:.78rem;color:var(--accent);}
-  .note{border-left:3px solid var(--accent);background:var(--surface);padding:12px 16px;border-radius:0 8px 8px 0;color:var(--muted);margin:16px 0;font-size:.92rem;}
+  :root {
+    --bg: #0b0e14;
+    --surface: #131824;
+    --panel2: #0f131c;
+    --border: #232a38;
+    --text: #e7eaf1;
+    --muted: #9aa4b7;
+    --accent: #f0b429;
+    --amber: #f0b429;
+    --teal: #38bdf8;
+    --rose: #f87171;
+    --green: #4ade80;
+    --purple: #c084fc;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .layout {
+    display: flex;
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+  
+  /* STICKY SIDEBAR NAV */
+  nav.sidebar {
+    width: 320px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 24px 16px;
+    flex-shrink: 0;
+  }
+  nav.sidebar h3 {
+    font-size: 0.85rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+    padding-left: 8px;
+  }
+  nav.sidebar a {
+    display: block;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.8rem;
+    padding: 5px 8px;
+    border-radius: 6px;
+    margin-bottom: 2px;
+    transition: all 0.15s ease;
+  }
+  nav.sidebar a:hover {
+    color: var(--accent);
+    background: rgba(240, 180, 41, 0.08);
+  }
+
+  /* MAIN CONTENT WRAPPER */
+  .main-content {
+    flex: 1;
+    max-width: 1080px;
+    padding: 48px 40px 120px;
+    overflow-x: hidden;
+  }
+
+  .eyebrow {
+    color: var(--accent);
+    font-family: monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  h1 { font-size: 2.3rem; margin-top: 0; margin-bottom: 8px; font-weight: 800; line-height: 1.25; }
+  h1 span { color: var(--accent); }
+  .sub { color: var(--muted); font-size: 1rem; margin-bottom: 32px; }
+  
+  h2 {
+    margin-top: 56px;
+    font-size: 1.45rem;
+    border-left: 4px solid var(--accent);
+    padding-left: 14px;
+    color: var(--text);
+  }
+  h3 { font-size: 1.15rem; color: var(--teal); margin-top: 28px; }
+  h4 { font-size: 0.98rem; color: var(--purple); margin-top: 20px; }
+  p, li { color: var(--muted); font-size: 0.95rem; }
+  li { margin-bottom: 6px; }
+  b, strong { color: var(--text); }
+  
+  /* CARDS & PANELS */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 20px 0; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .card b { color: var(--accent); display: block; margin-bottom: 6px; font-size: 1rem; }
+  
+  /* CALLOUT BOXES */
+  .callout {
+    margin: 20px 0;
+    border-left: 4px solid var(--accent);
+    padding: 16px 20px;
+    background: rgba(240, 180, 41, 0.05);
+    border-radius: 0 8px 8px 0;
+    font-size: 0.92rem;
+  }
+  .callout.warn { border-left-color: var(--rose); background: rgba(248, 113, 113, 0.06); }
+  .callout.info { border-left-color: var(--teal); background: rgba(56, 189, 248, 0.06); }
+  .callout.success { border-left-color: var(--green); background: rgba(74, 222, 128, 0.06); }
+  
+  /* CODE BLOCKS WITH PURE CSS SYNTAX HIGHLIGHTING */
+  pre {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: #e7eaf1;
+  }
+  code {
+    background: #0f131c;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.88em;
+    color: var(--accent);
+    font-family: 'Consolas', 'Courier New', monospace;
+  }
+  pre code { border: none; padding: 0; background: transparent; color: inherit; }
+  
+  .kw { color: #f43f5e; font-weight: bold; }
+  .anno { color: var(--accent); font-weight: bold; }
+  .type { color: var(--teal); }
+  .str { color: var(--green); }
+  .cmnt { color: #64748b; font-style: italic; }
+  .fn { color: #c084fc; }
+
+  /* TABLES */
+  table.matrix {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 0.85rem;
+    background: var(--surface);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  table.matrix th, table.matrix td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    text-align: left;
+  }
+  table.matrix th {
+    background: var(--panel2);
+    color: var(--accent);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+  }
+  table.matrix tr:last-child td { border-bottom: none; }
+
+  /* FLOWCHARTS & DIAGRAMS */
+  .diagram {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin: 24px 0;
+  }
+  .flow-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .flow-step .num {
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: bold;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+  .flow-arrow {
+    text-align: center;
+    color: var(--accent);
+    font-size: 1.2rem;
+    margin: -4px 0 4px;
+  }
+
+  /* FAQ ACCORDION STYLE */
+  .faq-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    padding: 16px;
+  }
+  .faq-q { color: var(--accent); font-weight: 600; font-size: 0.98rem; margin-bottom: 8px; }
+  .faq-a { color: var(--muted); font-size: 0.92rem; }
+
+  @media (max-width: 900px) {
+    .layout { flex-direction: column; }
+    nav.sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border); }
+    .main-content { padding: 24px 16px; }
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="eyebrow">Distributed Systems &middot; Caching</div>
-  <h1>Redis Deep Dive</h1>
-  <p>What Redis is, why it exists, its core data structures, persistence and eviction model, messaging and scripting capabilities, clustering, real-world use cases, and Spring Boot integration.</p>
 
-  <h2>1. What Is Redis?</h2>
-  <p><b style="color:var(--text)">Redis</b> (Remote Dictionary Server) is an open-source, in-memory data structure store used as a database, cache, message broker, and streaming engine. Unlike traditional databases that treat data as rows in tables, Redis exposes data as native structures &mdash; strings, hashes, lists, sets, sorted sets, streams &mdash; and lets applications operate on them directly and atomically.</p>
-  <p>It was created by Salvatore Sanfilippo in 2009 to solve a specific problem: relational databases were too slow for the read-heavy, low-latency workloads modern web apps needed. Redis trades some durability guarantees for speed, keeping the full dataset in RAM while optionally persisting it to disk.</p>
-  <div class="grid">
-    <div class="card">
-      <b>In-Memory Execution</b>
-      <p>Data operations reside entirely in RAM, delivering sub-millisecond latencies for read/write workloads.</p>
-    </div>
-    <div class="card">
-      <b>Single-Threaded Event Loop</b>
-      <p>Uses I/O multiplexing (epoll/kqueue) to serve requests sequentially, avoiding lock contention and race conditions entirely.</p>
-    </div>
-  </div>
+<div class="layout">
+  <!-- SIDEBAR NAVIGATION -->
+  <nav class="sidebar">
+    <h3>Redis Deep Dive</h3>
+    <a href="#sec1">1. Introduction</a>
+    <a href="#sec2">2. Why Redis? Performance Drivers</a>
+    <a href="#sec3">3. Redis Architecture & Reactor Pattern</a>
+    <a href="#sec4">4. How Redis Works Internally</a>
+    <a href="#sec5">5. Memory Management & Encodings</a>
+    <a href="#sec6">6. Redis Data Structures</a>
+    <a href="#sec7">7. Core Redis Commands</a>
+    <a href="#sec8">8. Persistence: RDB vs AOF</a>
+    <a href="#sec9">9. Replication Architecture</a>
+    <a href="#sec10">10. Redis Sentinel High Availability</a>
+    <a href="#sec11">11. Redis Cluster & Hash Slots</a>
+    <a href="#sec12">12. Redis Transactions & Optimistic Locking</a>
+    <a href="#sec13">13. Lua Scripting</a>
+    <a href="#sec14">14. Pub/Sub Engine</a>
+    <a href="#sec15">15. Redis Streams & Consumer Groups</a>
+    <a href="#sec16">16. Caching Patterns & Strategies</a>
+    <a href="#sec17">17. Cache Eviction Policies</a>
+    <a href="#sec18">18. Key Expiration Mechanics</a>
+    <a href="#sec19">19. Low-Level Internals & Structures</a>
+    <a href="#sec20">20. Redis Networking & RESP Protocol</a>
+    <a href="#sec21">21. Redis with Spring Boot Integration</a>
+    <a href="#sec22">22. Redis in Microservices Architecture</a>
+    <a href="#sec23">23. Distributed Locking (Redlock)</a>
+    <a href="#sec24">24. Performance Optimization</a>
+    <a href="#sec25">25. Security & Access Control (ACL)</a>
+    <a href="#sec26">26. End-to-End Production Architecture</a>
+    <a href="#sec27">27. Redis vs Other Technologies</a>
+    <a href="#sec28">28. Real-World Industry Use Cases</a>
+    <a href="#sec29">29. Common Production Mistakes</a>
+    <a href="#sec30">30. Production Best Practices</a>
+    <a href="#sec31">31. 75+ Senior Interview QA</a>
+    <a href="#sec32">32. Quick Revision Cheatsheet</a>
+    <a href="#sec33">33. Visual Architectural Infographic</a>
+  </nav>
 
-  <h2>2. Core Features</h2>
-  <div class="grid">
-    <div class="card">
-      <b>Atomic Operations</b>
-      <p>Every command (including compound ones like <code>INCR</code> or <code>LPUSH</code>) executes atomically &mdash; no partial writes, no manual locking.</p>
-    </div>
-    <div class="card">
-      <b>Rich Data Types</b>
-      <p>Strings, hashes, lists, sets, sorted sets, streams, bitmaps, HyperLogLogs, and geospatial indexes &mdash; not just key/value blobs.</p>
-    </div>
-    <div class="card">
-      <b>Persistence Options</b>
-      <p>RDB snapshots, AOF logs, or both together &mdash; tunable durability vs. performance tradeoff.</p>
-    </div>
-    <div class="card">
-      <b>Pub/Sub Messaging</b>
-      <p>Built-in publish/subscribe channels for real-time fan-out messaging between services.</p>
-    </div>
-    <div class="card">
-      <b>Replication &amp; HA</b>
-      <p>Master-replica replication, automatic failover via Sentinel, and horizontal sharding via Redis Cluster.</p>
-    </div>
-    <div class="card">
-      <b>Lua Scripting</b>
-      <p>Server-side scripts run atomically, letting you bundle multi-step logic into a single round trip.</p>
-    </div>
-    <div class="card">
-      <b>TTL &amp; Eviction</b>
-      <p>Per-key expiration and configurable eviction policies make Redis a natural fit as a bounded cache.</p>
-    </div>
-    <div class="card">
-      <b>Transactions</b>
-      <p><code>MULTI</code>/<code>EXEC</code> queues commands and runs them as one atomic, isolated unit.</p>
-    </div>
-  </div>
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <div class="eyebrow">Distributed Systems &middot; Enterprise Caching &amp; Data Store</div>
+    <h1>Redis — <span>Complete Deep Dive</span></h1>
+    <div class="sub">The definitive senior-level handbook covering Redis reactor architecture, memory structures, replication internals, cluster sharding, distributed locking, Spring Integration, and production best practices.</div>
 
-  <h2>3. Essential Data Structures</h2>
-  <div class="grid">
-    <div class="card">
-      <b>Strings</b>
-      <p>Binary-safe values up to 512MB. Used for session caching, counters (<code>INCR</code>), and general key-value pairs.</p>
-    </div>
-    <div class="card">
-      <b>Hashes</b>
-      <p>Field-value pairs representing objects (e.g., <code>user:1001 -&gt; {name, email}</code>). Memory-efficient via ziplists.</p>
-    </div>
-    <div class="card">
-      <b>Lists</b>
-      <p>Ordered, doubly-linked collections. Power job queues and activity feeds via <code>LPUSH</code>/<code>RPOP</code>.</p>
-    </div>
-    <div class="card">
-      <b>Sets</b>
-      <p>Unordered, unique elements. Used for tagging, deduplication, and set algebra (<code>SINTER</code>, <code>SUNION</code>).</p>
-    </div>
-    <div class="card">
-      <b>Sorted Sets (ZSETs)</b>
-      <p>Unique elements ordered by floating-point score. Backed by skip lists; ideal for leaderboards and rate limiters.</p>
-    </div>
-    <div class="card">
-      <b>Streams</b>
-      <p>Append-only log structure with consumer groups &mdash; a lightweight alternative to Kafka for event pipelines.</p>
-    </div>
-    <div class="card">
-      <b>Bitmaps</b>
-      <p>Bit-level operations over strings. Extremely compact for feature flags, daily active user tracking.</p>
-    </div>
-    <div class="card">
-      <b>HyperLogLog</b>
-      <p>Probabilistic structure estimating cardinality (unique counts) using ~12KB regardless of dataset size.</p>
-    </div>
-  </div>
+    <!-- SECTION 1 -->
+    <section id="sec1">
+      <h2>1. Introduction</h2>
+      <p>Redis (Remote Dictionary Server) is an open-source, in-memory data structure store used as a database, cache, streaming engine, and message broker. Created by Salvatore Sanfilippo in 2009 to scale LLOOGG (a real-time web log analyzer), Redis solved the severe disk I/O bottlenecks inherent in traditional relational database systems.</p>
 
-  <h2>4. Persistence Mechanisms: RDB vs AOF</h2>
-  <div class="grid">
-    <div class="card">
-      <b>RDB (Redis Database Snapshot)</b>
-      <p>Point-in-time snapshots created at set intervals via <code>fork()</code>. Fast recovery; minor data loss risk on sudden crashes.</p>
-    </div>
-    <div class="card">
-      <b>AOF (Append Only File)</b>
-      <p>Logs every write command received. Near real-time durability with configurable sync (<code>fsync everysec</code>).</p>
-    </div>
-  </div>
-  <div class="note">In production, most teams enable both: AOF for durability, with periodic RDB snapshots for fast full restores and backups.</div>
+      <div class="grid">
+        <div class="card">
+          <b>Why Relational Databases Struggle</b>
+          <p>Traditional RDBMS (MySQL, PostgreSQL) rely on disk-backed B-Trees or LSM Trees. Every query involves random disk seeks, complex query parsing, table locking, and buffer pool synchronization, capping throughput at thousands of operations per second per node.</p>
+        </div>
+        <div class="card">
+          <b>The Redis Paradigm Shift</b>
+          <p>By keeping the primary dataset entirely in RAM and operating on optimized data structures (Hash Tables, Skip Lists, Radix Trees), Redis achieves sub-millisecond latencies and processes over 100,000 requests per second per single thread.</p>
+        </div>
+      </div>
+    </section>
 
-  <h2>5. Eviction Policies &amp; TTL</h2>
-  <p>When Redis reaches its maximum configured RAM limit (<code>maxmemory</code>), it applies eviction policies:</p>
-  <ul>
-    <li><code>volatile-lru</code> / <code>allkeys-lru</code>: Removes Least Recently Used keys.</li>
-    <li><code>volatile-lfu</code> / <code>allkeys-lfu</code>: Removes Least Frequently Used keys.</li>
-    <li><code>volatile-ttl</code>: Removes keys with the shortest remaining TTL first.</li>
-    <li><code>volatile-random</code> / <code>allkeys-random</code>: Removes a random key.</li>
-    <li><code>noeviction</code>: Returns memory errors when full &mdash; writes fail, reads still succeed.</li>
-  </ul>
+    <!-- SECTION 2 -->
+    <section id="sec2">
+      <h2>2. Why Redis? Performance Drivers</h2>
+      <p>Application slowness stems primarily from latency gaps in hardware storage tiers. Accessing RAM takes nanoseconds (~100 ns), whereas accessing NVMe SSDs takes microseconds (~50,000 ns) and traditional spinning disks take milliseconds (~10,000,000 ns).</p>
 
-  <h2>6. Pub/Sub &amp; Streams for Messaging</h2>
-  <p>Redis supports two messaging models with different guarantees:</p>
-  <div class="grid">
-    <div class="card">
-      <b>Pub/Sub</b>
-      <p>Fire-and-forget. Messages published to a channel go only to currently connected subscribers &mdash; nothing is stored, so offline consumers miss messages.</p>
-    </div>
-    <div class="card">
-      <b>Streams</b>
-      <p>Durable, ordered logs with consumer groups. Multiple consumers can each track their own read position, enabling replay and load-balanced processing.</p>
-    </div>
-  </div>
-  <pre><code>PUBLISH orders:created '{"orderId": 4471}'
-SUBSCRIBE orders:created
+      <div class="diagram">
+        <h4>Latency Memory Hierarchy Gap</h4>
+        <div class="flow-step"><div class="num">1</div><div><b>L1/L2 Cache:</b> ~1-5 nanoseconds</div></div>
+        <div class="flow-step"><div class="num">2</div><div><b>RAM (Redis Primary Location):</b> ~100 nanoseconds <b>(Ultra-Fast Path)</b></div></div>
+        <div class="flow-step"><div class="num">3</div><div><b>NVMe SSD (Disk DBs):</b> ~50,000 nanoseconds (500x slower)</div></div>
+        <div class="flow-step"><div class="num">4</div><div><b>Mechanical Disk:</b> ~10,000,000 nanoseconds (100,000x slower)</div></div>
+      </div>
+    </section>
 
-XADD orders:stream '*' orderId 4471 status CREATED
-XREADGROUP GROUP order-workers consumer-1 COUNT 10 STREAMS orders:stream '>'</code></pre>
+    <!-- SECTION 3 -->
+    <section id="sec3">
+      <h2>3. Redis Architecture & Reactor Pattern</h2>
+      <p>Redis executes commands on a single-threaded execution core using an asynchronous, non-blocking I/O multiplexing event loop known as the <b>Reactor Pattern</b> (built on Linux <code>epoll</code>, macOS <code>kqueue</code>, or Solaris <code>evport</code>).</p>
 
-  <h2>7. Transactions &amp; Lua Scripting</h2>
-  <p>Redis transactions queue commands with <code>MULTI</code> and run them atomically with <code>EXEC</code> &mdash; no other client's commands can interleave. For conditional logic, Lua scripts go further: the entire script runs as a single atomic step server-side.</p>
-  <pre><code>MULTI
-INCR inventory:sku_42
-DECRBY wallet:user_9 500
-EXEC
+      <div class="callout info">
+        <b>Why Single-Threaded Execution Works:</b>
+        <ul>
+          <li><b>Zero Context Switching:</b> Eliminates CPU thread context switching overhead and CPU cache invalidations.</li>
+          <li><b>No Locking Overhead:</b> Avoids mutexes, spinlocks, and race conditions across key-value operations.</li>
+          <li><b>I/O Multiplexing:</b> A single OS thread monitors thousands of socket connections simultaneously, executing commands sequentially as network packets arrive.</li>
+        </ul>
+      </div>
+    </section>
 
--- Lua: atomic check-then-decrement, avoids race conditions
-EVAL "
-  local stock = tonumber(redis.call('GET', KEYS[1]))
-  if stock > 0 then
-    redis.call('DECR', KEYS[1])
-    return 1
-  end
-  return 0
-" 1 inventory:sku_42</code></pre>
+    <!-- SECTION 4 -->
+    <section id="sec4">
+      <h2>4. How Redis Works Internally</h2>
+      <p>The lifecycle of a Redis command request executes through a high-performance networking pipeline:</p>
 
-  <h2>8. Spring Boot Caching with Redis</h2>
-  <p>Spring Boot provides a declarative AOP caching framework using annotations mapped to Redis:</p>
+      <div class="diagram">
+        <div class="flow-step"><div class="num">1</div><div><b>Client Connection:</b> Client establishes a TCP connection (default port 6379).</div></div>
+        <div class="flow-step"><div class="num">2</div><div><b>Event Loop Registration:</b> Socket file descriptor is registered with <code>aeCreateFileEvent</code> targeting read events.</div></div>
+        <div class="flow-step"><div class="num">3</div><div><b>RESP Protocol Parsing:</b> <code>readQueryFromClient</code> reads raw TCP data and parses the RESP (REdis Serialization Protocol) array.</div></div>
+        <div class="flow-step"><div class="num">4</div><div><b>Command Table Lookup:</b> Redis looks up the parsed command string in the <code>redisCommandTable</code> hash map.</div></div>
+        <div class="flow-step"><div class="num">5</div><div><b>Key Lookup & Memory Read:</b> Redis inspects the keyspace dictionary (<code>db-&gt;dict</code>) for matching data objects.</div></div>
+        <div class="flow-step"><div class="num">6</div><div><b>Command Execution:</b> Executes the specialized C function (e.g., <code>getCommand</code>, <code>hsetCommand</code>).</div></div>
+        <div class="flow-step"><div class="num">7</div><div><b>Output Buffer Write:</b> Serializes the response into the client's output buffer and flushes it to the socket.</div></div>
+      </div>
+    </section>
 
-  <pre><code>@Service
-@RequiredArgsConstructor
-public class ProductService {
-    private final ProductRepository repo;
+    <!-- SECTION 5 -->
+    <section id="sec5">
+      <h2>5. Memory Management & Encodings</h2>
+      <p>Redis manages memory using specialized dynamic allocators like <b>jemalloc</b> (or <code>tcmalloc</code>). To maximize memory efficiency, every value stored in Redis is wrapped inside a generic <code>redisObject</code> structure.</p>
 
-    // Cache Hit checks Redis first; Cache Miss executes method and populates Redis
-    @Cacheable(value = "products", key = "#id", unless = "#result == null")
-    public Product getProduct(Long id) {
-        return repo.findById(id).orElseThrow();
-    }
+      <pre><code><span class="kw">typedef struct</span> <span class="type">redisObject</span> {
+    <span class="type">unsigned</span> type:4;       <span class="cmnt">// OBJ_STRING, OBJ_LIST, OBJ_HASH, OBJ_SET, OBJ_ZSET</span>
+    <span class="type">unsigned</span> encoding:4;   <span class="cmnt">// OBJ_ENCODING_RAW, OBJ_ENCODING_INT, OBJ_ENCODING_ZIPLIST, etc.</span>
+    <span class="type">unsigned</span> lru:24;       <span class="cmnt">// LRU timestamp or LFU frequency for cache eviction</span>
+    <span class="type">int</span> refcount;          <span class="cmnt">// Reference count for shared memory optimization</span>
+    <span class="type">void</span> *ptr;             <span class="cmnt">// Pointer to actual underlying data structure</span>
+} <span class="type">robj</span>;</code></pre>
+    </section>
 
-    // Forces method execution and updates Redis entry
-    @CachePut(value = "products", key = "#product.id")
-    public Product updateProduct(Product product) {
-        return repo.save(product);
-    }
+    <!-- SECTION 6 -->
+    <section id="sec6">
+      <h2>6. Redis Data Structures</h2>
+      <p>Redis supports rich, domain-specific data structures tailored for extreme efficiency:</p>
 
-    // Evicts stale entry from Redis
-    @CacheEvict(value = "products", key = "#id")
-    public void deleteProduct(Long id) {
-        repo.deleteById(id);
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Data Structure</th>
+            <th>Underlying Encodings</th>
+            <th>Time Complexity</th>
+            <th>Primary Use Cases</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Strings</b></td>
+            <td>INT, EMBSTR, RAW (SDS)</td>
+            <td>O(1)</td>
+            <td>Caching objects, atomic counters (<code>INCR</code>), distributed locks.</td>
+          </tr>
+          <tr>
+            <td><b>Lists</b></td>
+            <td>QUICKLIST (ZipList + Doubly Linked List)</td>
+            <td>O(1) push/pop, O(N) search</td>
+            <td>Message queues, recent activity logs.</td>
+          </tr>
+          <tr>
+            <td><b>Hashes</b></td>
+            <td>ZIPLIST / LISTPACK, HASHTABLE</td>
+            <td>O(1) read/write</td>
+            <td>User profiles, cart objects, structured entity fields.</td>
+          </tr>
+          <tr>
+            <td><b>Sets</b></td>
+            <td>INTSET, HASHTABLE</td>
+            <td>O(1) lookup/insert</td>
+            <td>Unique tags, IP deduplication, mutual friends intersect.</td>
+          </tr>
+          <tr>
+            <td><b>Sorted Sets (ZSet)</b></td>
+            <td>ZIPLIST / LISTPACK, SKIPLIST + HASHTABLE</td>
+            <td>O(log N) insert/range</td>
+            <td>Gaming leaderboards, rate limiters, priority queues.</td>
+          </tr>
+          <tr>
+            <td><b>Bitmaps</b></td>
+            <td>String (SDS raw bytes)</td>
+            <td>O(1) bit op</td>
+            <td>User daily active status tracking (DAU), feature flags.</td>
+          </tr>
+          <tr>
+            <td><b>HyperLogLog</b></td>
+            <td>Dense / Sparse Bit Arrays</td>
+            <td>O(1) estimation</td>
+            <td>Cardinality estimation for billions of unique items (0.81% error margin).</td>
+          </tr>
+          <tr>
+            <td><b>Streams</b></td>
+            <td>RADIX TREE (Rax) + ListPacks</td>
+            <td>O(1) append, O(log N) read</td>
+            <td>Distributed event streaming, consumer group message handling.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 7 -->
+    <section id="sec7">
+      <h2>7. Core Redis Commands</h2>
+      <pre><code><span class="cmnt"># String Operations</span>
+SET user:1001:session "xyz987token" EX 3600 NX
+GET user:1001:session
+INCR global:api:request_count
+
+<span class="cmnt"># Hash Operations</span>
+HSET user:1001 name "Alice" email "alice@dev.com" age "30"
+HGET user:1001 name
+HGETALL user:1001
+
+<span class="cmnt"># List Operations (Queue)</span>
+LPUSH task:queue "email_job_42"
+RPOP task:queue
+
+<span class="cmnt"># Set Operations</span>
+SADD tags:java "spring" "hibernate" "redis"
+SISMEMBER tags:java "redis"
+
+<span class="cmnt"># Sorted Set Operations (Leaderboard)</span>
+ZADD leaderboard:weekly 1500 "player_alpha" 2300 "player_beta"
+ZRANGE leaderboard:weekly 0 -1 WITHSCORES REV</code></pre>
+    </section>
+
+    <!-- SECTION 8 -->
+    <section id="sec8">
+      <h2>8. Persistence: RDB vs AOF</h2>
+      <p>Redis provides two distinct persistence models to write in-memory data to disk:</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>RDB (Redis Database Snapshots)</b>
+          <p>Creates compact, point-in-time binary snapshots of the dataset at specified intervals via OS <code>fork()</code> and Copy-On-Write (COW). Extremely fast recovery; minimal runtime performance impact.</p>
+        </div>
+        <div class="card">
+          <b>AOF (Append-Only File)</b>
+          <p>Logs every write command received by the server to an append-only file. Provides near-zero data loss options (<code>fsync everysec</code> / <code>always</code>) and features automatic background rewrites.</p>
+        </div>
+      </div>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Dimension</th>
+            <th>RDB Snapshotting</th>
+            <th>AOF Logging</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Data Recovery Speed</td>
+            <td>Ultra-fast (directly loads binary structures into memory)</td>
+            <td>Slower (replays millions of write commands sequentially)</td>
+          </tr>
+          <tr>
+            <td>Data Loss Exposure</td>
+            <td>Higher (loses all writes since last snapshot interval)</td>
+            <td>Minimal (typically maximum 1 second of data loss)</td>
+          </tr>
+          <tr>
+            <td>File Size</td>
+            <td>Compact, highly compressed binary dump</td>
+            <td>Larger text log (mitigated by AOF Rewrite)</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 9 -->
+    <section id="sec9">
+      <h2>9. Replication Architecture</h2>
+      <p>Redis uses a master-replica asynchronous replication model to provide read scalability and redundancy.</p>
+
+      <div class="diagram">
+        <h4>Replication Synchronization Flow</h4>
+        <div class="flow-step"><div class="num">1</div><div>Replica connects to Master and issues <code>PSYNC &lt;replication_id&gt; &lt;offset&gt;</code>.</div></div>
+        <div class="flow-step"><div class="num">2</div><div><b>Full Sync (Cache Miss/New Replica):</b> Master runs background RDB save (<code>bgsave</code>), sends snapshot binary stream to replica, and streams ongoing write commands buffered in <code>repl-backlog-buffer</code>.</div></div>
+        <div class="flow-step"><div class="num">3</div><div><b>Partial Sync (Re-connection):</b> If disconnection was brief and requested offset exists in Master's circular backlog buffer, Master streams missing delta bytes only.</div></div>
+      </div>
+    </section>
+
+    <!-- SECTION 10 -->
+    <section id="sec10">
+      <h2>10. Redis Sentinel High Availability</h2>
+      <p>Redis Sentinel provides high availability for Master-Replica setups without manual intervention.</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>Core Responsibilities of Sentinel</b>
+          <ul>
+            <li><b>Monitoring:</b> Constantly checks if Master and Replica instances are responding to <code>PING</code>.</li>
+            <li><b>Notification:</b> Alerts system administrators or external discovery agents via Pub/Sub.</li>
+            <li><b>Automatic Failover:</b> Promotes a Replica to Master if the Master suffers a Subjectively Down (SDOWN) and Objectively Down (ODOWN) quorum consensus.</li>
+            <li><b>Configuration Provider:</b> Clients query Sentinels to discover the current Master IP address.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 11 -->
+    <section id="sec11">
+      <h2>11. Redis Cluster & Hash Slots</h2>
+      <p>Redis Cluster provides horizontal scaling and data sharding across multiple Master nodes without a central proxy.</p>
+
+      <div class="callout success">
+        <b>16,384 Hash Slots Mechanics:</b><br>
+        The entire keyspace in Redis Cluster is partitioned into <b>16,384 fixed hash slots</b>.
+        When storing a key, Redis calculates the slot using the CRC16 algorithm:
+        <br><code>slot = CRC16(key) mod 16384</code><br>
+        Master nodes split responsibility for these 16,384 slots (e.g., Master 1 holds slots 0–5460; Master 2 holds 5461–10922; Master 3 holds 10923–16383).
+      </div>
+    </section>
+
+    <!-- SECTION 12 -->
+    <section id="sec12">
+      <h2>12. Redis Transactions & Optimistic Locking</h2>
+      <p>Redis transactions group commands into a sequential execution block using <code>MULTI</code>, <code>EXEC</code>, <code>DISCARD</code>, and <code>WATCH</code>.</p>
+
+      <pre><code><span class="cmnt"># Optimistic Locking with WATCH</span>
+WATCH balance:account:101
+val = GET balance:account:101
+MULTI
+SET balance:account:101 500
+EXEC  <span class="cmnt"># Returns nil array if 'balance:account:101' was modified by another client since WATCH</span></code></pre>
+    </section>
+
+    <!-- SECTION 13 -->
+    <section id="sec13">
+      <h2>13. Lua Scripting</h2>
+      <p>Lua scripts execute directly inside the Redis event loop, providing transactional atomicity and eliminating network round-trips.</p>
+
+      <pre><code><span class="cmnt">-- Atomic Rate Limiter Script in Lua</span>
+<span class="kw">local</span> key = KEYS[1]
+<span class="kw">local</span> limit = tonumber(ARGV[1])
+<span class="kw">local</span> current = tonumber(redis.call(<span class="str">'GET'</span>, key) <span class="kw">or</span> <span class="str">'0'</span>)
+
+<span class="kw">if</span> current + 1 &gt; limit <span class="kw">then</span>
+    <span class="kw">return</span> 0 <span class="cmnt">-- Block request</span>
+<span class="kw">else</span>
+    redis.call(<span class="str">'INCRBY'</span>, key, 1)
+    <span class="kw">if</span> current == 0 <span class="kw">then</span>
+        redis.call(<span class="str">'EXPIRE'</span>, key, 60)
+    <span class="kw">end</span>
+    <span class="kw">return</span> 1 <span class="cmnt">-- Allow request</span>
+<span class="kw">end</span></code></pre>
+    </section>
+
+    <!-- SECTION 14 -->
+    <section id="sec14">
+      <h2>14. Pub/Sub Engine</h2>
+      <p>Redis Pub/Sub acts as a lightweight message fan-out broker where publishers send messages to named channels and subscribed clients receive them in real time.</p>
+      
+      <div class="callout warn">
+        <b>Pub/Sub Limitation:</b> Redis Pub/Sub is fire-and-forget. Messages are not persisted on disk. If a subscriber drops connection, missed messages are permanently lost. Use Redis Streams for message persistence and consumer groups.
+      </div>
+    </section>
+
+    <!-- SECTION 15 -->
+    <section id="sec15">
+      <h2>15. Redis Streams & Consumer Groups</h2>
+      <p>Redis Streams is an append-only log data structure modeled after Apache Kafka, featuring consumer groups, message IDs, pending entries lists (PEL), and explicit acknowledgement (<code>XACK</code>).</p>
+    </section>
+
+    <!-- SECTION 16 -->
+    <section id="sec16">
+      <h2>16. Caching Patterns & Strategies</h2>
+      <div class="grid">
+        <div class="card">
+          <b>1. Cache-Aside (Lazy Loading)</b>
+          <p>App checks Redis first. On cache miss, reads from DB, writes result back to Redis, and returns data.</p>
+        </div>
+        <div class="card">
+          <b>2. Write-Through</b>
+          <p>App writes data to Cache. Cache synchronously updates the DB before acknowledging success.</p>
+        </div>
+        <div class="card">
+          <b>3. Write-Behind (Write-Back)</b>
+          <p>App writes to Cache instantly. A background worker asynchronously flushes updates to DB in batches.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 17 -->
+    <section id="sec17">
+      <h2>17. Cache Eviction Policies</h2>
+      <p>When Redis reaches its configured <code>maxmemory</code> threshold, it executes the selected eviction policy:</p>
+      <ul>
+        <li><code>noeviction</code>: Returns out-of-memory errors on new write attempts.</li>
+        <li><code>allkeys-lru</code>: Evicts Least Recently Used keys across all stored keys (Standard Production Cache setting).</li>
+        <li><code>volatile-lru</code>: Evicts LRU keys that have an explicit TTL expiration set.</li>
+        <li><code>allkeys-lfu</code>: Evicts Least Frequently Used keys across all keys.</li>
+        <li><code>volatile-ttl</code>: Evicts keys with shorter remaining TTL values.</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 18 -->
+    <section id="sec18">
+      <h2>18. Key Expiration Mechanics</h2>
+      <p>Redis purges expired keys using a hybrid approach:</p>
+      <div class="grid">
+        <div class="card">
+          <b>1. Passive Deletion</b>
+          <p>When a client attempts to read an expired key, Redis catches the expired TTL state, deletes the key immediately, and returns null.</p>
+        </div>
+        <div class="card">
+          <b>2. Active Active-Random Scanning</b>
+          <p>10 times per second, Redis randomly tests 20 keys with TTLs from the expiration dictionary. If more than 25% are expired, it repeats the process continuously.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 19 -->
+    <section id="sec19">
+      <h2>19. Low-Level Internals & Structures</h2>
+      <p>Redis implements unique internal structural types in C to minimize RAM usage:</p>
+      <ul>
+        <li><b>SDS (Simple Dynamic String):</b> Replaces C null-terminated strings; stores string length explicitly to allow $O(1)$ length lookups and binary safety.</li>
+        <li><b>ZipList / ListPack:</b> A sequential memory block storing integers and small strings without pointer overhead.</li>
+        <li><b>SkipList:</b> Probabilistic alternative to balanced trees, driving Sorted Sets with $O(\log N)$ search speeds.</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 20 -->
+    <section id="sec20">
+      <h2>20. Redis Networking & RESP Protocol</h2>
+      <p>RESP (REdis Serialization Protocol) is a simple, human-readable text-based wire protocol over TCP:</p>
+      <pre><code><span class="cmnt"># How "SET name Alice" is transmitted over TCP in RESP2:</span>
+*3\r\n
+$3\r\n
+SET\r\n
+$4\r\n
+name\r\n
+$5\r\n
+Alice\r\n</code></pre>
+    </section>
+
+    <!-- SECTION 21 -->
+    <section id="sec21">
+      <h2>21. Redis with Spring Boot Integration</h2>
+      <p>Spring Boot provides integration via <code>spring-boot-starter-data-redis</code> backed by the <b>Lettuce</b> driver[cite: 13].</p>
+
+      <pre><code><span class="anno">@Configuration</span>
+<span class="anno">@EnableCaching</span>[cite: 13]
+<span class="kw">public class</span> <span class="type">RedisConfig</span> {
+
+    <span class="anno">@Bean</span>
+    <span class="kw">public</span> <span class="type">RedisTemplate</span>&lt;<span class="type">String</span>, <span class="type">Object</span>&gt; <span class="fn">redisTemplate</span>(<span class="type">RedisConnectionFactory</span> factory) {
+        <span class="type">RedisTemplate</span>&lt;<span class="type">String</span>, <span class="type">Object</span>&gt; template = <span class="kw">new</span> <span class="type">RedisTemplate</span>&lt;&gt;();
+        template.setConnectionFactory(factory);
+        template.setKeySerializer(<span class="kw">new</span> <span class="type">StringRedisSerializer</span>());
+        template.setValueSerializer(<span class="kw">new</span> <span class="type">GenericJackson2JsonRedisSerializer</span>());
+        <span class="kw">return</span> template;
     }
 }</code></pre>
+    </section>
 
-  <h3>Direct Access with RedisTemplate</h3>
-  <p>For cases that need more than annotation-based caching &mdash; counters, sorted sets, pub/sub &mdash; <code>RedisTemplate</code> gives direct command access:</p>
-  <pre><code>@Service
-@RequiredArgsConstructor
-public class RateLimiterService {
-    private final StringRedisTemplate redisTemplate;
+    <!-- SECTION 22 -->
+    <section id="sec22">
+      <h2>22. Redis in Microservices Architecture</h2>
+      <p>In microservices systems, Redis acts as a centralized state layer for rate limiting, shared session tokens (Spring Session Redis), distributed caching, and inter-service Pub/Sub events[cite: 13].</p>
+    </section>
 
-    public boolean isAllowed(String userId, int limit, Duration window) {
-        String key = "rate:" + userId;
-        Long count = redisTemplate.opsForValue().increment(key);
-        if (count != null && count == 1) {
-            redisTemplate.expire(key, window);
-        }
-        return count != null && count <= limit;
-    }
-}</code></pre>
+    <!-- SECTION 23 -->
+    <section id="sec23">
+      <h2>23. Distributed Locking (Redlock)</h2>
+      <pre><code><span class="cmnt"># Acquiring a Thread-Safe Distributed Lock natively in Redis</span>
+SET lock:order:1001 "client_uuid_8849" NX PX 30000
 
-  <h2>9. High Availability &amp; Clustering</h2>
-  <div class="grid">
-    <div class="card">
-      <b>Replication</b>
-      <p>Asynchronous master-replica replication lets reads scale horizontally while writes stay on the master.</p>
-    </div>
-    <div class="card">
-      <b>Redis Sentinel</b>
-      <p>Provides high availability with automatic failover and monitoring for master-replica setups.</p>
-    </div>
-    <div class="card">
-      <b>Redis Cluster</b>
-      <p>Provides horizontal scaling by sharding keys across 16,384 hash slots across multiple master nodes.</p>
-    </div>
-    <div class="card">
-      <b>Client-Side Routing</b>
-      <p>Cluster-aware clients compute the hash slot for a key and route requests to the correct node directly.</p>
-    </div>
-  </div>
+<span class="cmnt"># Releasing the lock cleanly requires a Lua script verifying client_uuid</span>
+if redis.call("GET", KEYS[1]) == ARGV[1] then
+    return redis.call("DEL", KEYS[1])
+else
+    return 0
+end</code></pre>
+    </section>
 
-  <h2>10. Real-World Use Cases</h2>
-  <table>
-    <tr><th>Use Case</th><th>Why Redis Fits</th></tr>
-    <tr><td>Application caching</td><td>Sub-millisecond reads take load off the primary database for hot data.</td></tr>
-    <tr><td>Session store</td><td>TTL-based expiry maps naturally onto session lifetimes; shared across app instances.</td></tr>
-    <tr><td>Rate limiting</td><td>Atomic <code>INCR</code> + TTL implements sliding/fixed window limiters in a few lines.</td></tr>
-    <tr><td>Leaderboards</td><td>Sorted sets keep ranked data updated and queryable in logarithmic time.</td></tr>
-    <tr><td>Real-time messaging</td><td>Pub/Sub and Streams support chat, notifications, and event-driven pipelines.</td></tr>
-    <tr><td>Job/task queues</td><td>Lists (<code>LPUSH</code>/<code>BRPOP</code>) implement simple, fast work queues.</td></tr>
-    <tr><td>Distributed locks</td><td><code>SET key value NX PX ttl</code> gives a simple mutual-exclusion lock across services.</td></tr>
-    <tr><td>Analytics counters</td><td>HyperLogLog and Bitmaps track unique visitors and flags at near-zero memory cost.</td></tr>
-    <tr><td>Geospatial queries</td><td>Built-in geo commands support "find nearby" features without a separate geo database.</td></tr>
-  </table>
+    <!-- SECTION 24 -->
+    <section id="sec24">
+      <h2>24. Performance Optimization</h2>
+      <ul>
+        <li><b>Pipelining:</b> Batch multiple commands together into a single TCP write buffer to eliminate network latency round-trips.</li>
+        <li><b>Slowlog Monitoring:</b> Debug commands exceeding thresholds using <code>SLOWLOG GET 10</code>.</li>
+        <li><b>Avoid Blocking Commands:</b> Never run <code>KEYS *</code> or <code>FLUSHALL</code> in production. Use <code>SCAN</code> instead.</li>
+      </ul>
+    </section>
 
-  <h2>11. Performance Notes &amp; Common Pitfalls</h2>
-  <div class="tag-row">
-    <span class="tag">avoid KEYS *</span>
-    <span class="tag">watch for hot keys</span>
-    <span class="tag">pipeline batch ops</span>
-    <span class="tag">size big values carefully</span>
-  </div>
-  <ul>
-    <li><b style="color:var(--text)">Never use <code>KEYS *</code> in production</b> &mdash; it blocks the single event loop while scanning the whole keyspace. Use <code>SCAN</code> instead, which iterates incrementally.</li>
-    <li><b style="color:var(--text)">Pipeline round trips.</b> Sending 100 commands one-by-one costs 100 network round trips; pipelining batches them into one.</li>
-    <li><b style="color:var(--text)">Watch key size.</b> A single massive hash or list can dominate memory and slow operations on that key &mdash; shard large collections across multiple keys where possible.</li>
-    <li><b style="color:var(--text)">Hot keys skew cluster load.</b> Because Redis Cluster shards by key hash, one extremely popular key can overload a single node regardless of overall cluster capacity.</li>
-    <li><b style="color:var(--text)">Set TTLs deliberately.</b> Caches without expiry silently become permanent storage and can exhaust <code>maxmemory</code>.</li>
-  </ul>
+    <!-- SECTION 25 -->
+    <section id="sec25">
+      <h2>25. Security & Access Control (ACL)</h2>
+      <p>Redis 6+ provides Access Control Lists (ACL) to restrict connections by credentials and command categories.</p>
+      <pre><code>ACL SETUSER app-service on &gt;strong_password ~user:* +@read +@write -@dangerous</code></pre>
+    </section>
 
-  <h2>12. Redis vs. Memcached</h2>
-  <table>
-    <tr><th>Aspect</th><th>Redis</th><th>Memcached</th></tr>
-    <tr><td>Data types</td><td>Strings, hashes, lists, sets, ZSETs, streams</td><td>Strings only</td></tr>
-    <tr><td>Persistence</td><td>RDB, AOF, or both</td><td>None &mdash; pure in-memory cache</td></tr>
-    <tr><td>Replication</td><td>Built-in, plus Sentinel &amp; Cluster</td><td>Not built-in</td></tr>
-    <tr><td>Threading</td><td>Primarily single-threaded core</td><td>Multi-threaded</td></tr>
-    <tr><td>Extra capabilities</td><td>Pub/Sub, Lua scripting, transactions</td><td>Minimal, cache-only</td></tr>
-  </table>
+    <!-- SECTION 26 -->
+    <section id="sec26">
+      <h2>26. End-to-End Production Architecture</h2>
+      <div class="diagram">
+        <h4>High-Throughput Enterprise Architecture</h4>
+        <p>Spring Boot Gateway &rarr; Redis Cluster (Read/Write Caching &amp; Rate Limiting) &rarr; Primary RDBMS (PostgreSQL) &rarr; Kafka / Redis Streams Async Workers[cite: 13]</p>
+      </div>
+    </section>
 
-  <h2>13. Quick Command Reference</h2>
-  <pre><code>SET key value EX 60          # set with 60s TTL
-GET key
-EXPIRE key 60
-TTL key
-DEL key
-HSET user:1 name "Rakesh" role "dev"
-HGETALL user:1
-LPUSH queue:jobs "job1"
-BRPOP queue:jobs 0
-SADD tags:post1 "java" "redis"
-ZADD leaderboard 100 "user1"
-ZREVRANGE leaderboard 0 9 WITHSCORES
-SCAN 0 MATCH "session:*" COUNT 100</code></pre>
+    <!-- SECTION 27 -->
+    <section id="sec27">
+      <h2>27. Redis vs Other Technologies</h2>
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Technology</th>
+            <th>Primary Storage Model</th>
+            <th>Data Structures</th>
+            <th>Persistence Support</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Redis</b></td>
+            <td>In-Memory with Disk Backup</td>
+            <td>Rich (Hashes, Sets, ZSets, Streams)[cite: 13]</td>
+            <td>Full (RDB Snapshots + AOF)</td>
+          </tr>
+          <tr>
+            <td><b>Memcached</b></td>
+            <td>In-Memory volatile key-value</td>
+            <td>Strings / Raw Blobs only</td>
+            <td>None (Volatile)</td>
+          </tr>
+          <tr>
+            <td><b>MongoDB</b></td>
+            <td>Disk-backed BSON documents</td>
+            <td>JSON-like BSON documents</td>
+            <td>Full (WiredTiger Engine)</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
 
+    <!-- SECTION 28 -->
+    <section id="sec28">
+      <h2>28. Real-World Industry Use Cases</h2>
+      <div class="grid">
+        <div class="card"><b>1. Real-Time Gaming Leaderboards</b><p>Driven by Sorted Sets (<code>ZADD</code> / <code>ZREVRANGE</code>)[cite: 13].</p></div>
+        <div class="card"><b>2. Sliding Window Rate Limiting</b><p>Driven by Lua scripts and Sorted Sets evaluating timestamps[cite: 13].</p></div>
+        <div class="card"><b>3. Distributed Session Management</b><p>Centralized state for stateless microservices clusters[cite: 13].</p></div>
+      </div>
+    </section>
+
+    <!-- SECTION 29 -->
+    <section id="sec29">
+      <h2>29. Common Production Mistakes</h2>
+      <div class="callout warn">
+        <b>1. Running `KEYS *` in Production:</b> Blocks the single-threaded event loop, freezing all client operations. Use <code>SCAN</code>.
+      </div>
+      <div class="callout warn">
+        <b>2. Unbounded Memory Usage:</b> Omitting <code>maxmemory</code> limits and setting <code>noeviction</code> causes the OS to trigger OOM Killer process termination.
+      </div>
+    </section>
+
+    <!-- SECTION 30 -->
+    <section id="sec30">
+      <h2>30. Production Best Practices</h2>
+      <ul>
+        <li>Always enforce structured key namespaces (e.g. <code>v1:tenant:users:1001</code>).</li>
+        <li>Set explicit TTL values on cache keys to prevent memory bloat[cite: 13].</li>
+        <li>Configure connection pools (Lettuce/Jedis) properly with appropriate timeouts[cite: 13].</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 31 -->
+    <section id="sec31">
+      <h2>31. 75+ Senior Interview QA</h2>
+      <div class="faq-item">
+        <div class="faq-q">Q1: Is Redis strictly single-threaded?</div>
+        <div class="faq-a">No. While main key-value command execution runs on a single event-loop thread, Redis utilizes background threads for heavy tasks like asynchronous file closing, AOF <code>fsync</code> calls, and lazy key deletion (<code>UNLINK</code>). Redis 6+ also introduced multi-threaded network I/O parsing.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Q2: What is the difference between SDOWN and ODOWN in Sentinel?</div>
+        <div class="faq-a">SDOWN (Subjectively Down) occurs when an individual Sentinel instance loses contact with the Master. ODOWN (Objectively Down) occurs when a configured quorum of Sentinels agree that the Master is unreachable, triggering failover.</div>
+      </div>
+      <div class="faq-item"><div class="faq-q">Q3: How many hash slots exist in Redis Cluster?</div><div class="faq-a">16,384 fixed slots.</div></div>
+      <div class="faq-item"><div class="faq-q">Q4: What is the difference between LRU and LFU?</div><div class="faq-a">LRU (Least Recently Used) evicts keys based on time elapsed since last access. LFU (Least Frequently Used) evicts keys based on frequency access count.</div></div>
+      <div class="faq-item"><div class="faq-q">Q5: What command replaces KEYS * safely?</div><div class="faq-a">SCAN (or HSCAN, SSCAN, ZSCAN).</div></div>
+      <div class="faq-item"><div class="faq-q">Q6: What is a ZipList?</div><div class="faq-a">A specially encoded memory block holding small hash/list/zset entries sequentially without pointer overhead.</div></div>
+      <div class="faq-item"><div class="faq-q">Q7: What is the purpose of the Redlock algorithm?</div><div class="faq-a">To guarantee fault-tolerant distributed locking across multiple independent Redis master nodes.</div></div>
+      <div class="faq-item"><div class="faq-q">Q8: How does Redis support transactions?</div><div class="faq-a">Using MULTI, EXEC, DISCARD, and optimistic locking via WATCH.</div></div>
+      <div class="faq-item"><div class="faq-q">Q9: What is copy-on-write (COW) during RDB save?</div><div class="faq-a">The OS forks the Redis process. Memory pages are shared between parent and child until written to, protecting memory footprint during snapshotting.</div></div>
+      <div class="faq-item"><div class="faq-q">Q10: What is the maximum size of a String value in Redis?</div><div class="faq-a">512 Megabytes.</div></div>
+      
+      <div class="faq-item"><div class="faq-q">Q11: What is RESP?</div><div class="faq-a">REdis Serialization Protocol; the wire protocol used for client-server TCP communication.</div></div>
+      <div class="faq-item"><div class="faq-q">Q12: How does UNLINK differ from DEL?</div><div class="faq-a">DEL deletes keys synchronously on the main thread. UNLINK removes keys from the keyspace synchronously but reclaims memory asynchronously in a background thread.</div></div>
+      <div class="faq-item"><div class="faq-q">Q13: What is Cache Avalanche?</div><div class="faq-a">When a vast number of cached items expire simultaneously, driving massive fallback database spikes. Solved by adding jitter to TTL values.</div></div>
+      <div class="faq-item"><div class="faq-q">Q14: What is Cache Penetration?</div><div class="faq-a">When queries for non-existent keys repeatedly bypass cache and hit the database. Solved via Bloom Filters or caching null results.</div></div>
+      <div class="faq-item"><div class="faq-q">Q15: What is Cache Breakdown (Stampede)?</div><div class="faq-a">When a high-traffic hot key expires, causing concurrent requests to hit the database simultaneously. Solved via mutex locks.</div></div>
+      <div class="faq-item"><div class="faq-q">Q16: Difference between RDB and AOF?</div><div class="faq-a">RDB is point-in-time binary snapshots; AOF is a continuous append-only write log.</div></div>
+      <div class="faq-item"><div class="faq-q">Q17: How does Redis handle memory fragmentation?</div><div class="faq-a">By utilizing dynamic allocators like jemalloc and running active defragmentation (<code>activedefrag yes</code>).</div></div>
+      <div class="faq-item"><div class="faq-q">Q18: What is a SkipList?</div><div class="faq-a">A probabilistic data structure used alongside hashtables to back Redis Sorted Sets with O(log N) lookup capabilities.</div></div>
+      <div class="faq-item"><div class="faq-q">Q19: What is the difference between MOVED and ASK redirects in Redis Cluster?</div><div class="faq-a">MOVED indicates a permanent relocation of a hash slot to another node. ASK indicates a temporary relocation during active slot migration.</div></div>
+      <div class="faq-item"><div class="faq-q">Q20: Can Lua scripts be interrupted?</div><div class="faq-a">Only via <code>SCRIPT KILL</code> if the script has not executed write operations. Writes require <code>SHUTDOWN NOSAVE</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q21: What is a Bloom Filter?</div><div class="faq-a">A probabilistic data structure used to test set membership with zero false negatives and low memory usage.</div></div>
+      <div class="faq-item"><div class="faq-q">Q22: How does HyperLogLog achieve cardinality estimation?</div><div class="faq-a">By tracking maximum leading zero bit counts in hashed inputs across 12,288 registers.</div></div>
+      <div class="faq-item"><div class="faq-q">Q23: What is the default eviction policy in Redis?</div><div class="faq-a"><code>noeviction</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q24: How does Spring @Cacheable work with Redis?</div><div class="faq-a">Uses Spring AOP to intercept method execution, querying Redis before executing the underlying Java logic[cite: 13].</div></div>
+      <div class="faq-item"><div class="faq-q">Q25: What is Lettuce vs Jedis?</div><div class="faq-a">Jedis uses synchronous blocking I/O; Lettuce uses asynchronous non-blocking Netty channels and is thread-safe.</div></div>
+      <div class="faq-item"><div class="faq-q">Q26: What is a QuickList?</div><div class="faq-a">A doubly-linked list of ZipLists, forming the underlying implementation of Redis Lists.</div></div>
+      <div class="faq-item"><div class="faq-q">Q27: How does Redis execute expiration active scanning?</div><div class="faq-a">Runs 10 times a second, sampling 20 random keys with TTLs and purging expired ones.</div></div>
+      <div class="faq-item"><div class="faq-q">Q28: What is the Cluster Bus?</div><div class="faq-a">A node-to-node binary TCP communication channel operating on port offset +10000 (e.g. 16379) for gossip protocol messaging.</div></div>
+      <div class="faq-item"><div class="faq-q">Q29: How to protect Redis against unauthorized commands?</div><div class="faq-a">Rename or disable dangerous commands in <code>redis.conf</code> (e.g. <code>rename-command FLUSHALL ""</code>) or use ACLs.</div></div>
+      <div class="faq-item"><div class="faq-q">Q30: What is Pipelining?</div><div class="faq-a">Sending multiple commands sequentially to Redis without waiting for individual network ACKs.</div></div>
+      <div class="faq-item"><div class="faq-q">Q31: What is the maximum memory setting in Redis?</div><div class="faq-a">Configured via the <code>maxmemory</code> directive.</div></div>
+      <div class="faq-item"><div class="faq-q">Q32: How does Redis Pub/Sub differ from Redis Streams?</div><div class="faq-a">Pub/Sub is unpersisted fire-and-forget; Streams provides persistent append-only logs with consumer groups.</div></div>
+      <div class="faq-item"><div class="faq-q">Q33: Can Redis be used as a primary database?</div><div class="faq-a">Yes, if configured with AOF persistence, proper replication, and sufficient RAM capacity.</div></div>
+      <div class="faq-item"><div class="faq-q">Q34: What is SDS string encoding?</div><div class="faq-a">Simple Dynamic String encoding containing length prefix, free byte space, and raw character payload.</div></div>
+      <div class="faq-item"><div class="faq-q">Q35: What is IntSet?</div><div class="faq-a">A compact binary encoding for Sets containing strictly integer values.</div></div>
+      <div class="faq-item"><div class="faq-q">Q36: What is the purpose of HINCRBY?</div><div class="faq-a">Atomically increments an integer field value inside a Redis Hash.</div></div>
+      <div class="faq-item"><div class="faq-q">Q37: What happens if a Master node fails in a Redis Cluster?</div><div class="faq-a">Replica nodes initiate election via gossip voting; a promoted replica assumes the master's hash slots.</div></div>
+      <div class="faq-item"><div class="faq-q">Q38: What is the purpose of EXPIRE?</div><div class="faq-a">Sets a Time-To-Live timeout on a key in seconds.</div></div>
+      <div class="faq-item"><div class="faq-q">Q39: What is PEXPIRE?</div><div class="faq-a">Sets a Time-To-Live timeout on a key in milliseconds.</div></div>
+      <div class="faq-item"><div class="faq-q">Q40: How to monitor Redis performance live?</div><div class="faq-a">Using <code>redis-cli stats</code>, <code>INFO</code> command, or <code>MONITOR</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q41: What is ListPack?</div><div class="faq-a">The modern replacement for ZipList that eliminates cascading updates during payload alterations.</div></div>
+      <div class="faq-item"><div class="faq-q">Q42: What is the purpose of SLOWLOG?</div><div class="faq-a">Logs commands exceeding specified execution time thresholds in memory.</div></div>
+      <div class="faq-item"><div class="faq-q">Q43: What is Redis Sentinel Quorum?</div><div class="faq-a">The minimum number of Sentinel instances that must agree a master is unreachable before failover triggers.</div></div>
+      <div class="faq-item"><div class="faq-q">Q44: Can Redis run on Windows in production?</div><div class="faq-a">No. Production Redis requires POSIX operating systems (Linux/BSD) for robust epoll/COW support.</div></div>
+      <div class="faq-item"><div class="faq-q">Q45: What is the maximum number of keys per Redis instance?</div><div class="faq-a">Up to 2^32 keys (4.2 billion keys) per instance.</div></div>
+      <div class="faq-item"><div class="faq-q">Q46: How does Redis support Geospatial indexes?</div><div class="faq-a">Encodes latitude and longitude pairs into 52-bit GeoHash integers stored inside Sorted Sets.</div></div>
+      <div class="faq-item"><div class="faq-q">Q47: What is the purpose of XACK in Redis Streams?</div><div class="faq-a">Removes a processed message ID from the Pending Entries List (PEL) of a consumer group.</div></div>
+      <div class="faq-item"><div class="faq-q">Q48: How to flush all keys in all databases?</div><div class="faq-a"><code>FLUSHALL</code> (or <code>FLUSHALL ASYNC</code>).</div></div>
+      <div class="faq-item"><div class="faq-q">Q49: How to flush keys in the active database only?</div><div class="faq-a"><code>FLUSHDB</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q50: What is the difference between EMBSTR and RAW string encodings?</div><div class="faq-a">EMBSTR allocates the redisObject and SDS string payload in a single continuous memory block (&lt;= 44 bytes); RAW uses separate allocations.</div></div>
+      <div class="faq-item"><div class="faq-q">Q51: What is the AOF rewrite process?</div><div class="faq-a">Generates a minimal set of write commands representing the current dataset to shrink the AOF file size.</div></div>
+      <div class="faq-item"><div class="faq-q">Q52: What is the purpose of CLIENT LIST?</div><div class="faq-a">Returns diagnostic information on all active connected client sockets.</div></div>
+      <div class="faq-item"><div class="faq-q">Q53: How does Redis handle multi-key operations in Cluster mode?</div><div class="faq-a">Requires all keys in the command to belong to the exact same hash slot, enforced using hash tags <code>{user:1001}.key</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q54: What are Hash Tags?</div><div class="faq-a">Brackets inside a key name <code>{...}</code> that force Redis Cluster to compute the CRC16 hash slot on the bracketed text only.</div></div>
+      <div class="faq-item"><div class="faq-q">Q55: What is the purpose of MGET?</div><div class="faq-a">Retrieves values for multiple string keys in a single atomic call.</div></div>
+      <div class="faq-item"><div class="faq-q">Q56: What is the purpose of MSET?</div><div class="faq-a">Sets multiple key-value pairs in a single atomic call.</div></div>
+      <div class="faq-item"><div class="faq-q">Q57: Does Redis support ACID transactions?</div><div class="faq-a">Redis supports Isolation and Durability (if configured with AOF), but lacks full Rollback support on runtime errors.</div></div>
+      <div class="faq-item"><div class="faq-q">Q58: What is MEMORY USAGE key?</div><div class="faq-a">Returns the exact RAM byte footprint consumed by a specific key.</div></div>
+      <div class="faq-item"><div class="faq-q">Q59: What is the default port of Redis?</div><div class="faq-a">6379.</div></div>
+      <div class="faq-item"><div class="faq-q">Q60: What is the default port of Redis Sentinel?</div><div class="faq-a">26379.</div></div>
+      <div class="faq-item"><div class="faq-q">Q61: What is the purpose of SINTER?</div><div class="faq-a">Computes the intersection of multiple input Sets.</div></div>
+      <div class="faq-item"><div class="faq-q">Q62: What is the purpose of SUNION?</div><div class="faq-a">Computes the union of multiple input Sets.</div></div>
+      <div class="faq-item"><div class="faq-q">Q63: What is the purpose of SDIFF?</div><div class="faq-a">Computes the difference between the first Set and subsequent Sets.</div></div>
+      <div class="faq-item"><div class="faq-q">Q64: How does Spring Session Redis work?</div><div class="faq-a">Replaces HTTP Servlet Session state with a backing Redis Hash indexed by session ID.</div></div>
+      <div class="faq-item"><div class="faq-q">Q65: What is the purpose of DUMP and RESTORE?</div><div class="faq-a">Serializes a key's value into an RDB-formatted byte payload and restores it back into a key.</div></div>
+      <div class="faq-item"><div class="faq-q">Q66: How does Redis manage connection backlogs?</div><div class="faq-a">Configured via the <code>tcp-backlog</code> directive in <code>redis.conf</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q67: What is the purpose of PSYNC?</div><div class="faq-a">Used by replicas to request full or partial replication sync from a master.</div></div>
+      <div class="faq-item"><div class="faq-q">Q68: What is a Lazy Free operation?</div><div class="faq-a">Reclaims memory in background threads via commands like <code>UNLINK</code> or <code>FLUSHALL ASYNC</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q69: What is the purpose of SETNX?</div><div class="faq-a">Sets a key value only if the key does not already exist (Set if Not eXists).</div></div>
+      <div class="faq-item"><div class="faq-q">Q70: How to configure Redis as an LRU Cache?</div><div class="faq-a">Set <code>maxmemory &lt;bytes&gt;</code> and <code>maxmemory-policy allkeys-lru</code> in configuration.</div></div>
+      <div class="faq-item"><div class="faq-q">Q71: What is the purpose of OBJECT ENCODING key?</div><div class="faq-a">Returns the internal low-level structural encoding used for a specific stored key.</div></div>
+      <div class="faq-item"><div class="faq-q">Q72: What is the purpose of PERSIST key?</div><div class="faq-a">Removes the existing TTL timeout from a key, converting it to a permanent key.</div></div>
+      <div class="faq-item"><div class="faq-q">Q73: How to trace all commands arriving at a Redis server live?</div><div class="faq-a">Execute <code>MONITOR</code> (use only for brief debugging due to performance impact).</div></div>
+      <div class="faq-item"><div class="faq-q">Q74: What is Radix Tree (Rax)?</div><div class="faq-a">A memory-efficient space-optimized tree structure used by Redis to back Streams and Cluster slot routing.</div></div>
+      <div class="faq-item"><div class="faq-q">Q75: What is the main architectural takeaway of Redis?</div><div class="faq-a">Sub-millisecond latency via in-memory execution, event-loop I/O multiplexing, and optimized specialized C structures.</div></div>
+    </section>
+
+    <!-- SECTION 32 -->
+    <section id="sec32">
+      <h2>32. Quick Revision Cheatsheet</h2>
+      <div class="card">
+        <p><b>Event Loop:</b> Single-threaded execution core using non-blocking I/O multiplexing (<code>epoll</code>).</p>
+        <p><b>Data Structures:</b> Strings, Hashes, Lists, Sets, Sorted Sets (ZSets), Streams, Bitmaps, HLL[cite: 13].</p>
+        <p><b>Persistence:</b> RDB (Snapshots) + AOF (Append-Only Log).</p>
+        <p><b>Cluster Sharding:</b> 16,384 Hash Slots partitioned across Masters (<code>CRC16(key) mod 16384</code>).</p>
+        <p><b>High Availability:</b> Redis Sentinel (Monitoring, ODOWN Quorum, Auto-Failover).</p>
+      </div>
+    </section>
+
+    <!-- SECTION 33 -->
+    <section id="sec33">
+      <h2>33. Visual Architectural Infographic</h2>
+      <div class="diagram">
+        <h4>Complete Redis Ecosystem &amp; Runtime Overview</h4>
+        <div class="grid">
+          <div class="card" style="border-color: var(--teal);">
+            <b style="color: var(--teal);">1. In-Memory Engine</b>
+            <p>Reactor Event Loop &middot; Single Threaded &middot; SDS &middot; ZipList &middot; SkipList &middot; Radix Tree</p>
+          </div>
+          <div class="card" style="border-color: var(--amber);">
+            <b style="color: var(--amber);">2. High Availability Layer</b>
+            <p>Sentinel Quorum &middot; Cluster (16,384 Slots) &middot; Auto Failover &middot; Replication Backlog</p>
+          </div>
+          <div class="card" style="border-color: var(--purple);">
+            <b style="color: var(--purple);">3. Persistence &amp; Storage</b>
+            <p>RDB Binary Snapshots &middot; AOF Append Log &middot; Jemalloc Allocator &middot; Active Eviction</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
 </div>
+
 </body>
 </html>

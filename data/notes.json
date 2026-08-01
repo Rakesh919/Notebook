@@ -74,6 +74,17 @@
           "lastUpdated": "2026-06-02"
         },
         {
+          "id": "strings",
+          "title": "String Handling",
+          "file": "notes/java/string-deepdive.html",
+          "tags": [
+            "strings","stringbuilder","stringbuffer",
+            "memory"
+          ],
+          "difficulty": "Intermediate",
+          "lastUpdated": "2026-06-02"
+        },
+        {
           "id": "hashmap-internals",
           "title": "HashMap Internals",
           "file": "notes/java/hashmap-deepdive.html",
