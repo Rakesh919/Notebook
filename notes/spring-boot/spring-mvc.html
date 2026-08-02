@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Spring MVC — Complete Deep Dive</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  :root {
+    --bg: #0b0e14;
+    --surface: #131824;
+    --panel2: #0f131c;
+    --border: #232a38;
+    --text: #e7eaf1;
+    --muted: #9aa4b7;
+    --accent: #f0b429;
+    --amber: #f0b429;
+    --teal: #38bdf8;
+    --rose: #f87171;
+    --green: #4ade80;
+    --purple: #c084fc;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .layout {
+    display: flex;
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+  
+  /* STICKY SIDEBAR NAV */
+  nav.sidebar {
+    width: 310px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 24px 16px;
+    flex-shrink: 0;
+  }
+  nav.sidebar h3 {
+    font-size: 0.85rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+    padding-left: 8px;
+  }
+  nav.sidebar a {
+    display: block;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.8rem;
+    padding: 5px 8px;
+    border-radius: 6px;
+    margin-bottom: 2px;
+    transition: all 0.15s ease;
+  }
+  nav.sidebar a:hover {
+    color: var(--accent);
+    background: rgba(240, 180, 41, 0.08);
+  }
+
+  /* MAIN CONTENT WRAPPER */
+  .main-content {
+    flex: 1;
+    max-width: 1080px;
+    padding: 48px 40px 120px;
+    overflow-x: hidden;
+  }
+
+  .eyebrow {
+    color: var(--accent);
+    font-family: monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  h1 { font-size: 2.3rem; margin-top: 0; margin-bottom: 8px; font-weight: 800; line-height: 1.25; }
+  h1 span { color: var(--accent); }
+  .sub { color: var(--muted); font-size: 1rem; margin-bottom: 32px; }
+  
+  h2 {
+    margin-top: 56px;
+    font-size: 1.45rem;
+    border-left: 4px solid var(--accent);
+    padding-left: 14px;
+    color: var(--text);
+  }
+  h3 { font-size: 1.15rem; color: var(--teal); margin-top: 28px; }
+  h4 { font-size: 0.98rem; color: var(--purple); margin-top: 20px; }
+  p, li { color: var(--muted); font-size: 0.95rem; }
+  li { margin-bottom: 6px; }
+  b, strong { color: var(--text); }
+  
+  /* CARDS & PANELS */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 20px 0; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .card b { color: var(--accent); display: block; margin-bottom: 6px; font-size: 1rem; }
+  
+  /* CALLOUT BOXES */
+  .callout {
+    margin: 20px 0;
+    border-left: 4px solid var(--accent);
+    padding: 16px 20px;
+    background: rgba(240, 180, 41, 0.05);
+    border-radius: 0 8px 8px 0;
+    font-size: 0.92rem;
+  }
+  .callout.warn { border-left-color: var(--rose); background: rgba(248, 113, 113, 0.06); }
+  .callout.info { border-left-color: var(--teal); background: rgba(56, 189, 248, 0.06); }
+  .callout.success { border-left-color: var(--green); background: rgba(74, 222, 128, 0.06); }
+  
+  /* CODE BLOCKS WITH PURE CSS SYNTAX HIGHLIGHTING */
+  pre {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: #e7eaf1;
+  }
+  code {
+    background: #0f131c;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.88em;
+    color: var(--accent);
+    font-family: 'Consolas', 'Courier New', monospace;
+  }
+  pre code { border: none; padding: 0; background: transparent; color: inherit; }
+  
+  .kw { color: #f43f5e; font-weight: bold; }
+  .anno { color: var(--accent); font-weight: bold; }
+  .type { color: var(--teal); }
+  .str { color: var(--green); }
+  .cmnt { color: #64748b; font-style: italic; }
+  .fn { color: #c084fc; }
+
+  /* TABLES */
+  table.matrix {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 0.85rem;
+    background: var(--surface);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  table.matrix th, table.matrix td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    text-align: left;
+  }
+  table.matrix th {
+    background: var(--panel2);
+    color: var(--accent);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+  }
+  table.matrix tr:last-child td { border-bottom: none; }
+
+  /* FLOWCHARTS & DIAGRAMS */
+  .diagram {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin: 24px 0;
+  }
+  .flow-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .flow-step .num {
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: bold;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+  .flow-arrow {
+    text-align: center;
+    color: var(--accent);
+    font-size: 1.2rem;
+    margin: -4px 0 4px;
+  }
+
+  /* FAQ ACCORDION STYLE */
+  .faq-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    padding: 16px;
+  }
+  .faq-q { color: var(--accent); font-weight: 600; font-size: 0.98rem; margin-bottom: 8px; }
+  .faq-a { color: var(--muted); font-size: 0.92rem; }
+
+  @media (max-width: 900px) {
+    .layout { flex-direction: column; }
+    nav.sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border); }
+    .main-content { padding: 24px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- SIDEBAR NAVIGATION -->
+  <nav class="sidebar">
+    <h3>Spring MVC Deep Dive</h3>
+    <a href="#sec1">1. Introduction</a>
+    <a href="#sec2">2. MVC Architecture</a>
+    <a href="#sec3">3. Complete Request Lifecycle</a>
+    <a href="#sec4">4. DispatcherServlet</a>
+    <a href="#sec5">5. HandlerMapping</a>
+    <a href="#sec6">6. HandlerAdapter</a>
+    <a href="#sec7">7. Controller Layer</a>
+    <a href="#sec8">8. Request Mapping Annotations</a>
+    <a href="#sec9">9. Request &amp; Response Serialization</a>
+    <a href="#sec10">10. Validation Framework</a>
+    <a href="#sec11">11. Global Exception Handling</a>
+    <a href="#sec12">12. Interceptors</a>
+    <a href="#sec13">13. Filters vs Interceptors</a>
+    <a href="#sec14">14. View Resolution</a>
+    <a href="#sec15">15. REST API Best Practices</a>
+    <a href="#sec16">16. Real Production Walkthrough</a>
+    <a href="#sec17">17. Common Mistakes</a>
+    <a href="#sec18">18. Senior Best Practices</a>
+    <a href="#sec19">19. 50+ Interview Questions</a>
+    <a href="#sec20">20. Revision Cheatsheet</a>
+    <a href="#sec21">21. Visual Summary Infographic</a>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <div class="eyebrow">Enterprise Java &middot; Spring Framework Web Layer</div>
+    <h1>Spring MVC — <span>Complete Deep Dive</span></h1>
+    <div class="sub">A beginner-friendly, simple, and comprehensive guide to Spring MVC—explaining the Front Controller pattern, DispatcherServlet, request lifecycles, RESTful serialization, exception handling, and production architectures.</div>
+
+    <!-- SECTION 1 -->
+    <section id="sec1">
+      <h2>1. Introduction</h2>
+      <p>Before modern web frameworks, building Java web applications required writing bare-metal Java Servlets. Every single URL endpoint required its own Servlet class, manual HTML string concatenation, manual parameter parsing, and explicit thread synchronization. This produced messy, unmaintainable code.</p>
+
+      <p><b>Spring MVC</b> (Model-View-Controller) was introduced to solve this exact problem. It provides an elegant, structured framework for building decoupled web applications and RESTful Web Services in Java.</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>Real-World Analogy: The Restaurant Flow</b>
+          <p>Imagine a busy restaurant. Instead of customers walking into the kitchen to talk directly to individual chefs, a <b>Receptionist / Maître D'</b> greets customers at the door, assigns them a waiter, passes order slips to the kitchen staff, and delivers the cooked meal back to the table. In Spring MVC, this central coordinator is called the <b>DispatcherServlet</b>!</p>
+        </div>
+        <div class="card">
+          <b>Advantages of Spring MVC</b>
+          <ul>
+            <li><b>Separation of Concerns:</b> Web UI, business logic, and database access are strictly separated into clean layers.</li>
+            <li><b>Reusable Components:</b> Interceptors, exception handlers, and converters apply across all endpoints seamlessly.</li>
+            <li><b>Annotation-Driven:</b> Routing and parameter parsing are handled via declarative annotations like <code>@GetMapping</code> and <code>@PathVariable</code>.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2 -->
+    <section id="sec2">
+      <h2>2. MVC Architecture</h2>
+      <p>The MVC pattern breaks a web application down into three distinct logical components:</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>1. Model</b>
+          <p>Represents the application's domain data and state (DTOs, Entities, and data models). It carries data between the Controller and the UI or REST client.</p>
+        </div>
+        <div class="card">
+          <b>2. View</b>
+          <p>Represents the presentation output (e.g. HTML templates generated by Thymeleaf/JSP, or JSON payloads rendered in REST endpoints).</p>
+        </div>
+        <div class="card">
+          <b>3. Controller</b>
+          <p>Contains the routing logic. It receives HTTP requests, processes input parameters, calls business services, and selects the appropriate View or JSON response.</p>
+        </div>
+      </div>
+
+      <div class="diagram">
+        <h4>Classic MVC Data Flow</h4>
+        <div class="flow-step"><div class="num">1</div><div><b>User Action:</b> Client submits an HTTP request to the Controller.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">2</div><div><b>Business Execution:</b> Controller updates/fetches the <b>Model</b> via Service classes.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">3</div><div><b>Response Rendering:</b> Controller passes the <b>Model</b> data to the <b>View</b> layer (or Jackson JSON serializer) to produce output.</div></div>
+      </div>
+    </section>
+
+    <!-- SECTION 3 -->
+    <section id="sec3">
+      <h2>3. Complete Request Lifecycle</h2>
+      <p>What happens step-by-step when a user types a URL or your frontend sends a REST API request? Here is the complete end-to-end execution path:</p>
+
+      <div class="diagram">
+        <h4>End-to-End Spring MVC Request Lifecycle</h4>
+        <div class="flow-step"><div class="num">1</div><div><b>HTTP Request:</b> Browser sends <code>POST /api/v1/orders</code>.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">2</div><div><b>Embedded Tomcat:</b> Web server accepts TCP connection and passes the raw request to the Servlet container.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">3</div><div><b>DispatcherServlet:</b> The central Front Controller intercepts the incoming request.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">4</div><div><b>HandlerMapping:</b> DispatcherServlet asks HandlerMapping to locate the matching Controller method.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">5</div><div><b>HandlerAdapter:</b> Invokes the target method, parsing parameters and unmarshalling JSON body payloads.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">6</div><div><b>Controller Method:</b> Executes user controller method (e.g. <code>OrderController.createOrder()</code>).</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">7</div><div><b>Service Layer:</b> Runs business logic, validation rules, and transaction boundaries (<code>@Transactional</code>).</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">8</div><div><b>Repository Layer:</b> Queries the database via Spring Data JPA / Hibernate.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">9</div><div><b>Database execution:</b> PostgreSQL executes SQL query and returns row records.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">10</div><div><b>Return Object:</b> Service returns domain Entity / DTO back to the Controller.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">11</div><div><b>HttpMessageConverter:</b> Jackson (<code>MappingJackson2HttpMessageConverter</code>) serializes the Java object to JSON.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">12</div><div><b>HTTP 200 OK Response:</b> DispatcherServlet flushes JSON response through Tomcat back to Browser.</div></div>
+      </div>
+    </section>
+
+    <!-- SECTION 4 -->
+    <section id="sec4">
+      <h2>4. DispatcherServlet</h2>
+      <p>The <code>DispatcherServlet</code> is the beating heart of Spring MVC. It implements the <b>Front Controller Architectural Pattern</b>—a design pattern where a single centralized Servlet intercepts all incoming HTTP traffic for a web application and delegates routing, parameter parsing, and response rendering to specialized helper components.</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>Responsibilities of DispatcherServlet</b>
+          <ul>
+            <li>Interceptors pre-processing and post-processing execution.</li>
+            <li>Consulting <code>HandlerMapping</code> to resolve controller target methods.</li>
+            <li>Invoking <code>HandlerAdapter</code> to resolve parameters and run methods.</li>
+            <li>Delegating global exception handling to <code>HandlerExceptionResolver</code>.</li>
+            <li>Marshalling Java objects to JSON via <code>HttpMessageConverters</code>.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5 -->
+    <section id="sec5">
+      <h2>5. HandlerMapping</h2>
+      <p>When a request arrives at <code>DispatcherServlet</code>, how does Spring know which class or method should handle it? It consults the <b>HandlerMapping</b> component.</p>
+
+      <p>During startup, Spring's <code>RequestMappingHandlerMapping</code> scans all beans annotated with <code>@Controller</code> and <code>@RestController</code>, building an in-memory lookup table of URL paths, HTTP methods, headers, and media types mapped directly to Java methods.</p>
+
+      <pre><code><span class="anno">@RestController</span>
+<span class="anno">@RequestMapping</span>(<span class="str">"/api/v1/users"</span>)
+<span class="kw">public class</span> <span class="type">UserController</span> {
+
+    <span class="cmnt">// HandlerMapping registers: GET /api/v1/users/{id} -> getUserById()</span>
+    <span class="anno">@GetMapping</span>(<span class="str">"/{id}"</span>)
+    <span class="kw">public</span> <span class="type">UserDto</span> <span class="fn">getUserById</span>(<span class="anno">@PathVariable</span>(<span class="str">"id"</span>) <span class="type">Long</span> id) {
+        <span class="kw">return</span> userService.findById(id);
+    }
+}</code></pre>
+    </section>
+
+    <!-- SECTION 6 -->
+    <section id="sec6">
+      <h2>6. HandlerAdapter</h2>
+      <p>Once <code>HandlerMapping</code> identifies the target controller method, <code>DispatcherServlet</code> does not invoke the Java method directly via reflection. Instead, it delegates invocation to a <b>HandlerAdapter</b> (specifically <code>RequestMappingHandlerAdapter</code>).</p>
+
+      <div class="callout info">
+        <b>Why Use HandlerAdapter?</b><br>
+        Controller methods have completely dynamic signatures! One method might take <code>@RequestBody UserDto dto</code>, while another takes <code>@RequestParam String query, HttpServletRequest req</code>. <code>HandlerAdapter</code> uses <code>HandlerMethodArgumentResolver</code> implementations to evaluate and inject whatever parameters the target method requests before calling it.
+      </div>
+    </section>
+
+    <!-- SECTION 7 -->
+    <section id="sec7">
+      <h2>7. Controller Layer</h2>
+      <p>Spring MVC provides two primary annotations to declare web controller components:</p>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Annotation</th>
+            <th>Primary Use Case</th>
+            <th>Response Behavior</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>@Controller</code></td>
+            <td>Traditional Server-Side Rendering (Thymeleaf, JSP, HTML views).</td>
+            <td>Handler methods return a String representing a View Template Name.</td>
+          </tr>
+          <tr>
+            <td><code>@RestController</code></td>
+            <td>RESTful Web APIs (React, Angular, Mobile Apps, Microservices).</td>
+            <td>Meta-annotated with <code>@Controller</code> + <code>@ResponseBody</code>. Returns objects directly serialized as JSON/XML.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 8 -->
+    <section id="sec8">
+      <h2>8. Request Mapping Annotations</h2>
+      <p>Spring MVC provides declarative mapping annotations to inspect HTTP parameters, paths, headers, and request payloads:</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>HTTP Verb Mappings</b>
+          <p><code>@GetMapping</code>, <code>@PostMapping</code>, <code>@PutMapping</code>, <code>@DeleteMapping</code>, <code>@PatchMapping</code>. Shorthands for <code>@RequestMapping(method = RequestMethod...)</code>.</p>
+        </div>
+        <div class="card">
+          <b>@PathVariable</b>
+          <p>Extracts dynamic values directly from URI path segments (e.g. <code>/users/{id}</code> &rarr; <code>@PathVariable Long id</code>).</p>
+        </div>
+        <div class="card">
+          <b>@RequestParam</b>
+          <p>Extracts query parameters or form fields from the URL (e.g. <code>/users?page=1&amp;size=10</code> &rarr; <code>@RequestParam int page</code>).</p>
+        </div>
+        <div class="card">
+          <b>@RequestBody</b>
+          <p>Instructs Jackson to deserialize the incoming HTTP request JSON body into a target Java DTO object.</p>
+        </div>
+        <div class="card">
+          <b>@RequestHeader &amp; @CookieValue</b>
+          <p>Extracts specific HTTP headers (e.g. <code>Authorization</code>, <code>X-Correlation-ID</code>) or HTTP cookies.</p>
+        </div>
+        <div class="card">
+          <b>@ResponseStatus</b>
+          <p>Sets explicit HTTP response status codes (e.g., <code>HttpStatus.CREATED</code> 201 or <code>HttpStatus.NO_CONTENT</code> 204).</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 9 -->
+    <section id="sec9">
+      <h2>9. Request &amp; Response Serialization</h2>
+      <p>How does Spring automatically convert JSON sent from a frontend into a Java object, and then convert Java objects back into JSON for the HTTP response?</p>
+
+      <p>It uses <b>HttpMessageConverters</b>. For REST APIs returning JSON, Spring MVC configures the <b>Jackson library</b> (<code>MappingJackson2HttpMessageConverter</code>) by default.</p>
+
+      <div class="diagram">
+        <h4>Jackson Conversion Pipeline</h4>
+        <div class="flow-step"><div class="num">1</div><div><b>Deserialization:</b> Incoming JSON string stream &rarr; Jackson <code>ObjectMapper</code> &rarr; Instantiates Java DTO (used by <code>@RequestBody</code>).</div></div>
+        <div class="flow-step"><div class="num">2</div><div><b>Serialization:</b> Returned Java DTO / Response Entity &rarr; Jackson <code>ObjectMapper</code> &rarr; Generates outgoing JSON string bytes (used by <code>@ResponseBody</code>).</div></div>
+      </div>
+    </section>
+
+    <!-- SECTION 10 -->
+    <section id="sec10">
+      <h2>10. Validation Framework</h2>
+      <p>Spring MVC integrates seamlessly with Jakarta Bean Validation (Hibernate Validator) to validate incoming request DTOs automatically.</p>
+
+      <pre><code><span class="kw">public class</span> <span class="type">UserRegistrationRequest</span> {
+
+    <span class="anno">@NotBlank</span>(message = <span class="str">"Name cannot be blank"</span>)
+    <span class="kw">private</span> <span class="type">String</span> name;
+
+    <span class="anno">@Email</span>(message = <span class="str">"Must be a valid email address"</span>)
+    <span class="anno">@NotNull</span>
+    <span class="kw">private</span> <span class="type">String</span> email;
+
+    <span class="anno">@Size</span>(min = 8, max = 32, message = <span class="str">"Password must be between 8 and 32 characters"</span>)
+    <span class="kw">private</span> <span class="type">String</span> password;
+}
+
+<span class="anno">@RestController</span>
+<span class="anno">@RequestMapping</span>(<span class="str">"/api/v1/users"</span>)
+<span class="kw">public class</span> <span class="type">UserController</span> {
+
+    <span class="anno">@PostMapping</span>
+    <span class="kw">public</span> <span class="type">ResponseEntity</span>&lt;<span class="type">Void</span>&gt; <span class="fn">register</span>(<span class="anno">@Valid</span> <span class="anno">@RequestBody</span> <span class="type">UserRegistrationRequest</span> request) {
+        <span class="cmnt">// If validation fails, Spring throws MethodArgumentNotValidException automatically!</span>
+        userService.create(request);
+        <span class="kw">return</span> <span class="type">ResponseEntity</span>.status(<span class="type">HttpStatus</span>.CREATED).build();
+    }
+}</code></pre>
+    </section>
+
+    <!-- SECTION 11 -->
+    <section id="sec11">
+      <h2>11. Global Exception Handling</h2>
+      <p>In production applications, you should never allow raw Java exceptions or stack traces to leak to REST API clients. Spring MVC provides <b>@RestControllerAdvice</b> for centralized, clean error handling.</p>
+
+      <pre><code><span class="anno">@RestControllerAdvice</span>
+<span class="kw">public class</span> <span class="type">GlobalExceptionHandler</span> {
+
+    <span class="anno">@ExceptionHandler</span>(<span class="type">UserNotFoundException</span>.<span class="kw">class</span>)
+    <span class="anno">@ResponseStatus</span>(<span class="type">HttpStatus</span>.NOT_FOUND)
+    <span class="kw">public</span> <span class="type">ErrorResponse</span> <span class="fn">handleUserNotFound</span>(<span class="type">UserNotFoundException</span> ex) {
+        <span class="kw">return new</span> <span class="type">ErrorResponse</span>(<span class="str">"USER_NOT_FOUND"</span>, ex.getMessage());
+    }
+
+    <span class="anno">@ExceptionHandler</span>(<span class="type">MethodArgumentNotValidException</span>.<span class="kw">class</span>)
+    <span class="anno">@ResponseStatus</span>(<span class="type">HttpStatus</span>.BAD_REQUEST)
+    <span class="kw">public</span> <span class="type">ErrorResponse</span> <span class="fn">handleValidationFailure</span>(<span class="type">MethodArgumentNotValidException</span> ex) {
+        <span class="type">String</span> firstError = ex.getBindingResult().getFieldErrors().get(<span class="num">0</span>).getDefaultMessage();
+        <span class="kw">return new</span> <span class="type">ErrorResponse</span>(<span class="str">"VALIDATION_FAILED"</span>, firstError);
+    }
+}</code></pre>
+    </section>
+
+    <!-- SECTION 12 -->
+    <section id="sec12">
+      <h2>12. Interceptors</h2>
+      <p><b>HandlerInterceptors</b> allow you to intercept HTTP requests before they reach a controller method, after execution completes, or after the view/response has been fully rendered.</p>
+
+      <div class="diagram">
+        <h4>HandlerInterceptor Lifecycle</h4>
+        <div class="flow-step"><div class="num">1</div><div><b>preHandle():</b> Executes <i>before</i> reaching the controller. Returning <code>false</code> aborts request execution immediately.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">2</div><div><b>Controller Method:</b> Executes business code in controller.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">3</div><div><b>postHandle():</b> Executes <i>after</i> controller finishes, before view rendering / JSON flushing.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">4</div><div><b>afterCompletion():</b> Executes <i>after</i> full request completion (used for resource cleanups or logging total execution time).</div></div>
+      </div>
+    </section>
+
+    <!-- SECTION 13 -->
+    <section id="sec13">
+      <h2>13. Filters vs Interceptors</h2>
+      <p>Developers often confuse Servlet Filters with Spring HandlerInterceptors. Here is how they differ:</p>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Servlet Filter</th>
+            <th>Spring HandlerInterceptor</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Specification Layer</td>
+            <td>Standard Jakarta Servlet Specification (Outside Spring).</td>
+            <td>Native Spring MVC Framework component.</td>
+          </tr>
+          <tr>
+            <td>Execution Location</td>
+            <td>Runs before <code>DispatcherServlet</code> gets invoked.</td>
+            <td>Runs inside <code>DispatcherServlet</code>, right before reaching Controller.</td>
+          </tr>
+          <tr>
+            <td>Spring Context Access</td>
+            <td>Limited (requires Spring Bean Delegation).</td>
+            <td>Full access to Spring ApplicationContext and target HandlerMethod objects.</td>
+          </tr>
+          <tr>
+            <td>Common Use Cases</td>
+            <td>GZIP compression, CORS preflight headers, raw request security, rate limiting.</td>
+            <td>Request timing logs, correlation ID tracing, custom auth token checks, locale updates.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 14 -->
+    <section id="sec14">
+      <h2>14. View Resolution</h2>
+      <p>In traditional web applications returning HTML templates (e.g. Thymeleaf), controllers return a String view name (e.g. <code>"index"</code>). The <code>ViewResolver</code> maps this string to a physical template file (e.g., <code>/templates/index.html</code>).</p>
+
+      <p>In modern REST APIs using <code>@RestController</code>, the <b>ViewResolver is completely bypassed</b> because objects are converted directly to JSON streams via <code>HttpMessageConverters</code>.</p>
+    </section>
+
+    <!-- SECTION 15 -->
+    <section id="sec15">
+      <h2>15. REST API Best Practices</h2>
+      <ul>
+        <li><b>Use Proper Nouns for Resources:</b> Use plural nouns for endpoints (<code>/api/v1/orders</code>, <code>/api/v1/users</code>) instead of verbs (<code>/getOrders</code>).</li>
+        <li><b>Leverage Proper HTTP Verbs:</b> GET (Read), POST (Create), PUT (Replace), PATCH (Partial Update), DELETE (Remove).</li>
+        <li><b>Return Meaningful HTTP Status Codes:</b> 200 OK, 201 Created, 204 No Content, 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found, 500 Internal Server Error.</li>
+        <li><b>API Versioning:</b> Include version prefixes in path URIs (e.g. <code>/api/v1/products</code>).</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 16 -->
+    <section id="sec16">
+      <h2>16. Real Production Walkthrough</h2>
+      <p>Here is how a clean multi-layered Spring Boot REST API handles an HTTP request in production:</p>
+
+      <pre><code><span class="cmnt">// 1. Controller Layer: Routing, Input Validation, HTTP Status Codes</span>
+<span class="anno">@RestController</span>
+<span class="anno">@RequestMapping</span>(<span class="str">"/api/v1/products"</span>)
+<span class="kw">public class</span> <span class="type">ProductController</span> {
+
+    <span class="kw">private final</span> <span class="type">ProductService</span> productService;
+    <span class="kw">public</span> <span class="fn">ProductController</span>(<span class="type">ProductService</span> productService) { <span class="kw">this</span>.productService = productService; }
+
+    <span class="anno">@PostMapping</span>
+    <span class="kw">public</span> <span class="type">ResponseEntity</span>&lt;<span class="type">ProductResponseDto</span>&gt; <span class="fn">create</span>(<span class="anno">@Valid</span> <span class="anno">@RequestBody</span> <span class="type">CreateProductRequest</span> request) {
+        <span class="type">ProductResponseDto</span> response = productService.createProduct(request);
+        <span class="kw">return</span> <span class="type">ResponseEntity</span>.status(<span class="type">HttpStatus</span>.CREATED).body(response);
+    }
+}
+
+<span class="cmnt">// 2. Service Layer: Business Logic & Transactions</span>
+<span class="anno">@Service</span>
+<span class="kw">public class</span> <span class="type">ProductServiceImpl</span> <span class="kw">implements</span> <span class="type">ProductService</span> {
+
+    <span class="kw">private final</span> <span class="type">ProductRepository</span> repository;
+    <span class="kw">public</span> <span class="fn">ProductServiceImpl</span>(<span class="type">ProductRepository</span> repository) { <span class="kw">this</span>.repository = repository; }
+
+    <span class="anno">@Override</span>
+    <span class="anno">@Transactional</span>
+    <span class="kw">public</span> <span class="type">ProductResponseDto</span> <span class="fn">createProduct</span>(<span class="type">CreateProductRequest</span> request) {
+        <span class="type">Product</span> entity = <span class="kw">new</span> <span class="type">Product</span>(request.getName(), request.getPrice());
+        <span class="type">Product</span> saved = repository.save(entity);
+        <span class="kw">return</span> <span class="kw">new</span> <span class="type">ProductResponseDto</span>(saved.getId(), saved.getName(), saved.getPrice());
+    }
+}</code></pre>
+    </section>
+
+    <!-- SECTION 17 -->
+    <section id="sec17">
+      <h2>17. Common Mistakes</h2>
+      <div class="callout warn">
+        <b>1. Business Logic Inside Controller:</b> Writing SQL queries, database calls, or calculations inside controller methods makes code un-testable and breaks Separation of Concerns.<br><br>
+        <b>2. Returning JPA Entities Directly from Controllers:</b> Causes infinite JSON recursion loops (due to bidirectional relationships) and exposes internal database schema. Always return DTOs.<br><br>
+        <b>3. Missing @Valid Annotation:</b> Forgetting to add <code>@Valid</code> next to <code>@RequestBody</code> parameters skips Bean Validation checks entirely.
+      </div>
+    </section>
+
+    <!-- SECTION 18 -->
+    <section id="sec18">
+      <h2>18. Senior Best Practices</h2>
+      <ul>
+        <li>Use DTOs (Data Transfer Objects) for request payloads and response bodies. Never expose JPA Entities.</li>
+        <li>Centralize all exception handling inside a <code>@RestControllerAdvice</code> class.</li>
+        <li>Use Constructor Injection for Service dependencies in Controllers and mark fields <code>private final</code>.</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 19 -->
+    <section id="sec19">
+      <h2>19. 50+ Interview Questions</h2>
+
+      <div class="faq-item">
+        <div class="faq-q">Q1: What is DispatcherServlet in Spring MVC?</div>
+        <div class="faq-a">It is the central Front Controller Servlet in Spring MVC that intercepts all incoming HTTP requests and coordinates routing, execution, exception handling, and response rendering.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q2: Why is DispatcherServlet called a Front Controller?</div>
+        <div class="faq-a">Because it acts as a single centralized entry point for all web requests, delegating specialized tasks (like endpoint lookup or parameter conversion) to helper beans.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q3: Difference between @Controller and @RestController?</div>
+        <div class="faq-a">@Controller is used for traditional HTML view rendering. @RestController combines @Controller and @ResponseBody to automatically serialize return objects into JSON/XML payloads.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q4: What is HandlerMapping?</div>
+        <div class="faq-a">A Spring component that maintains a lookup table of request URLs/HTTP methods and returns the matching Controller handler method.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q5: What is HandlerAdapter?</div>
+        <div class="faq-a">A component that invokes the controller method chosen by HandlerMapping, resolving dynamic method arguments and parameters before execution.</div>
+      </div>
+
+      <div class="faq-item"><div class="faq-q">Q6: What is HttpMessageConverter?</div><div class="faq-a">A Spring strategy interface used by Jackson to convert Java objects into HTTP response JSON streams and vice versa.</div></div>
+      <div class="faq-item"><div class="faq-q">Q7: Difference between Servlet Filter and HandlerInterceptor?</div><div class="faq-a">Filters are Jakarta Servlet specs that run before DispatcherServlet. Interceptors are Spring components that run inside DispatcherServlet around Controller execution.</div></div>
+      <div class="faq-item"><div class="faq-q">Q8: How does @RestControllerAdvice work?</div><div class="faq-a">It acts as a global exception interceptor class for all controllers, using @ExceptionHandler methods to return standardized JSON error responses.</div></div>
+      <div class="faq-item"><div class="faq-q">Q9: Difference between @PathVariable and @RequestParam?</div><div class="faq-a">@PathVariable extracts dynamic path segments (/users/{id}). @RequestParam extracts query parameters (/users?id=10).</div></div>
+      <div class="faq-item"><div class="faq-q">Q10: What does @RequestBody do?</div><div class="faq-a">Tells Jackson to deserialize the incoming HTTP request JSON body into a Java DTO object.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q11: What does @ResponseBody do?</div><div class="faq-a">Tells Spring MVC to serialize the method return value directly into the HTTP response body as JSON.</div></div>
+      <div class="faq-item"><div class="faq-q">Q12: What is the purpose of @Valid annotation?</div><div class="faq-a">Triggers automatic Bean Validation on input DTO fields before executing the controller method.</div></div>
+      <div class="faq-item"><div class="faq-q">Q13: What exception is thrown when @Valid fails on @RequestBody?</div><div class="faq-a"><code>MethodArgumentNotValidException</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q14: What is the role of ViewResolver in Spring MVC?</div><div class="faq-a">Maps string view names returned by @Controller methods to physical view template files (e.g. Thymeleaf HTML).</div></div>
+      <div class="faq-item"><div class="faq-q">Q15: Why is ViewResolver bypassed in REST APIs?</div><div class="faq-a">Because @RestController methods return raw data objects serialized directly to JSON via HttpMessageConverter rather than HTML views.</div></div>
+      <div class="faq-item"><div class="faq-q">Q16: What is preHandle() in HandlerInterceptor?</div><div class="faq-a">Method that executes before reaching the controller; returning false aborts the request execution immediately.</div></div>
+      <div class="faq-item"><div class="faq-q">Q17: What is postHandle() in HandlerInterceptor?</div><div class="faq-a">Method that executes after controller method completion but before response rendering/flushing.</div></div>
+      <div class="faq-item"><div class="faq-q">Q18: What is afterCompletion() in HandlerInterceptor?</div><div class="faq-a">Method that executes after the complete HTTP request has finished rendering, used for resource cleanup.</div></div>
+      <div class="faq-item"><div class="faq-q">Q19: What is @CrossOrigin used for?</div><div class="faq-a">Enables Cross-Origin Resource Sharing (CORS) headers on endpoints for frontend integration.</div></div>
+      <div class="faq-item"><div class="faq-q">Q20: What is @ResponseStatus used for?</div><div class="faq-a">Sets default HTTP status code (e.g., 201 CREATED) on controller methods or custom exception classes.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q21: How to get HTTP request headers in Spring MVC?</div><div class="faq-a">Using the <code>@RequestHeader</code> parameter annotation.</div></div>
+      <div class="faq-item"><div class="faq-q">Q22: How to get HTTP cookies in Spring MVC?</div><div class="faq-a">Using the <code>@CookieValue</code> parameter annotation.</div></div>
+      <div class="faq-item"><div class="faq-q">Q23: Difference between PUT and PATCH?</div><div class="faq-a">PUT replaces an entire resource record. PATCH performs a partial update on specific fields.</div></div>
+      <div class="faq-item"><div class="faq-q">Q24: What is ResponseEntity in Spring MVC?</div><div class="faq-a">A wrapper object allowing full control over HTTP response status code, headers, and body payload.</div></div>
+      <div class="faq-item"><div class="faq-q">Q25: Why should you never return JPA Entities directly from REST controllers?</div><div class="faq-a">Prevents infinite JSON recursion loops, leaks database structure, and exposes internal security fields.</div></div>
+      <div class="faq-item"><div class="faq-q">Q26: What is MethodArgumentTypeMismatchException?</div><div class="faq-a">Thrown when a request path or query parameter cannot be converted to the required Java target type.</div></div>
+      <div class="faq-item"><div class="faq-q">Q27: How does Spring MVC handle file uploads?</div><div class="faq-a">Using <code>MultipartFile</code> parameter type supported by StandardServletMultipartResolver.</div></div>
+      <div class="faq-item"><div class="faq-q">Q28: What is @ModelAttribute used for?</div><div class="faq-a">Binds form data or query parameters to a model object in traditional MVC HTML applications.</div></div>
+      <div class="faq-item"><div class="faq-q">Q29: How to customize Jackson ObjectMapper in Spring Boot?</div><div class="faq-a">By defining a custom <code>Jackson2ObjectMapperBuilderCustomizer</code> or <code>ObjectMapper</code> bean.</div></div>
+      <div class="faq-item"><div class="faq-q">Q30: What is Content Negotiation in Spring MVC?</div><div class="faq-a">Determining the response media type (JSON vs XML) based on the HTTP <code>Accept</code> header.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q31: What is @ExceptionHandler?</div><div class="faq-a">Annotation used to define handler methods for specific exception types inside controllers or advice classes.</div></div>
+      <div class="faq-item"><div class="faq-q">Q32: Difference between @ControllerAdvice and @RestControllerAdvice?</div><div class="faq-a">@RestControllerAdvice automatically adds @ResponseBody to all error handler method returns.</div></div>
+      <div class="faq-item"><div class="faq-q">Q33: How to validate URL PathVariables?</div><div class="faq-a">Add <code>@Validated</code> on the Controller class level and validation annotations (e.g. <code>@Min(1)</code>) on path variable parameters.</div></div>
+      <div class="faq-item"><div class="faq-q">Q34: How to configure Interceptors in Spring Boot?</div><div class="faq-a">By implementing <code>WebMvcConfigurer</code> and overriding <code>addInterceptors()</code> method.</div></div>
+      <div class="faq-item"><div class="faq-q">Q35: What HTTP status code should be returned on successful creation?</div><div class="faq-a">201 Created.</div></div>
+      <div class="faq-item"><div class="faq-q">Q36: What HTTP status code should be returned on successful deletion?</div><div class="faq-a">204 No Content (or 200 OK).</div></div>
+      <div class="faq-item"><div class="faq-q">Q37: What is RequestMappingHandlerAdapter?</div><div class="faq-a">Concrete implementation of HandlerAdapter used to execute @RequestMapping methods.</div></div>
+      <div class="faq-item"><div class="faq-q">Q38: What is RequestMappingHandlerMapping?</div><div class="faq-a">Concrete implementation of HandlerMapping that maps URLs to @RequestMapping methods.</div></div>
+      <div class="faq-item"><div class="faq-q">Q39: What is the default JSON library in Spring Boot Web?</div><div class="faq-a">Jackson.</div></div>
+      <div class="faq-item"><div class="faq-q">Q40: How to handle CORS globally in Spring MVC?</div><div class="faq-a">By overriding <code>addCorsMappings()</code> inside a <code>WebMvcConfigurer</code> bean.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q41: What is HttpEntity?</div><div class="faq-a">Represents an HTTP request or response entity consisting of headers and body.</div></div>
+      <div class="faq-item"><div class="faq-q">Q42: Can a Controller method take HttpServletRequest as argument?</div><div class="faq-a">Yes! HandlerAdapter resolves raw Servlet API parameters automatically.</div></div>
+      <div class="faq-item"><div class="faq-q">Q43: What is UriComponentsBuilder?</div><div class="faq-a">A builder class used to construct and expand URI strings safely in Spring.</div></div>
+      <div class="faq-item"><div class="faq-q">Q44: What happens if a required @RequestParam is missing in request?</div><div class="faq-a">Spring throws <code>MissingServletRequestParameterException</code> returning HTTP 400.</div></div>
+      <div class="faq-item"><div class="faq-q">Q45: How to make a @RequestParam optional?</div><div class="faq-a">Set <code>@RequestParam(required = false)</code> or wrap parameter in <code>Optional&lt;T&gt;</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q46: What is Matrix Variable in Spring MVC?</div><div class="faq-a">Name-value pairs embedded in path segments separated by semicolons (/users;age=30).</div></div>
+      <div class="faq-item"><div class="faq-q">Q47: What is ProblemDetail in Spring 6 / Boot 3?</div><div class="faq-a">A standard specification (RFC 7807) representation for returning structured REST API error responses.</div></div>
+      <div class="faq-item"><div class="faq-q">Q48: What is WebMvcConfigurer?</div><div class="faq-a">An interface used to customize Spring MVC configuration (CORS, Interceptors, Formatters).</div></div>
+      <div class="faq-item"><div class="faq-q">Q49: How does Spring MVC handle async request processing?</div><div class="faq-a">By allowing controller methods to return <code>CompletableFuture&lt;T&gt;</code> or <code>DeferredResult&lt;T&gt;</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q50: What is the main takeaway of Spring MVC architecture?</div><div class="faq-a">Centralized Front Controller routing, clean layered decoupling, annotation-driven parameter resolution, and automated REST JSON serialization.</div></div>
+    </section>
+
+    <!-- SECTION 20 -->
+    <section id="sec20">
+      <h2>20. Revision Cheatsheet</h2>
+      <div class="card">
+        <p><b>DispatcherServlet:</b> Front Controller intercepting all incoming HTTP requests.</p>
+        <p><b>HandlerMapping:</b> Maps URLs to matching Controller methods.</p>
+        <p><b>HandlerAdapter:</b> Invokes Controller methods and resolves arguments.</p>
+        <p><b>@RestController:</b> Combines @Controller + @ResponseBody for REST JSON APIs.</p>
+        <p><b>HttpMessageConverter:</b> Serializes Java objects to JSON via Jackson.</p>
+        <p><b>@RestControllerAdvice:</b> Centralized global exception handler across all controllers.</p>
+      </div>
+    </section>
+
+    <!-- SECTION 21 -->
+    <section id="sec21">
+      <h2>21. Visual Infographic Summary</h2>
+      <div class="diagram">
+        <h4>Spring MVC Complete Architecture Map</h4>
+        <div class="grid">
+          <div class="card" style="border-color: var(--teal);">
+            <b style="color: var(--teal);">1. Front Controller</b>
+            <p>Tomcat &middot; DispatcherServlet &middot; Filters &middot; Interceptors</p>
+          </div>
+          <div class="card" style="border-color: var(--amber);">
+            <b style="color: var(--amber);">2. Routing &amp; Execution</b>
+            <p>HandlerMapping &middot; HandlerAdapter &middot; @RestController &middot; Validation (@Valid)</p>
+          </div>
+          <div class="card" style="border-color: var(--purple);">
+            <b style="color: var(--purple);">3. Business &amp; Response</b>
+            <p>Service Layer &middot; Repository &middot; Jackson Converter &middot; @RestControllerAdvice</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+</body>
+</html>

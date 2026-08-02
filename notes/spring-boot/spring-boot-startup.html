@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Spring Boot Startup Process — Complete Deep Dive</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  :root {
+    --bg: #0b0e14;
+    --surface: #131824;
+    --panel2: #0f131c;
+    --border: #232a38;
+    --text: #e7eaf1;
+    --muted: #9aa4b7;
+    --accent: #f0b429;
+    --amber: #f0b429;
+    --teal: #38bdf8;
+    --rose: #f87171;
+    --green: #4ade80;
+    --purple: #c084fc;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .layout {
+    display: flex;
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+  
+  /* STICKY SIDEBAR NAV */
+  nav.sidebar {
+    width: 310px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 24px 16px;
+    flex-shrink: 0;
+  }
+  nav.sidebar h3 {
+    font-size: 0.85rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+    padding-left: 8px;
+  }
+  nav.sidebar a {
+    display: block;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.8rem;
+    padding: 5px 8px;
+    border-radius: 6px;
+    margin-bottom: 2px;
+    transition: all 0.15s ease;
+  }
+  nav.sidebar a:hover {
+    color: var(--accent);
+    background: rgba(240, 180, 41, 0.08);
+  }
+
+  /* MAIN CONTENT WRAPPER */
+  .main-content {
+    flex: 1;
+    max-width: 1080px;
+    padding: 48px 40px 120px;
+    overflow-x: hidden;
+  }
+
+  .eyebrow {
+    color: var(--accent);
+    font-family: monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  h1 { font-size: 2.3rem; margin-top: 0; margin-bottom: 8px; font-weight: 800; line-height: 1.25; }
+  h1 span { color: var(--accent); }
+  .sub { color: var(--muted); font-size: 1rem; margin-bottom: 32px; }
+  
+  h2 {
+    margin-top: 56px;
+    font-size: 1.45rem;
+    border-left: 4px solid var(--accent);
+    padding-left: 14px;
+    color: var(--text);
+  }
+  h3 { font-size: 1.15rem; color: var(--teal); margin-top: 28px; }
+  h4 { font-size: 0.98rem; color: var(--purple); margin-top: 20px; }
+  p, li { color: var(--muted); font-size: 0.95rem; }
+  li { margin-bottom: 6px; }
+  b, strong { color: var(--text); }
+  
+  /* CARDS & PANELS */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 20px 0; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .card b { color: var(--accent); display: block; margin-bottom: 6px; font-size: 1rem; }
+  
+  /* CALLOUT BOXES */
+  .callout {
+    margin: 20px 0;
+    border-left: 4px solid var(--accent);
+    padding: 16px 20px;
+    background: rgba(240, 180, 41, 0.05);
+    border-radius: 0 8px 8px 0;
+    font-size: 0.92rem;
+  }
+  .callout.warn { border-left-color: var(--rose); background: rgba(248, 113, 113, 0.06); }
+  .callout.info { border-left-color: var(--teal); background: rgba(56, 189, 248, 0.06); }
+  .callout.success { border-left-color: var(--green); background: rgba(74, 222, 128, 0.06); }
+  
+  /* CODE BLOCKS WITH PURE CSS SYNTAX HIGHLIGHTING */
+  pre {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: #e7eaf1;
+  }
+  code {
+    background: #0f131c;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.88em;
+    color: var(--accent);
+    font-family: 'Consolas', 'Courier New', monospace;
+  }
+  pre code { border: none; padding: 0; background: transparent; color: inherit; }
+  
+  .kw { color: #f43f5e; font-weight: bold; }
+  .anno { color: var(--accent); font-weight: bold; }
+  .type { color: var(--teal); }
+  .str { color: var(--green); }
+  .cmnt { color: #64748b; font-style: italic; }
+  .fn { color: #c084fc; }
+
+  /* TABLES */
+  table.matrix {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 0.85rem;
+    background: var(--surface);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  table.matrix th, table.matrix td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    text-align: left;
+  }
+  table.matrix th {
+    background: var(--panel2);
+    color: var(--accent);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+  }
+  table.matrix tr:last-child td { border-bottom: none; }
+
+  /* FLOWCHARTS & DIAGRAMS */
+  .diagram {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin: 24px 0;
+  }
+  .flow-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .flow-step .num {
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: bold;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+  .flow-arrow {
+    text-align: center;
+    color: var(--accent);
+    font-size: 1.2rem;
+    margin: -4px 0 4px;
+  }
+
+  /* FAQ ACCORDION STYLE */
+  .faq-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    padding: 16px;
+  }
+  .faq-q { color: var(--accent); font-weight: 600; font-size: 0.98rem; margin-bottom: 8px; }
+  .faq-a { color: var(--muted); font-size: 0.92rem; }
+
+  @media (max-width: 900px) {
+    .layout { flex-direction: column; }
+    nav.sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border); }
+    .main-content { padding: 24px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- SIDEBAR NAVIGATION -->
+  <nav class="sidebar">
+    <h3>Startup Process</h3>
+    <a href="#sec1">1. Introduction</a>
+    <a href="#sec2">2. Overall Startup Flow</a>
+    <a href="#sec3">3. main() Method</a>
+    <a href="#sec4">4. SpringApplication.run()</a>
+    <a href="#sec5">5. SpringApplication Internals</a>
+    <a href="#sec6">6. Component Scanning</a>
+    <a href="#sec7">7. Auto Configuration</a>
+    <a href="#sec8">8. Conditional Annotations</a>
+    <a href="#sec9">9. Starter Dependencies</a>
+    <a href="#sec10">10. ApplicationContext Creation</a>
+    <a href="#sec11">11. Bean Creation Process</a>
+    <a href="#sec12">12. Embedded Tomcat Server</a>
+    <a href="#sec13">13. Auto Configuration Report</a>
+    <a href="#sec14">14. Application Startup Events</a>
+    <a href="#sec15">15. Runners (CommandLine &amp; App)</a>
+    <a href="#sec16">16. Production Startup Flow</a>
+    <a href="#sec17">17. Common Startup Mistakes</a>
+    <a href="#sec18">18. Senior Best Practices</a>
+    <a href="#sec19">19. 40+ Interview Questions</a>
+    <a href="#sec20">20. Revision Cheatsheet</a>
+    <a href="#sec21">21. Visual Infographic Summary</a>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <div class="eyebrow">Enterprise Java &middot; Spring Boot Architecture</div>
+    <h1>Spring Boot Startup Process — <span>Complete Deep Dive</span></h1>
+    <div class="sub">A beginner-friendly, simple, and complete guide to what happens behind the scenes when you boot a Spring Boot application—from <code>main()</code> and <code>SpringApplication.run()</code> to Auto-Configuration, Embedded Tomcat, and Application Events.</div>
+
+    <!-- SECTION 1 -->
+    <section id="sec1">
+      <h2>1. Introduction</h2>
+      <p>When you click the "Run" button in your IDE or execute <code>java -jar app.jar</code>, a Spring Boot application starts up in a few seconds and prints a nice ASCII banner. But what actually happens in those few seconds?</p>
+      
+      <p>Behind that simple boot screen, Spring Boot is performing dozens of automated setup tasks: scanning your code, setting up an in-memory application environment, configuring database connections, creating security filters, and starting a web server like Apache Tomcat.</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>Real-World Analogy: Opening a Restaurant</b>
+          <p>Running a Spring Boot application is like opening a restaurant for the day. Before customers can order food (HTTP requests), the manager must unlock the doors (JVM start), hire staff (Component Scan), organize ingredient suppliers (Auto Configuration), turn on the kitchen appliances (Embedded Tomcat), and announce the restaurant is open (ApplicationReadyEvent).</p>
+        </div>
+        <div class="card">
+          <b>Why Understanding Startup Matters</b>
+          <p>Knowing the startup process helps you debug "BeanNotOfRequiredTypeException" or "Port already in use" errors, optimize slow application boot times, customize environment properties dynamically, and ace technical backend interviews.</p>
+        </div>
+      </div>
+
+      <div class="diagram">
+        <h4>High-Level Startup Overview</h4>
+        <div class="flow-step"><div class="num">1</div><div><b>Java Main Execution:</b> JVM calls your class's <code>public static void main()</code> method.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">2</div><div><b>Spring Boot Engine:</b> <code>SpringApplication.run()</code> takes control to boot Spring.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">3</div><div><b>Environment &amp; Container:</b> Creates configuration environment and ApplicationContext container.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">4</div><div><b>Beans &amp; Web Server:</b> Creates Spring Beans, autowires dependencies, and starts Embedded Tomcat.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">5</div><div><b>Ready for Requests:</b> Triggers ready listeners and waits for incoming HTTP traffic on port 8080.</div></div>
+      </div>
+    </section>
+
+    <!-- SECTION 2 -->
+    <section id="sec2">
+      <h2>2. Overall Startup Flow</h2>
+      <p>Here is the complete step-by-step flowchart of the Spring Boot application startup process:</p>
+
+      <div class="diagram">
+        <h4>Master Spring Boot Startup Flowchart</h4>
+        <div class="flow-step"><div class="num">1</div><div><b>main() Called:</b> Application entry point is executed.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">2</div><div><b>SpringApplication.run():</b> Static boot method is invoked with your primary configuration class.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">3</div><div><b>Create SpringApplication Object:</b> Instantiates the engine object and sets initializers/listeners.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">4</div><div><b>Determine Application Type:</b> Checks classpath to determine if it is SERVLET, REACTIVE, or NONE.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">5</div><div><b>Prepare Environment:</b> Loads <code>application.properties</code>, active profiles, and system environment variables.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">6</div><div><b>Create ApplicationContext:</b> Instantiates the core IoC container (e.g., <code>AnnotationConfigServletWebServerApplicationContext</code>).</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">7</div><div><b>Execute Initializers:</b> Runs <code>ApplicationContextInitializer</code> instances to customize the context.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">8</div><div><b>Load Auto Configurations:</b> Evaluates <code>@EnableAutoConfiguration</code> imports using conditional annotations.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">9</div><div><b>Component Scan:</b> Scans packages under the main class for <code>@Component</code>, <code>@Service</code>, <code>@Repository</code>, <code>@RestController</code>.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">10</div><div><b>Create Bean Definitions:</b> Registers blueprints of all discovered beans into the <code>BeanFactory</code>.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">11</div><div><b>Instantiate Beans:</b> Creates actual object instances in heap memory for non-lazy singletons.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">12</div><div><b>Dependency Injection:</b> Injects dependent beans via constructors, setters, or fields.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">13</div><div><b>Embedded Tomcat Starts:</b> Initializes and starts the embedded web server on port 8080.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">14</div><div><b>Application Ready:</b> Executes <code>CommandLineRunner</code> / <code>ApplicationRunner</code> and triggers ready events.</div></div>
+      </div>
+    </section>
+
+    <!-- SECTION 3 -->
+    <section id="sec3">
+      <h2>3. main() Method</h2>
+      <p>Every standard Java application requires a <code>public static void main(String[] args)</code> method as its entry point. Spring Boot applications follow this exact same standard Java rule.</p>
+
+      <pre><code><span class="kw">package</span> com.devvault;
+
+<span class="kw">import</span> org.springframework.boot.SpringApplication;
+<span class="kw">import</span> org.springframework.boot.autoconfigure.SpringBootApplication;
+
+<span class="anno">@SpringBootApplication</span>
+<span class="kw">public class</span> <span class="type">Application</span> {
+
+    <span class="kw">public static void</span> <span class="fn">main</span>(<span class="type">String</span>[] args) {
+        <span class="type">SpringApplication</span>.run(<span class="type">Application</span>.<span class="kw">class</span>, args);
+    }
+}</code></pre>
+
+      <div class="callout info">
+        <b>What Happens Inside main()?</b><br>
+        The <code>main()</code> method does not contain complex setup code. Instead, it acts as a launcher that passes two things to <code>SpringApplication.run()</code>:
+        <br>1. <code>Application.class</code>: Your primary configuration class (decorated with <code>@SpringBootApplication</code>).
+        <br>2. <code>args</code>: Command-line arguments passed when executing the application (e.g., <code>--server.port=9090</code>).
+      </div>
+    </section>
+
+    <!-- SECTION 4 -->
+    <section id="sec4">
+      <h2>4. SpringApplication.run()</h2>
+      <p><code>SpringApplication.run()</code> is the core engine function of Spring Boot. It delegates the complex bootstrapping workflow to a newly instantiated <code>SpringApplication</code> object.</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>What is SpringApplication?</b>
+          <p>A bootstrap helper class in package <code>org.springframework.boot</code> designed to create, configure, and refresh a Spring <code>ApplicationContext</code> from a simple Java <code>main()</code> method.</p>
+        </div>
+        <div class="card">
+          <b>What Does run() Return?</b>
+          <p>It returns a fully initialized <code>ConfigurableApplicationContext</code>. This object holds all configured beans, environment properties, active profiles, and web server references.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5 -->
+    <section id="sec5">
+      <h2>5. SpringApplication Internals</h2>
+      <p>When <code>SpringApplication.run()</code> is executed, it breaks down into two distinct phases:</p>
+
+      <h3>Phase A: Object Instantiation (The Construction Phase)</h3>
+      <p>When <code>new SpringApplication(primarySources)</code> is called, it initializes default settings:</p>
+      <ul>
+        <li><b>1. Detect Web Application Type:</b> Checks the classpath. If <code>DispatcherServlet</code> and <code>Servlet</code> classes are present, it marks type as <b>SERVLET</b>. If Spring WebFlux is present, it marks type as <b>REACTIVE</b>. Otherwise, it sets <b>NONE</b>.</li>
+        <li><b>2. Load Bootstrapper Initializers:</b> Reads <code>META-INF/spring.factories</code> or <code>org.springframework.boot.BootstrapRegistryInitializer</code> from classpath JARs.</li>
+        <li><b>3. Load Application Context Initializers:</b> Finds classes implementing <code>ApplicationContextInitializer</code>.</li>
+        <li><b>4. Load Application Listeners:</b> Finds classes implementing <code>ApplicationListener</code> to process startup events.</li>
+        <li><b>5. Deduce Main Application Class:</b> Inspects the current thread call stack to identify the class containing the <code>main()</code> method.</li>
+      </ul>
+
+      <h3>Phase B: The run() Method Execution Phase</h3>
+      <p>Next, the <code>run(args)</code> instance method executes the operational boot loop:</p>
+      <div class="diagram">
+        <div class="flow-step"><div class="num">1</div><div>Starts a stopwatch to track startup metrics.</div></div>
+        <div class="flow-step"><div class="num">2</div><div>Prepares the <code>ConfigurableEnvironment</code> (reads <code>application.properties</code> and environment variables).</div></div>
+        <div class="flow-step"><div class="num">3</div><div>Prints the Spring Boot ASCII Banner to the log output.</div></div>
+        <div class="flow-step"><div class="num">4</div><div>Creates the appropriate <code>ApplicationContext</code> matching the web application type.</div></div>
+        <div class="flow-step"><div class="num">5</div><div>Refreshes the ApplicationContext (scans components, configures auto-configuration, creates beans, autowires dependencies, starts embedded Tomcat).</div></div>
+        <div class="flow-step"><div class="num">6</div><div>Executes all registered <code>CommandLineRunner</code> and <code>ApplicationRunner</code> beans.</div></div>
+      </div>
+    </section>
+
+    <!-- SECTION 6 -->
+    <section id="sec6">
+      <h2>6. Component Scanning</h2>
+      <p>Component Scanning is the discovery process where Spring scans Java packages looking for classes annotated with stereotype annotations so it can manage them as Spring Beans.</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>Annotations Discovered During Scan</b>
+          <ul>
+            <li><code>@Component</code>: Generic Spring managed component.</li>
+            <li><code>@Service</code>: Business logic layer component.</li>
+            <li><code>@Repository</code>: Data access layer (DAO) component.</li>
+            <li><code>@RestController</code> / <code>@Controller</code>: Web API controller component.</li>
+            <li><code>@Configuration</code>: Java-based bean configuration class.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <b>Default Package Scanning Rule</b>
+          <p>By default, <code>@SpringBootApplication</code> (via <code>@ComponentScan</code>) scans the package where your main application class resides, plus <b>all sub-packages underneath it</b> recursively.</p>
+        </div>
+      </div>
+
+      <div class="callout warn">
+        <b>Common Component Scan Bug:</b><br>
+        If you place a controller or service in a package <b>outside</b> or parallel to the main application class package (e.g., main class in <code>com.devvault.app</code> and service in <code>com.devvault.service</code>), Spring Boot will NOT find it! It will fail to create the bean, resulting in "No qualifying bean of type found" at runtime.
+      </div>
+    </section>
+
+    <!-- SECTION 7 -->
+    <section id="sec7">
+      <h2>7. Auto Configuration</h2>
+      <p>Auto Configuration is Spring Boot's "magic" feature that automatically configures beans based on the JAR libraries present on your classpath.</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>Real-World Analogy: Smart Home System</b>
+          <p>Imagine a smart home system. If you plug in a TV, the home automatically detects it, configures the HDMI channels, and sets up the remote control. If you don't have a TV plugged in, it skips setting up TV channels. Auto Configuration works the exact same way with software dependencies!</p>
+        </div>
+        <div class="card">
+          <b>How Spring Boot Decides What to Configure</b>
+          <p>If Spring Boot sees <code>h2.jar</code> on your classpath, it automatically creates an H2 in-memory <code>DataSource</code> bean. If it sees <code>spring-boot-starter-web</code>, it automatically configures an embedded Tomcat server and Jackson JSON converters.</p>
+        </div>
+      </div>
+
+      <div class="callout info">
+        <b>Where Auto Configurations Live:</b><br>
+        Spring Boot reads auto-configuration classes declared in imports files inside starter JARs located at:
+        <br><code>META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports</code>
+      </div>
+    </section>
+
+    <!-- SECTION 8 -->
+    <section id="sec8">
+      <h2>8. Conditional Annotations</h2>
+      <p>Auto Configuration relies heavily on <b>Conditional Annotations</b>. These annotations act as <code>if-then</code> checks that determine whether a configuration class or <code>@Bean</code> method should actually execute.</p>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Conditional Annotation</th>
+            <th>What It Checks (The Condition)</th>
+            <th>Real-World Spring Boot Use Case</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>@ConditionalOnClass</code></td>
+            <td>Checks if a specific <code>.class</code> exists on the JVM classpath.</td>
+            <td>Configures Tomcat beans only if <code>org.apache.catalina.Startup</code> class exists on classpath.</td>
+          </tr>
+          <tr>
+            <td><code>@ConditionalOnMissingBean</code></td>
+            <td>Checks if the developer has NOT already created a custom bean of this type.</td>
+            <td>Configures default Jackson <code>ObjectMapper</code> only if you haven't defined your own custom <code>ObjectMapper</code> bean.</td>
+          </tr>
+          <tr>
+            <td><code>@ConditionalOnBean</code></td>
+            <td>Checks if a specific bean already exists in the container.</td>
+            <td>Configures a TransactionManager only if a <code>DataSource</code> bean has already been created.</td>
+          </tr>
+          <tr>
+            <td><code>@ConditionalOnProperty</code></td>
+            <td>Checks if a configuration property in <code>application.properties</code> matches a value.</td>
+            <td>Enables Swagger OpenAPI documentation beans only if <code>app.swagger.enabled=true</code>.</td>
+          </tr>
+          <tr>
+            <td><code>@ConditionalOnWebApplication</code></td>
+            <td>Checks if the current application context is running as a web application.</td>
+            <td>Configures web security filters and Spring MVC exception handlers only in web apps.</td>
+          </tr>
+          <tr>
+            <td><code>@ConditionalOnExpression</code></td>
+            <td>Evaluates a complex Spring Expression Language (SpEL) boolean condition.</td>
+            <td>Configures advanced caching beans based on complex multi-property checks.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 9 -->
+    <section id="sec9">
+      <h2>9. Starter Dependencies</h2>
+      <p>Before Spring Boot, developers had to manually search for, copy, and maintain compatible versions of dozens of third-party libraries in their <code>pom.xml</code> or <code>build.gradle</code> files.</p>
+
+      <p><b>Spring Boot Starters</b> solved this problem by providing pre-packaged, curated sets of dependency descriptors. Adding a single starter brings in all required transitive dependencies with guaranteed version compatibility.</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>spring-boot-starter-web</b>
+          <p>Bundles Spring MVC, Embedded Tomcat, Jackson JSON serializer, and validation libraries needed to build REST APIs.</p>
+        </div>
+        <div class="card">
+          <b>spring-boot-starter-data-jpa</b>
+          <p>Bundles Hibernate ORM, Spring Data JPA, Spring ORM, and JDBC connection pooling (HikariCP).</p>
+        </div>
+        <div class="card">
+          <b>spring-boot-starter-security</b>
+          <p>Bundles Spring Security core, web security filters, BCrypt password encoders, and authentication mechanisms.</p>
+        </div>
+        <div class="card">
+          <b>spring-boot-starter-test</b>
+          <p>Bundles JUnit 5, Mockito, AssertJ, Hamcrest, and Spring Test runner for unit and integration testing.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 10 -->
+    <section id="sec10">
+      <h2>10. ApplicationContext Creation</h2>
+      <p>The <code>ApplicationContext</code> is Spring's central Inversion of Control (IoC) container. It holds all managed objects (Beans), environment variables, active profiles, and event publishers.</p>
+
+      <div class="diagram">
+        <h4>BeanFactory vs ApplicationContext Hierarchy</h4>
+        <div class="flow-step"><div class="num">1</div><div><b>BeanFactory (Interface):</b> Low-level container interface that stores bean definitions and instantiates objects on request.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">2</div><div><b>ApplicationContext (Interface):</b> High-level container extending BeanFactory; adds auto-configuration, AOP, events, i18n, and web server support.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">3</div><div><b>AnnotationConfigServletWebServerApplicationContext:</b> Concrete class created by default for Spring Boot Web applications.</div></div>
+      </div>
+    </section>
+
+    <!-- SECTION 11 -->
+    <section id="sec11">
+      <h2>11. Bean Creation Process</h2>
+      <p>Here is a simplified summary of how Spring Boot creates beans during startup:</p>
+
+      <div class="diagram">
+        <div class="flow-step"><div class="num">1</div><div><b>Component Scan Discovery:</b> Finds classes marked with <code>@Component</code>, <code>@Service</code>, etc.</div></div>
+        <div class="flow-step"><div class="num">2</div><div><b>BeanDefinition Registration:</b> Registers class metadata (blueprints) into the <code>BeanFactory</code> registry.</div></div>
+        <div class="flow-step"><div class="num">3</div><div><b>Instantiation:</b> Instantiates the raw Java object in heap memory using reflection or constructors.</div></div>
+        <div class="flow-step"><div class="num">4</div><div><b>Dependency Injection:</b> Autowires dependent beans into constructors, setters, or fields.</div></div>
+        <div class="flow-step"><div class="num">5</div><div><b>Post-Processing &amp; Ready:</b> Runs <code>@PostConstruct</code> methods, wraps beans in AOP proxies if needed, and caches them.</div></div>
+      </div>
+    </section>
+
+    <!-- SECTION 12 -->
+    <section id="sec12">
+      <h2>12. Embedded Tomcat Server</h2>
+      <p>In traditional Java EE development, you had to install an external application server (like standalone Apache Tomcat or WebLogic), build a <code>.war</code> file, and manually deploy it.</p>
+
+      <p>Spring Boot inverted this relationship: <b>the web server is embedded inside your application <code>.jar</code> file!</b> Your application owns the web server, not the other way around.</p>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Traditional WAR Deployment</th>
+            <th>Spring Boot Embedded Tomcat</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Server Installation</td>
+            <td>Must manually install and configure external Tomcat server on OS.</td>
+            <td>Zero installation required! Embedded server JAR comes bundled inside application.</td>
+          </tr>
+          <tr>
+            <td>Execution Method</td>
+            <td>Build <code>.war</code> file &rarr; Copy to Tomcat <code>/webapps</code> folder.</td>
+            <td>Build executable <code>.jar</code> file &rarr; Run <code>java -jar app.jar</code>.</td>
+          </tr>
+          <tr>
+            <td>Configuration &amp; Port</td>
+            <td>Configured via Tomcat's <code>server.xml</code> file.</td>
+            <td>Configured simply via <code>server.port=8080</code> in <code>application.properties</code>.</td>
+          </tr>
+          <tr>
+            <td>Cloud &amp; Docker Friendly</td>
+            <td>Harder to containerize and scale.</td>
+            <td>Extremely easy to package into Docker containers and deploy to Kubernetes.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 13 -->
+    <section id="sec13">
+      <h2>13. Auto Configuration Report</h2>
+      <p>Have you ever wondered why a specific auto-configuration ran or why a bean was skipped? Spring Boot generates a <b>Condition Evaluation Report</b> at startup.</p>
+
+      <div class="callout info">
+        <b>How to Enable Debug Logging:</b><br>
+        Pass <code>--debug</code> when launching your app, or add <code>debug=true</code> to your <code>application.properties</code> file.
+      </div>
+
+      <pre><code>============================
+CONDITIONS EVALUATION REPORT
+============================
+
+Positive matches: (Auto-configurations that executed)
+-----------------
+   JdbcTemplateAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'org.springframework.jdbc.core.JdbcTemplate'
+
+Negative matches: (Auto-configurations that were skipped)
+-----------------
+   MongoDataAutoConfiguration:
+      - @ConditionalOnClass did not find 'com.mongodb.client.MongoClient'</code></pre>
+    </section>
+
+    <!-- SECTION 14 -->
+    <section id="sec14">
+      <h2>14. Application Startup Events</h2>
+      <p>Spring Boot fires a series of lifecycle events during startup. You can attach custom <code>ApplicationListener</code> beans to hook into any stage of startup.</p>
+
+      <div class="diagram">
+        <h4>Startup Event Sequence Timeline</h4>
+        <div class="flow-step"><div class="num">1</div><div><b>ApplicationStartingEvent:</b> Fired right at the beginning before environment or context creation.</div></div>
+        <div class="flow-step"><div class="num">2</div><div><b>ApplicationEnvironmentPreparedEvent:</b> Fired when environment properties (application.properties) are ready.</div></div>
+        <div class="flow-step"><div class="num">3</div><div><b>ApplicationContextInitializedEvent:</b> Fired when ApplicationContext is created but before beans are loaded.</div></div>
+        <div class="flow-step"><div class="num">4</div><div><b>ApplicationPreparedEvent:</b> Fired when bean definitions are loaded but singletons are not instantiated yet.</div></div>
+        <div class="flow-step"><div class="num">5</div><div><b>ApplicationStartedEvent:</b> Fired when context is refreshed and beans are ready, but runners have not executed.</div></div>
+        <div class="flow-step"><div class="num">6</div><div><b>ApplicationReadyEvent:</b> Fired when the app is completely ready to handle incoming network traffic.</div></div>
+        <div class="flow-step"><div class="num">7</div><div><b>ApplicationFailedEvent:</b> Fired if an unhandled exception occurs at any point during startup.</div></div>
+      </div>
+    </section>
+
+    <!-- SECTION 15 -->
+    <section id="sec15">
+      <h2>15. CommandLineRunner &amp; ApplicationRunner</h2>
+      <p>If you need to run specific custom code <b>right after the application finishes starting up</b> (such as seeding initial database data or warming up caches), Spring Boot provides two runner interfaces.</p>
+
+      <pre><code><span class="anno">@Component</span>
+<span class="kw">public class</span> <span class="type">DatabaseSeeder</span> <span class="kw">implements</span> <span class="type">CommandLineRunner</span> {
+
+    <span class="anno">@Override</span>
+    <span class="kw">public void</span> <span class="fn">run</span>(<span class="type">String</span>... args) <span class="kw">throws</span> <span class="type">Exception</span> {
+        <span class="type">System</span>.out.println(<span class="str">"Executing database seed scripts at startup..."</span>);
+    }
+}</code></pre>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Runner Interface</th>
+            <th>Method Signature</th>
+            <th>Argument Passing Format</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>CommandLineRunner</code></td>
+            <td><code>run(String... args)</code></td>
+            <td>Passes raw command line arguments as a plain array of Strings.</td>
+          </tr>
+          <tr>
+            <td><code>ApplicationRunner</code></td>
+            <td><code>run(ApplicationArguments args)</code></td>
+            <td>Passes parsed <code>ApplicationArguments</code> object providing methods to query option and non-option args.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 16 -->
+    <section id="sec16">
+      <h2>16. Production Startup Flow</h2>
+      <p>Here is what happens in a production REST API when you execute <code>java -jar app.jar</code>:</p>
+
+      <div class="diagram">
+        <h4>Production Executable JAR Launch Sequence</h4>
+        <p>1. Operating System starts JVM process &rarr; Reads manifest file <code>META-INF/MANIFEST.MF</code> inside JAR.</p>
+        <div class="flow-arrow">&darr;</div>
+        <p>2. Executes <code>JarLauncher</code> &rarr; Unpacks nested BOOT-INF/classes and BOOT-INF/lib dependencies.</p>
+        <div class="flow-arrow">&darr;</div>
+        <p>3. Calls <code>Application.main(args)</code> &rarr; Invokes <code>SpringApplication.run()</code>.</p>
+        <div class="flow-arrow">&darr;</div>
+        <p>4. Evaluates Auto-Configuration &amp; Component Scan &rarr; Instantiates HikariCP DataSource pool &amp; JPA Repositories.</p>
+        <div class="flow-arrow">&darr;</div>
+        <p>5. Starts Embedded Tomcat on Port 8080 &rarr; Registers DispatcherServlet &amp; Spring Security Filters.</p>
+        <div class="flow-arrow">&darr;</div>
+        <p>6. Fires <code>ApplicationReadyEvent</code> &rarr; Logs "Started Application in 2.45 seconds" &rarr; Listens for HTTP traffic.</p>
+      </div>
+    </section>
+
+    <!-- SECTION 17 -->
+    <section id="sec17">
+      <h2>17. Common Startup Mistakes</h2>
+      <div class="callout warn">
+        <b>1. Wrong Package Hierarchy:</b> Placing your main class inside a sub-package causes Component Scanning to miss your controllers and services located in parallel packages.<br><br>
+        <b>2. Port 8080 Already in Use:</b> Trying to start an app when port 8080 is occupied by another process. Fix by adding <code>server.port=9090</code> in <code>application.properties</code>.<br><br>
+        <b>3. Circular Dependencies During Startup:</b> Service A requires Service B, while Service B requires Service A. Fix by using <code>@Lazy</code> or refactoring design.<br><br>
+        <b>4. Missing Database Driver:</b> Including <code>spring-boot-starter-data-jpa</code> without providing a database driver JAR (like PostgreSQL or MySQL driver) causes immediate DataSource creation failure.
+      </div>
+    </section>
+
+    <!-- SECTION 18 -->
+    <section id="sec18">
+      <h2>18. Senior Best Practices</h2>
+      <ul>
+        <li><b>Keep Main Package Top-Level:</b> Place your <code>@SpringBootApplication</code> class in a root package like <code>com.company.project</code> so Component Scan discovers all sub-packages automatically.</li>
+        <li><b>Avoid Heavy Work in Constructors / Runners:</b> Do not run blocking network calls or slow operations on the main startup thread.</li>
+        <li><b>Use Constructor Injection:</b> Mark dependencies <code>private final</code> and inject them via constructors to catch missing beans at startup.</li>
+        <li><b>Enable Lazy Initialization for Development:</b> Set <code>spring.main.lazy-initialization=true</code> in dev environments to drastically speed up boot times.</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 19 -->
+    <section id="sec19">
+      <h2>19. 40+ Interview Questions</h2>
+
+      <div class="faq-item">
+        <div class="faq-q">Q1: What happens inside SpringApplication.run()?</div>
+        <div class="faq-a">It creates a SpringApplication instance, sets environment properties, instantiates the appropriate ApplicationContext matching web type (Servlet/Reactive), loads auto-configurations, performs component scanning, creates and autowires singleton beans, starts embedded Tomcat server, executes runners, and fires ApplicationReadyEvent.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q2: What is Auto Configuration in Spring Boot?</div>
+        <div class="faq-a">A Spring Boot mechanism that automatically configures and creates beans based on the JAR libraries detected on your classpath and configuration properties, using conditional annotations.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q3: What is the difference between SpringApplication and ApplicationContext?</div>
+        <div class="faq-a">SpringApplication is the bootstrap engine class used to configure and start the app. ApplicationContext is the actual IoC container holding all managed beans, environment properties, and events.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q4: How does Component Scan work in Spring Boot?</div>
+        <div class="faq-a">It scans the package containing the @SpringBootApplication class and all its sub-packages, registering classes annotated with @Component, @Service, @Repository, @RestController, and @Configuration as managed beans.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q5: What is Embedded Tomcat and why is it useful?</div>
+        <div class="faq-a">It is a web server bundled directly inside your executable JAR application file. It eliminates the need to manually install, configure, and deploy WAR files to external application servers.</div>
+      </div>
+
+      <div class="faq-item"><div class="faq-q">Q6: What is @SpringBootApplication composed of?</div><div class="faq-a">It is a meta-annotation composed of @SpringBootConfiguration, @EnableAutoConfiguration, and @ComponentScan.</div></div>
+      <div class="faq-item"><div class="faq-q">Q7: What is @ConditionalOnClass?</div><div class="faq-a">A conditional annotation that enables configuration only if a specific class is present on the JVM classpath.</div></div>
+      <div class="faq-item"><div class="faq-q">Q8: What is @ConditionalOnMissingBean?</div><div class="faq-a">A conditional annotation that creates a default bean only if the developer has not already created a custom bean of that type.</div></div>
+      <div class="faq-item"><div class="faq-q">Q9: What is the purpose of CommandLineRunner?</div><div class="faq-a">An interface used to execute custom initialization code after the ApplicationContext has booted and singletons are ready.</div></div>
+      <div class="faq-item"><div class="faq-q">Q10: Difference between CommandLineRunner and ApplicationRunner?</div><div class="faq-a">CommandLineRunner passes raw String[] args; ApplicationRunner passes parsed ApplicationArguments object.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q11: Where does Spring Boot store auto-configuration import lists?</div><div class="faq-a">In <code>META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports</code> inside starter JARs.</div></div>
+      <div class="faq-item"><div class="faq-q">Q12: How to change embedded server port in Spring Boot?</div><div class="faq-a">By setting <code>server.port=9090</code> in <code>application.properties</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q13: How to disable a specific auto-configuration class?</div><div class="faq-a">By using <code>@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q14: How does Spring Boot determine if an app is web-based?</div><div class="faq-a">By inspecting the classpath for web classes like DispatcherServlet or WebFlux.</div></div>
+      <div class="faq-item"><div class="faq-q">Q15: What is the Condition Evaluation Report?</div><div class="faq-a">A diagnostic log generated when running with <code>--debug</code> showing positive and negative auto-configuration matches.</div></div>
+      <div class="faq-item"><div class="faq-q">Q16: What event is fired when Spring Boot finishes booting?</div><div class="faq-a"><code>ApplicationReadyEvent</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q17: What event is fired if Spring Boot fails during startup?</div><div class="faq-a"><code>ApplicationFailedEvent</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q18: What are Spring Boot Starter dependencies?</div><div class="faq-a">Curated sets of dependency descriptors that aggregate compatible library versions into single convenient POM imports.</div></div>
+      <div class="faq-item"><div class="faq-q">Q19: How to run custom code right before context creation?</div><div class="faq-a">By attaching an <code>ApplicationListener</code> listening for <code>ApplicationStartingEvent</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q20: Why should main class be in root package?</div><div class="faq-a">So default @ComponentScan scans all application packages and sub-packages without missing beans.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q21: What is spring-boot-starter-web?</div><div class="faq-a">A starter bundling Spring MVC, Embedded Tomcat, and Jackson JSON dependencies for REST API creation.</div></div>
+      <div class="faq-item"><div class="faq-q">Q22: How to switch embedded Tomcat to Jetty?</div><div class="faq-a">Exclude <code>spring-boot-starter-tomcat</code> from web starter and add <code>spring-boot-starter-jetty</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q23: How to speed up Spring Boot startup in development?</div><div class="faq-a">Set <code>spring.main.lazy-initialization=true</code> in <code>application.properties</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q24: What is @ConditionalOnProperty?</div><div class="faq-a">Loads configuration conditionally based on a property value in application.properties.</div></div>
+      <div class="faq-item"><div class="faq-q">Q25: What is JarLauncher in Spring Boot?</div><div class="faq-a">An internal Spring Boot loader that executes executable JARs by loading nested BOOT-INF classes.</div></div>
+      <div class="faq-item"><div class="faq-q">Q26: What is @EnableAutoConfiguration?</div><div class="faq-a">Annotation enabling Spring Boot's auto-configuration mechanism.</div></div>
+      <div class="faq-item"><div class="faq-q">Q27: What is Spring Boot Banner?</div><div class="faq-a">The ASCII art banner printed in console during startup, customizable via <code>banner.txt</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q28: What is ApplicationContextInitializer?</div><div class="faq-a">Callback interface for initializing Spring ApplicationContext prior to bean refresh.</div></div>
+      <div class="faq-item"><div class="faq-q">Q29: How to pass arguments to Spring Boot executable JAR?</div><div class="faq-a">Using <code>java -jar app.jar --server.port=9090 --spring.profiles.active=prod</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q30: What is spring.factories?</div><div class="faq-a">Legacy SPI configuration file inside META-INF used to declare initializers, listeners, and auto-configurations.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q31: What happens if port 8080 is in use?</div><div class="faq-a">Tomcat fails to bind to port and application throws <code>PortInUseException</code> during startup.</div></div>
+      <div class="faq-item"><div class="faq-q">Q32: How to turn off Spring Boot Banner?</div><div class="faq-a">Set <code>spring.main.banner-mode=off</code> in application.properties.</div></div>
+      <div class="faq-item"><div class="faq-q">Q33: How does Spring Boot handle multiple runners?</div><div class="faq-a">Executes them in sequence; order can be controlled using <code>@Order</code> annotation.</div></div>
+      <div class="faq-item"><div class="faq-q">Q34: What is Spring Application Environment?</div><div class="faq-a">Object representing active profiles, OS environment variables, system properties, and application.properties.</div></div>
+      <div class="faq-item"><div class="faq-q">Q35: Can Spring Boot run without an embedded web server?</div><div class="faq-a">Yes! Non-web applications (e.g., CLI batch jobs) set WebApplicationType to NONE.</div></div>
+      <div class="faq-item"><div class="faq-q">Q36: What is @SpringBootConfiguration?</div><div class="faq-a">A specialization of @Configuration used by Spring Boot to mark primary configuration classes.</div></div>
+      <div class="faq-item"><div class="faq-q">Q37: Difference between @ComponentScan and Auto-Configuration?</div><div class="faq-a">@ComponentScan scans your project classes; Auto-Configuration evaluates starter libraries on classpath.</div></div>
+      <div class="faq-item"><div class="faq-q">Q38: How to print startup metrics in Spring Boot 3?</div><div class="faq-a">Spring Boot logs total startup elapsed time in seconds upon <code>ApplicationReadyEvent</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q39: What is Spring Boot AOT startup?</div><div class="faq-a">Ahead-of-Time compilation in Spring Boot 3 pre-calculates bean definitions at build time for instant boot.</div></div>
+      <div class="faq-item"><div class="faq-q">Q40: What is the main benefit of understanding Spring Boot startup?</div><div class="faq-a">Helps debug startup failures, optimize boot performance, customize configuration, and master Spring architecture.</div></div>
+    </section>
+
+    <!-- SECTION 20 -->
+    <section id="sec20">
+      <h2>20. Revision Cheatsheet</h2>
+      <div class="card">
+        <p><b>main():</b> Standard Java entry point calling <code>SpringApplication.run()</code>.</p>
+        <p><b>SpringApplication:</b> Bootstrap engine that detects app type, loads listeners, and creates context.</p>
+        <p><b>Component Scan:</b> Scans root package and sub-packages for <code>@Component</code>, <code>@Service</code>, etc.</p>
+        <p><b>Auto Configuration:</b> Evaluates classpath JARs using <code>@ConditionalOn...</code> annotations.</p>
+        <p><b>Embedded Tomcat:</b> Web server running inside executable JAR on port 8080.</p>
+        <p><b>ApplicationReadyEvent:</b> Signals app is booted, singletons are wired, and server is ready.</p>
+      </div>
+    </section>
+
+    <!-- SECTION 21 -->
+    <section id="sec21">
+      <h2>21. Visual Infographic Summary</h2>
+      <div class="diagram">
+        <h4>Spring Boot Startup Complete Architecture Map</h4>
+        <div class="grid">
+          <div class="card" style="border-color: var(--teal);">
+            <b style="color: var(--teal);">1. Launch Phase</b>
+            <p><code>main()</code> &middot; <code>SpringApplication.run()</code> &middot; Detect Web Type &middot; Load Listeners &middot; Prepare Environment</p>
+          </div>
+          <div class="card" style="border-color: var(--amber);">
+            <b style="color: var(--amber);">2. Context &amp; Bean Phase</b>
+            <p>Create ApplicationContext &middot; Component Scan &middot; Evaluate Auto-Configurations &middot; Instantiate Singletons &middot; Dependency Injection</p>
+          </div>
+          <div class="card" style="border-color: var(--purple);">
+            <b style="color: var(--purple);">3. Web &amp; Ready Phase</b>
+            <p>Start Embedded Tomcat (Port 8080) &middot; Run CommandLineRunners &middot; Fire <code>ApplicationReadyEvent</code> &middot; Serve Requests</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+</body>
+</html>

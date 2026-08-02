@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Spring Data JPA &amp; Hibernate — Complete Deep Dive</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  :root {
+    --bg: #0b0e14;
+    --surface: #131824;
+    --panel2: #0f131c;
+    --border: #232a38;
+    --text: #e7eaf1;
+    --muted: #9aa4b7;
+    --accent: #f0b429;
+    --amber: #f0b429;
+    --teal: #38bdf8;
+    --rose: #f87171;
+    --green: #4ade80;
+    --purple: #c084fc;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .layout {
+    display: flex;
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+  
+  /* STICKY SIDEBAR NAV */
+  nav.sidebar {
+    width: 310px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 24px 16px;
+    flex-shrink: 0;
+  }
+  nav.sidebar h3 {
+    font-size: 0.85rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+    padding-left: 8px;
+  }
+  nav.sidebar a {
+    display: block;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.8rem;
+    padding: 5px 8px;
+    border-radius: 6px;
+    margin-bottom: 2px;
+    transition: all 0.15s ease;
+  }
+  nav.sidebar a:hover {
+    color: var(--accent);
+    background: rgba(240, 180, 41, 0.08);
+  }
+
+  /* MAIN CONTENT WRAPPER */
+  .main-content {
+    flex: 1;
+    max-width: 1080px;
+    padding: 48px 40px 120px;
+    overflow-x: hidden;
+  }
+
+  .eyebrow {
+    color: var(--accent);
+    font-family: monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  h1 { font-size: 2.3rem; margin-top: 0; margin-bottom: 8px; font-weight: 800; line-height: 1.25; }
+  h1 span { color: var(--accent); }
+  .sub { color: var(--muted); font-size: 1rem; margin-bottom: 32px; }
+  
+  h2 {
+    margin-top: 56px;
+    font-size: 1.45rem;
+    border-left: 4px solid var(--accent);
+    padding-left: 14px;
+    color: var(--text);
+  }
+  h3 { font-size: 1.15rem; color: var(--teal); margin-top: 28px; }
+  h4 { font-size: 0.98rem; color: var(--purple); margin-top: 20px; }
+  p, li { color: var(--muted); font-size: 0.95rem; }
+  li { margin-bottom: 6px; }
+  b, strong { color: var(--text); }
+  
+  /* CARDS & PANELS */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 20px 0; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .card b { color: var(--accent); display: block; margin-bottom: 6px; font-size: 1rem; }
+  
+  /* CALLOUT BOXES */
+  .callout {
+    margin: 20px 0;
+    border-left: 4px solid var(--accent);
+    padding: 16px 20px;
+    background: rgba(240, 180, 41, 0.05);
+    border-radius: 0 8px 8px 0;
+    font-size: 0.92rem;
+  }
+  .callout.warn { border-left-color: var(--rose); background: rgba(248, 113, 113, 0.06); }
+  .callout.info { border-left-color: var(--teal); background: rgba(56, 189, 248, 0.06); }
+  .callout.success { border-left-color: var(--green); background: rgba(74, 222, 128, 0.06); }
+  
+  /* CODE BLOCKS WITH PURE CSS SYNTAX HIGHLIGHTING */
+  pre {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: #e7eaf1;
+  }
+  code {
+    background: #0f131c;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.88em;
+    color: var(--accent);
+    font-family: 'Consolas', 'Courier New', monospace;
+  }
+  pre code { border: none; padding: 0; background: transparent; color: inherit; }
+  
+  .kw { color: #f43f5e; font-weight: bold; }
+  .anno { color: var(--accent); font-weight: bold; }
+  .type { color: var(--teal); }
+  .str { color: var(--green); }
+  .cmnt { color: #64748b; font-style: italic; }
+  .fn { color: #c084fc; }
+
+  /* TABLES */
+  table.matrix {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 0.85rem;
+    background: var(--surface);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  table.matrix th, table.matrix td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    text-align: left;
+  }
+  table.matrix th {
+    background: var(--panel2);
+    color: var(--accent);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+  }
+  table.matrix tr:last-child td { border-bottom: none; }
+
+  /* FLOWCHARTS & DIAGRAMS */
+  .diagram {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin: 24px 0;
+  }
+  .flow-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .flow-step .num {
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: bold;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+  .flow-arrow {
+    text-align: center;
+    color: var(--accent);
+    font-size: 1.2rem;
+    margin: -4px 0 4px;
+  }
+
+  /* FAQ ACCORDION STYLE */
+  .faq-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    padding: 16px;
+  }
+  .faq-q { color: var(--accent); font-weight: 600; font-size: 0.98rem; margin-bottom: 8px; }
+  .faq-a { color: var(--muted); font-size: 0.92rem; }
+
+  @media (max-width: 900px) {
+    .layout { flex-direction: column; }
+    nav.sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border); }
+    .main-content { padding: 24px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- SIDEBAR NAVIGATION -->
+  <nav class="sidebar">
+    <h3>Spring Data JPA</h3>
+    <a href="#sec1">1. Introduction &amp; Evolution</a>
+    <a href="#sec2">2. Layered Architecture</a>
+    <a href="#sec3">3. Technology Comparison</a>
+    <a href="#sec4">4. Entity Mapping Annotations</a>
+    <a href="#sec5">5. Entity Lifecycle States</a>
+    <a href="#sec6">6. Persistence Context Internals</a>
+    <a href="#sec7">7. EntityManager Methods</a>
+    <a href="#sec8">8. Entity Relationships &amp; Mappings</a>
+    <a href="#sec9">9. Fetch Strategies &amp; N+1 Problem</a>
+    <a href="#sec10">10. Spring Data Repositories</a>
+    <a href="#sec11">11. JPQL (Java Persistence Query Language)</a>
+    <a href="#sec12">12. Native SQL Queries</a>
+    <a href="#sec13">13. Transactions (@Transactional)</a>
+    <a href="#sec14">14. Locking Strategies</a>
+    <a href="#sec15">15. Performance Tuning</a>
+    <a href="#sec16">16. Common Pitfalls</a>
+    <a href="#sec17">17. Production Best Practices</a>
+    <a href="#sec18">18. Real-world Request Walkthrough</a>
+    <a href="#sec19">19. 60+ Senior Interview QA</a>
+    <a href="#sec20">20. Revision Cheatsheet</a>
+    <a href="#sec21">21. Visual Infographic Summary</a>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <div class="eyebrow">Enterprise Java &middot; Database Persistence &amp; ORM</div>
+    <h1>Spring Data JPA &amp; Hibernate — <span>Complete Deep Dive</span></h1>
+    <div class="sub">A beginner-friendly, simple, and comprehensive guide to Java Persistence—explaining JDBC, ORM concepts, Hibernate, Spring Data JPA repositories, entity lifecycles, dirty checking, performance optimization, and production best practices.</div>
+
+    <!-- SECTION 1 -->
+    <section id="sec1">
+      <h2>1. Introduction &amp; Evolution</h2>
+      <p>Storing application data in relational databases (like PostgreSQL or MySQL) is a fundamental requirement of backend software. Over time, Java's persistence tools evolved to become simpler, more maintainable, and less boilerplate-heavy.</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>1. JDBC (Java Database Connectivity)</b>
+          <p>Low-level Java API for executing raw SQL statements. Requires writing verbose code to open connections, manage statements, loop over <code>ResultSet</code> rows manually, map columns to objects, and handle checked exceptions.</p>
+        </div>
+        <div class="card">
+          <b>2. JPA (Java Persistence API / Jakarta Persistence)</b>
+          <p>A standard specification (a set of interfaces, rules, and annotations) that defines Object-Relational Mapping (ORM) in Java. JPA itself contains no executable code; it is purely a specification contract.</p>
+        </div>
+        <div class="card">
+          <b>3. Hibernate</b>
+          <p>The most popular concrete ORM implementation of the JPA specification. It translates Java object operations into underlying SQL queries, handles connection pooling, and manages caching behind the scenes.</p>
+        </div>
+        <div class="card">
+          <b>4. Spring Data JPA</b>
+          <p>An abstraction layer built on top of JPA/Hibernate. It eliminates repository boilerplate code by generating database query implementations automatically from Java interface method names.</p>
+        </div>
+      </div>
+
+      <div class="callout info">
+        <b>Real-World Analogy: The Charging Port Standards</b><br>
+        • <b>JPA</b> is like the <i>USB-C Standard Specification document</i> (a set of guidelines for how charging should work).<br>
+        • <b>Hibernate</b> is like an <i>actual USB-C Charger cable</i> built according to that specification.<br>
+        • <b>Spring Data JPA</b> is like a <i>Smart Power Strip</i> that manages multiple cables automatically so you don't even have to plug them in manually!
+      </div>
+    </section>
+
+    <!-- SECTION 2 -->
+    <section id="sec2">
+      <h2>2. Layered Architecture</h2>
+      <p>Here is how the data access layers fit together in a modern Spring Boot application:</p>
+
+      <div class="diagram">
+        <h4>Persistence Layer Stack</h4>
+        <div class="flow-step"><div class="num">1</div><div><b>Spring Boot Application:</b> Calls repository interface (e.g. <code>userRepository.save(user)</code>).</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">2</div><div><b>Spring Data JPA:</b> Translates repository methods into JPA <code>EntityManager</code> operations.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">3</div><div><b>JPA Specification Layer:</b> Provides standard interfaces (<code>EntityManager</code>, <code>EntityTransaction</code>).</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">4</div><div><b>Hibernate (ORM Engine):</b> Generates dialect-specific SQL statements from entities and JPQL.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">5</div><div><b>JDBC Driver:</b> Sends generated raw SQL strings across TCP sockets to the database server.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">6</div><div><b>Relational Database:</b> PostgreSQL / MySQL executes SQL queries and persists data to disk.</div></div>
+      </div>
+    </section>
+
+    <!-- SECTION 3 -->
+    <section id="sec3">
+      <h2>3. Technology Comparison</h2>
+      <p>Understanding the trade-offs across persistence technologies:</p>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Technology</th>
+            <th>Type</th>
+            <th>Boilerplate Code</th>
+            <th>SQL Control</th>
+            <th>Primary Advantage</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>JDBC</b></td>
+            <td>Low-level API</td>
+            <td>Very High (Manual <code>ResultSet</code> mapping)</td>
+            <td>Complete (Raw SQL)</td>
+            <td>Maximum execution speed and direct database access.</td>
+          </tr>
+          <tr>
+            <td><b>Hibernate</b></td>
+            <td>ORM Implementation</td>
+            <td>Medium (Uses <code>EntityManager</code>)</td>
+            <td>Automated (HQL / JPQL)</td>
+            <td>Handles complex object graphs, lazy loading, and dirty checking.</td>
+          </tr>
+          <tr>
+            <td><b>Spring Data JPA</b></td>
+            <td>Abstraction Layer</td>
+            <td>Very Low (Interface only)</td>
+            <td>Generated + Custom JPQL</td>
+            <td>Generates queries automatically from method names (e.g. <code>findByEmail</code>).</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 4 -->
+    <section id="sec4">
+      <h2>4. Entity Mapping Annotations</h2>
+      <p>An Entity is a plain Java object (POJO) mapped to a relational database table.</p>
+
+      <pre><code><span class="anno">@Entity</span>
+<span class="anno">@Table</span>(name = <span class="str">"users"</span>)
+<span class="kw">public class</span> <span class="type">User</span> {
+
+    <span class="anno">@Id</span>
+    <span class="anno">@GeneratedValue</span>(strategy = <span class="type">GenerationType</span>.IDENTITY)
+    <span class="kw">private</span> <span class="type">Long</span> id;
+
+    <span class="anno">@Column</span>(name = <span class="str">"email_address"</span>, nullable = <span class="kw">false</span>, unique = <span class="kw">true</span>, length = <span class="num">150</span>)
+    <span class="kw">private</span> <span class="type">String</span> email;
+
+    <span class="anno">@Enumerated</span>(<span class="type">EnumType</span>.STRING)
+    <span class="kw">private</span> <span class="type">UserRole</span> role;
+
+    <span class="anno">@Lob</span>
+    <span class="kw">private</span> <span class="type">String</span> bio;
+
+    <span class="anno">@Transient</span>
+    <span class="kw">private</span> <span class="type">String</span> temporarySessionToken; <span class="cmnt">// Ignored by database persistence</span>
+}</code></pre>
+
+      <div class="grid">
+        <div class="card">
+          <b>@Entity &amp; @Table</b>
+          <p><code>@Entity</code> tells JPA this class is a database persistent object. <code>@Table</code> specifies the actual database table name (defaults to class name if omitted).</p>
+        </div>
+        <div class="card">
+          <b>@Id &amp; @GeneratedValue</b>
+          <p><code>@Id</code> marks the primary key. <code>@GeneratedValue</code> sets generation strategies: <code>IDENTITY</code> (auto-increment column), <code>SEQUENCE</code> (DB sequence), or <code>AUTO</code>.</p>
+        </div>
+        <div class="card">
+          <b>@Column &amp; @Transient</b>
+          <p><code>@Column</code> customizes column name, nullability, and max length. <code>@Transient</code> instructs Hibernate to ignore the field entirely during SQL generation.</p>
+        </div>
+        <div class="card">
+          <b>@Enumerated &amp; @Lob</b>
+          <p><code>@Enumerated(EnumType.STRING)</code> persists Enum values as readable strings rather than ordinals. <code>@Lob</code> maps large text or binary data (CLOB / BLOB).</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5 -->
+    <section id="sec5">
+      <h2>5. Entity Lifecycle States</h2>
+      <p>Every JPA entity object lives inside one of four distinct lifecycle states managed by Hibernate:</p>
+
+      <div class="diagram">
+        <h4>Entity Lifecycle State Transitions</h4>
+        <div class="flow-step"><div class="num">1</div><div><b>Transient State:</b> Object created using <code>new User()</code>. It is a plain Java object not associated with any <code>EntityManager</code> or database row.</div></div>
+        <div class="flow-arrow">&darr; <code>em.persist(user)</code> or <code>repository.save(user)</code></div>
+        <div class="flow-step"><div class="num">2</div><div><b>Persistent State:</b> Entity is attached to an active Persistence Context. Any setter calls are automatically tracked for DB updates via dirty checking!</div></div>
+        <div class="flow-arrow">&darr; <code>em.detach(user)</code>, <code>em.clear()</code>, or Transaction closes</div>
+        <div class="flow-step"><div class="num">3</div><div><b>Detached State:</b> Entity has a database primary key, but its Persistence Context closed. Changes made to object fields are no longer tracked automatically.</div></div>
+        <div class="flow-arrow">&darr; <code>em.remove(user)</code></div>
+        <div class="flow-step"><div class="num">4</div><div><b>Removed State:</b> Entity is marked for deletion. Hibernate executes an SQL <code>DELETE</code> statement upon transaction flush/commit.</div></div>
+      </div>
+    </section>
+
+    <!-- SECTION 6 -->
+    <section id="sec6">
+      <h2>6. Persistence Context Internals</h2>
+      <p>The <b>Persistence Context</b> is an in-memory cache/buffer managed by Hibernate's <code>EntityManager</code> during a database transaction.</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>First-Level Cache (L1 Cache)</b>
+          <p>Every <code>EntityManager</code> instance maintains its own L1 Cache. If you query for <code>find(User.class, 1L)</code> twice inside the same transaction, Hibernate fetches the entity from the database once, caches it, and returns the exact same in-memory reference on the second call without running a second SQL query!</p>
+        </div>
+        <div class="card">
+          <b>Dirty Checking Mechanism</b>
+          <p>When an entity enters the Persistent state, Hibernate takes an initial snapshot of its property values. When the transaction commits, Hibernate compares the current entity state against the snapshot. If any field changed, Hibernate automatically generates and executes an SQL <code>UPDATE</code> statement—no explicit <code>save()</code> call required!</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 7 -->
+    <section id="sec7">
+      <h2>7. EntityManager Methods</h2>
+      <p>The <code>EntityManager</code> is the core JPA interface used to interact with the Persistence Context:</p>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Primary Operation</th>
+            <th>Behavior</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>persist(entity)</code></td>
+            <td>Insert</td>
+            <td>Transitions a Transient entity into the Persistent state (schedules SQL <code>INSERT</code>).</td>
+          </tr>
+          <tr>
+            <td><code>merge(entity)</code></td>
+            <td>Update / Reattach</td>
+            <td>Copies state from a Detached entity into a Managed Persistent entity instance.</td>
+          </tr>
+          <tr>
+            <td><code>find(Class, id)</code></td>
+            <td>Read</td>
+            <td>Fetches entity by primary key from L1 Cache; queries database on cache miss.</td>
+          </tr>
+          <tr>
+            <td><code>remove(entity)</code></td>
+            <td>Delete</td>
+            <td>Schedules a Managed Persistent entity for SQL <code>DELETE</code>.</td>
+          </tr>
+          <tr>
+            <td><code>flush()</code></td>
+            <td>Sync with DB</td>
+            <td>Flushes all pending SQL statements (INSERT, UPDATE, DELETE) to the database immediately without committing the transaction.</td>
+          </tr>
+          <tr>
+            <td><code>clear()</code></td>
+            <td>Clear Cache</td>
+            <td>Clears the entire L1 Cache, detaching all managed entity instances.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 8 -->
+    <section id="sec8">
+      <h2>8. Relationships</h2>
+      <p>RDBMS tables connect via Foreign Keys. JPA maps these relationships between Java Entities using annotations:</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>@ManyToOne &amp; @OneToMany</b>
+          <p>The most common relationship (e.g. Many Orders belong to One User). The <code>@ManyToOne</code> side holds the <code>@JoinColumn</code> (foreign key). The <code>@OneToMany</code> side uses <code>mappedBy</code> to reference the owning field name.</p>
+        </div>
+        <div class="card">
+          <b>@OneToOne &amp; @ManyToMany</b>
+          <p><code>@OneToOne</code> connects two entities 1-to-1 (e.g. User and UserProfile). <code>@ManyToMany</code> connects many-to-many via a join table managed by <code>@JoinTable</code>.</p>
+        </div>
+      </div>
+
+      <pre><code><span class="anno">@Entity</span>
+<span class="kw">public class</span> <span class="type">Department</span> {
+    <span class="anno">@Id</span> <span class="kw">private</span> <span class="type">Long</span> id;
+
+    <span class="cmnt">// mappedBy specifies that Employee.department field owns the foreign key</span>
+    <span class="anno">@OneToMany</span>(mappedBy = <span class="str">"department"</span>, cascade = <span class="type">CascadeType</span>.ALL, orphanRemoval = <span class="kw">true</span>)
+    <span class="kw">private</span> <span class="type">List</span>&lt;<span class="type">Employee</span>&gt; employees = <span class="kw">new</span> <span class="type">ArrayList</span>&lt;&gt;();
+}
+
+<span class="anno">@Entity</span>
+<span class="kw">public class</span> <span class="type">Employee</span> {
+    <span class="anno">@Id</span> <span class="kw">private</span> <span class="type">Long</span> id;
+
+    <span class="anno">@ManyToOne</span>(fetch = <span class="type">FetchType</span>.LAZY)
+    <span class="anno">@JoinColumn</span>(name = <span class="str">"department_id"</span>) <span class="cmnt">// Foreign key column in 'employee' table</span>
+    <span class="kw">private</span> <span class="type">Department</span> department;
+}</code></pre>
+
+      <div class="callout info">
+        <b>Cascade &amp; Orphan Removal:</b><br>
+        • <code>CascadeType.ALL</code> propagates entity operations (persist, merge, remove) from parent to child automatically.<br>
+        • <code>orphanRemoval = true</code> automatically deletes child entities from the database when removed from a parent collection!
+      </div>
+    </section>
+
+    <!-- SECTION 9 -->
+    <section id="sec9">
+      <h2>9. Fetch Types &amp; N+1 Problem</h2>
+      <p>Fetch Types define when associated child entities are loaded from the database:</p>
+      <ul>
+        <li><b>FetchType.LAZY:</b> Associated objects are loaded on-demand only when getter methods are accessed.</li>
+        <li><b>FetchType.EAGER:</b> Associated objects are loaded immediately alongside the parent entity via SQL JOINs.</li>
+      </ul>
+
+      <div class="callout warn">
+        <b>Default JPA Fetch Strategies:</b><br>
+        • <code>@ManyToOne</code> &amp; <code>@OneToOne</code> default to <b>EAGER</b> (Dangerous for performance!).<br>
+        • <code>@OneToMany</code> &amp; <code>@ManyToMany</code> default to <b>LAZY</b>.<br>
+        <b>Senior Best Practice:</b> Always explicitly set <code>fetch = FetchType.LAZY</code> on ALL relationships!
+      </div>
+
+      <h3>The N+1 Select Problem</h3>
+      <p>The N+1 problem occurs when fetching $N$ parent entities triggers $N$ additional individual SQL queries to fetch child associations.</p>
+
+      <p><b>Example:</b> Querying 100 Departments (1 initial query). Accessing <code>department.getEmployees()</code> on each loops 100 additional queries. Total SQL queries = $1 + 100 = 101$ queries! This degrades performance severely.</p>
+
+      <div class="callout success">
+        <b>Fixing N+1 Problem using JOIN FETCH in JPQL:</b><br>
+        <code>@Query("SELECT d FROM Department d JOIN FETCH d.employees")</code><br>
+        This instructs Hibernate to fetch parents and children in <b>one single SQL JOIN query</b>!
+      </div>
+    </section>
+
+    <!-- SECTION 10 -->
+    <section id="sec10">
+      <h2>10. Spring Data Repositories</h2>
+      <p>Spring Data JPA provides a rich hierarchy of repository interfaces that generate implementation classes automatically at runtime:</p>
+
+      <div class="diagram">
+        <h4>Spring Data Repository Hierarchy</h4>
+        <div class="flow-step"><div class="num">1</div><div><b>Repository (Marker Interface):</b> Top-level marker interface.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">2</div><div><b>CrudRepository:</b> Adds standard CRUD operations (<code>save</code>, <code>findById</code>, <code>deleteById</code>).</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">3</div><div><b>PagingAndSortingRepository:</b> Adds pagination methods (<code>findAll(Pageable)</code>).</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">4</div><div><b>JpaRepository:</b> Adds JPA-specific operations (<code>flush()</code>, <code>saveAndFlush()</code>, <code>deleteAllInBatch()</code>).</div></div>
+      </div>
+
+      <pre><code><span class="anno">@Repository</span>
+<span class="kw">public interface</span> <span class="type">UserRepository</span> <span class="kw">extends</span> <span class="type">JpaRepository</span>&lt;<span class="type">User</span>, <span class="type">Long</span>&gt; {
+
+    <span class="cmnt">// Derived Query Method: Spring Data automatically generates the SQL query from method name!</span>
+    <span class="type">List</span>&lt;<span class="type">User</span>&gt; <span class="fn">findByLastNameAndStatus</span>(<span class="type">String</span> lastName, <span class="type">UserStatus</span> status);
+
+    <span class="type">Page</span>&lt;<span class="type">User</span>&gt; <span class="fn">findByAgeGreaterThan</span>(<span class="kw">int</span> age, <span class="type">Pageable</span> pageable);
+}</code></pre>
+    </section>
+
+    <!-- SECTION 11 -->
+    <section id="sec11">
+      <h2>11. JPQL (Java Persistence Query Language)</h2>
+      <p>JPQL is an object-oriented query language. Instead of querying database tables and columns directly, JPQL queries <b>Java Entity classes and properties</b>.</p>
+
+      <pre><code><span class="kw">public interface</span> <span class="type">UserRepository</span> <span class="kw">extends</span> <span class="type">JpaRepository</span>&lt;<span class="type">User</span>, <span class="type">Long</span>&gt; {
+
+    <span class="cmnt">// Custom JPQL Query using Entity class 'User' and property 'email'</span>
+    <span class="anno">@Query</span>(<span class="str">"SELECT u FROM User u WHERE u.email = :email"</span>)
+    <span class="type">Optional</span>&lt;<span class="type">User</span>&gt; <span class="fn">findUserByEmailCustom</span>(<span class="anno">@Param</span>(<span class="str">"email"</span>) <span class="type">String</span> email);
+}</code></pre>
+    </section>
+
+    <!-- SECTION 12 -->
+    <section id="sec12">
+      <h2>12. Native Queries</h2>
+      <p>When JPQL is insufficient for database-specific features (e.g. PostgreSQL JSONB operators, complex CTEs, or window functions), you can execute raw native SQL queries.</p>
+
+      <pre><code><span class="kw">public interface</span> <span class="type">UserRepository</span> <span class="kw">extends</span> <span class="type">JpaRepository</span>&lt;<span class="type">User</span>, <span class="type">Long</span>&gt; {
+
+    <span class="anno">@Query</span>(value = <span class="str">"SELECT * FROM users WHERE email_address = :email"</span>, nativeQuery = <span class="kw">true</span>)
+    <span class="type">Optional</span>&lt;<span class="type">User</span>&gt; <span class="fn">findByEmailNative</span>(<span class="anno">@Param</span>(<span class="str">"email"</span>) <span class="type">String</span> email);
+}</code></pre>
+    </section>
+
+    <!-- SECTION 13 -->
+    <section id="sec13">
+      <h2>13. Transactions (@Transactional)</h2>
+      <p>A database transaction is a unit of work ensuring <b>ACID properties</b> (Atomicity, Consistency, Isolation, Durability). In Spring, annotating a method with <code>@Transactional</code> automatically wraps execution inside a database transaction.</p>
+
+      <pre><code><span class="anno">@Service</span>
+<span class="kw">public class</span> <span class="type">BankService</span> {
+
+    <span class="anno">@Transactional</span>(rollbackFor = <span class="type">Exception</span>.<span class="kw">class</span>)
+    <span class="kw">public void</span> <span class="fn">transferMoney</span>(<span class="type">Long</span> fromId, <span class="type">Long</span> toId, <span class="type">BigDecimal</span> amount) {
+        Account from = accountRepo.findById(fromId).orElseThrow();
+        Account to = accountRepo.findById(toId).orElseThrow();
+
+        from.debit(amount);  <span class="cmnt">// Managed by dirty checking</span>
+        to.credit(amount);   <span class="cmnt">// Managed by dirty checking</span>
+        <span class="cmnt">// If an exception occurs, transaction rolls back automatically!</span>
+    }
+}</code></pre>
+    </section>
+
+    <!-- SECTION 14 -->
+    <section id="sec14">
+      <h2>14. Locking Strategies</h2>
+      <p>Locking prevents concurrent user updates from corrupting data (Lost Update problem):</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>Optimistic Locking (@Version)</b>
+          <p>Does not lock database rows. Instead, adds an integer <code>@Version</code> column to the entity. When updated, Hibernate checks if the version matched. If another user updated it concurrently, throws <code>OptimisticLockException</code>.</p>
+        </div>
+        <div class="card">
+          <b>Pessimistic Locking</b>
+          <p>Locks the actual database row at the SQL level using <code>SELECT ... FOR UPDATE</code>. Prevents any other transaction from reading or writing until the lock is released.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 15 -->
+    <section id="sec15">
+      <h2>15. Performance Tuning</h2>
+      <ul>
+        <li><b>Batch Inserts/Updates:</b> Enable JDBC batching in <code>application.properties</code>: <code>spring.jpa.properties.hibernate.jdbc.batch_size=30</code>.</li>
+        <li><b>Pagination:</b> Always use <code>Pageable</code> to limit query result sets instead of returning massive collections.</li>
+        <li><b>DTO Projections:</b> Query only required columns instead of fetching full heavy entities when performing read-only queries.</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 16 -->
+    <section id="sec16">
+      <h2>16. Common Pitfalls</h2>
+      <div class="callout warn">
+        <b>1. LazyInitializationException:</b> Thrown when trying to access a <code>LAZY</code> loaded child collection after the <code>EntityManager</code> transaction has already closed.<br><br>
+        <b>2. Returning JPA Entities Directly from Controllers:</b> Triggers serialization issues, infinite JSON recursion loops, and exposes database schema. Always map to DTOs!<br><br>
+        <b>3. Default EAGER Fetching:</b> Forgetting to override default EAGER fetching on <code>@ManyToOne</code> relationships results in massive unused SQL JOIN overhead.
+      </div>
+    </section>
+
+    <!-- SECTION 17 -->
+    <section id="sec17">
+      <h2>17. Production Best Practices</h2>
+      <ul>
+        <li>Set <code>fetch = FetchType.LAZY</code> on all entity relationships.</li>
+        <li>Use DTO Projections for read-only REST API endpoints.</li>
+        <li>Mark read-only service methods with <code>@Transactional(readOnly = true)</code> to disable Hibernate dirty checking snapshots and boost performance.</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 18 -->
+    <section id="sec18">
+      <h2>18. Real-world Request Walkthrough</h2>
+      <pre><code><span class="cmnt">// 1. Controller Layer: Receives DTO request</span>
+<span class="anno">@RestController</span> <span class="anno">@RequestMapping</span>(<span class="str">"/api/v1/orders"</span>)
+<span class="kw">public class</span> <span class="type">OrderController</span> {
+    <span class="anno">@PostMapping</span>
+    <span class="kw">public</span> <span class="type">ResponseEntity</span>&lt;<span class="type">OrderResponse</span>&gt; <span class="fn">createOrder</span>(<span class="anno">@Valid</span> <span class="anno">@RequestBody</span> <span class="type">CreateOrderRequest</span> req) {
+        <span class="kw">return</span> <span class="type">ResponseEntity</span>.status(<span class="type">HttpStatus</span>.CREATED).body(orderService.placeOrder(req));
+    }
+}
+
+<span class="cmnt">// 2. Service Layer: Transactional Business Workflow</span>
+<span class="anno">@Service</span>
+<span class="kw">public class</span> <span class="type">OrderServiceImpl</span> <span class="kw">implements</span> <span class="type">OrderService</span> {
+    <span class="anno">@Override</span> <span class="anno">@Transactional</span>
+    <span class="kw">public</span> <span class="type">OrderResponse</span> <span class="fn">placeOrder</span>(<span class="type">CreateOrderRequest</span> req) {
+        <span class="type">User</span> user = userRepo.findById(req.getUserId()).orElseThrow();
+        <span class="type">Order</span> order = <span class="kw">new</span> <span class="type">Order</span>(user, req.getAmount());
+        <span class="type">Order</span> saved = orderRepo.save(order);
+        <span class="kw">return new</span> <span class="type">OrderResponse</span>(saved.getId(), saved.getAmount());
+    }
+}</code></pre>
+    </section>
+
+    <!-- SECTION 19 -->
+    <section id="sec19">
+      <h2>19. 60+ Senior Interview QA</h2>
+
+      <div class="faq-item">
+        <div class="faq-q">Q1: What is the difference between JPA and Hibernate?</div>
+        <div class="faq-a">JPA is an official Java specification (set of interface rules and annotations). Hibernate is an open-source ORM library that implements the JPA specification.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q2: What is Spring Data JPA?</div>
+        <div class="faq-a">An abstraction layer on top of JPA/Hibernate that eliminates repository boilerplate code by generating database query implementations automatically from interface method names.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q3: What is the Persistence Context?</div>
+        <div class="faq-a">An in-memory storage buffer managed by Hibernate's EntityManager that acts as a First-Level Cache and manages entity lifecycles during a database transaction.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q4: How does Dirty Checking work in Hibernate?</div>
+        <div class="faq-a">Hibernate takes an initial snapshot of managed entities when loaded into the Persistence Context. On transaction commit, it compares current entity values against the snapshot and automatically issues SQL UPDATE statements for modified fields.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q5: What is the N+1 Select Problem and how do you fix it?</div>
+        <div class="faq-a">It occurs when fetching N parent entities triggers N additional SQL queries to fetch child associations. Fixed using 'JOIN FETCH' in JPQL or using Entity Graphs.</div>
+      </div>
+
+      <div class="faq-item"><div class="faq-q">Q6: What causes LazyInitializationException?</div><div class="faq-a">Accessing a LAZY loaded child collection outside of an active open transaction / Persistence Context session.</div></div>
+      <div class="faq-item"><div class="faq-q">Q7: Difference between FetchType.LAZY and FetchType.EAGER?</div><div class="faq-a">LAZY loads associations on-demand when accessed; EAGER loads associations immediately alongside parent entities.</div></div>
+      <div class="faq-item"><div class="faq-q">Q8: What is the purpose of @Version annotation?</div><div class="faq-a">Enables Optimistic Locking by tracking version numbers on entity rows to prevent concurrent update overwrite conflicts.</div></div>
+      <div class="faq-item"><div class="faq-q">Q9: Difference between Optimistic and Pessimistic Locking?</div><div class="faq-a">Optimistic locking checks version numbers on update without locking rows. Pessimistic locking locks DB rows at SQL level (FOR UPDATE).</div></div>
+      <div class="faq-item"><div class="faq-q">Q10: What is JPQL?</div><div class="faq-a">Java Persistence Query Language—an object-oriented query language targeting Java Entity classes rather than database tables.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q11: Difference between CrudRepository and JpaRepository?</div><div class="faq-a">JpaRepository extends PagingAndSortingRepository and CrudRepository, adding JPA-specific methods like flush() and batch deletes.</div></div>
+      <div class="faq-item"><div class="faq-q">Q12: What is the purpose of mappedBy attribute?</div><div class="faq-a">Indicates that the current entity is the inverse (non-owning) side of a relationship and points to the owning field in child entity.</div></div>
+      <div class="faq-item"><div class="faq-q">Q13: What does @JoinColumn do?</div><div class="faq-a">Specifies the physical Foreign Key column name in the owning entity table.</div></div>
+      <div class="faq-item"><div class="faq-q">Q14: What is orphanRemoval = true?</div><div class="faq-a">Automatically deletes child entity rows from the database when removed from a parent entity collection.</div></div>
+      <div class="faq-item"><div class="faq-q">Q15: What is the difference between persist() and merge()?</div><div class="faq-a">persist() converts a Transient entity to Persistent. merge() copies state from a Detached entity into a managed Persistent entity.</div></div>
+      <div class="faq-item"><div class="faq-q">Q16: What is the Transient entity state?</div><div class="faq-a">An object created using new() that is not associated with an EntityManager or database primary key.</div></div>
+      <div class="faq-item"><div class="faq-q">Q17: What is the Persistent entity state?</div><div class="faq-a">An entity managed by Persistence Context whose field changes are tracked automatically via dirty checking.</div></div>
+      <div class="faq-item"><div class="faq-q">Q18: What is the Detached entity state?</div><div class="faq-a">An entity with a primary key whose Persistence Context session has closed.</div></div>
+      <div class="faq-item"><div class="faq-q">Q19: What does flush() do in EntityManager?</div><div class="faq-a">Executes pending SQL statements immediately to the database without committing the transaction.</div></div>
+      <div class="faq-item"><div class="faq-q">Q20: What is the First-Level Cache?</div><div class="faq-a">An in-memory cache associated with a single EntityManager transaction session.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q21: What is the Second-Level Cache?</div><div class="faq-a">An optional shared cache across multiple EntityManagers/transactions (e.g., EHCache, Hazelcast).</div></div>
+      <div class="faq-item"><div class="faq-q">Q22: Why shouldn't you use EAGER fetching on OneToMany relationships?</div><div class="faq-a">Causes severe memory bloat and performance degradation by querying massive unused child datasets on every parent read.</div></div>
+      <div class="faq-item"><div class="faq-q">Q23: How to enable query logging in Spring Data JPA?</div><div class="faq-a">Set <code>spring.jpa.show-sql=true</code> and <code>logging.level.org.hibernate.SQL=DEBUG</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q24: What is @EntityGraph?</div><div class="faq-a">An annotation allowing dynamic override of LAZY fetch plans to eagerly fetch associations for specific repository queries.</div></div>
+      <div class="faq-item"><div class="faq-q">Q25: What is @Modifying annotation used for?</div><div class="faq-a">Tells Spring Data JPA that a custom @Query executes an UPDATE, DELETE, or INSERT statement instead of SELECT.</div></div>
+      <div class="faq-item"><div class="faq-q">Q26: What is a DTO Projection in Spring Data JPA?</div><div class="faq-a">An interface or class used to select specific scalar fields in SQL queries rather than fetching whole heavy entities.</div></div>
+      <div class="faq-item"><div class="faq-q">Q27: What is the purpose of @Transactional(readOnly = true)?</div><div class="faq-a">Optimizes read queries by telling Hibernate to skip creating dirty checking snapshots.</div></div>
+      <div class="faq-item"><div class="faq-q">Q28: How does Spring handle database transaction rollbacks?</div><div class="faq-a">Un-handled RuntimeExceptions automatically trigger transaction rollback; checked exceptions do not unless specified.</div></div>
+      <div class="faq-item"><div class="faq-q">Q29: What is CascadeType.ALL?</div><div class="faq-a">Propagates all entity operations (PERSIST, MERGE, REMOVE, REFRESH, DETACH) from parent to child.</div></div>
+      <div class="faq-item"><div class="faq-q">Q30: What is @Transient annotation?</div><div class="faq-a">Marks a field in a Java Entity to be ignored during database table mapping and persistence.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q31: Difference between Derived Queries and JPQL Queries?</div><div class="faq-a">Derived queries build SQL automatically from method names (findByEmail). JPQL uses explicit @Query annotations.</div></div>
+      <div class="faq-item"><div class="faq-q">Q32: What is the nativeQuery = true attribute?</div><div class="faq-a">Instructs Spring Data JPA to execute raw database SQL directly instead of parsing JPQL.</div></div>
+      <div class="faq-item"><div class="faq-q">Q33: What is @Enumerated(EnumType.STRING)?</div><div class="faq-a">Persists Java Enum values as readable text names in the DB column rather than default integer ordinals.</div></div>
+      <div class="faq-item"><div class="faq-q">Q34: What is @Lob annotation?</div><div class="faq-a">Maps entity fields to Large Object columns (CLOB for text, BLOB for binary data).</div></div>
+      <div class="faq-item"><div class="faq-q">Q35: How does pagination work in Spring Data JPA?</div><div class="faq-a">By passing a <code>Pageable</code> parameter (e.g. <code>PageRequest.of(0, 10)</code>) returning a <code>Page&lt;T&gt;</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q36: What is a Composite Key in JPA?</div><div class="faq-a">A primary key comprising multiple columns, mapped using <code>@EmbeddedId</code> or <code>@IdClass</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q37: What is @Embeddable and @Embedded?</div><div class="faq-a">@Embeddable defines a reusable class of column attributes; @Embedded includes those columns inside an Entity table.</div></div>
+      <div class="faq-item"><div class="faq-q">Q38: Why should you avoid returning Entities directly from REST Controllers?</div><div class="faq-a">Exposes database schema, causes infinite JSON recursion on bidirectional links, and bypasses validation boundaries.</div></div>
+      <div class="faq-item"><div class="faq-q">Q39: How do you configure JDBC batch size in Spring Boot?</div><div class="faq-a">Set <code>spring.jpa.properties.hibernate.jdbc.batch_size=30</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q40: What is the purpose of clear() in EntityManager?</div><div class="faq-a">Clears L1 Cache, detaching all managed entities to prevent memory overflow during heavy batch processing.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q41: What is GenerationType.IDENTITY?</div><div class="faq-a">Uses database auto-increment columns to assign primary key IDs upon INSERT execution.</div></div>
+      <div class="faq-item"><div class="faq-q">Q42: What is GenerationType.SEQUENCE?</div><div class="faq-a">Uses a database sequence object to request primary key IDs prior to executing INSERT statements.</div></div>
+      <div class="faq-item"><div class="faq-q">Q43: What is the difference between findById() and getReferenceById()?</div><div class="faq-a">findById() loads the actual entity immediately. getReferenceById() returns a lazy un-initialized proxy reference.</div></div>
+      <div class="faq-item"><div class="faq-q">Q44: What is transaction propagation in Spring?</div><div class="faq-a">Defines how transactional boundaries behave when a transactional method invokes another (e.g. REQUIRED, REQUIRES_NEW).</div></div>
+      <div class="faq-item"><div class="faq-q">Q45: What is Propagation.REQUIRED?</div><div class="faq-a">Default propagation mode: uses the existing transaction if present, or creates a new one if none exists.</div></div>
+      <div class="faq-item"><div class="faq-q">Q46: What is Propagation.REQUIRES_NEW?</div><div class="faq-a">Suspends current active transaction and opens a brand-new independent transaction.</div></div>
+      <div class="faq-item"><div class="faq-q">Q47: What is ACID in database transactions?</div><div class="faq-a">Atomicity, Consistency, Isolation, Durability.</div></div>
+      <div class="faq-item"><div class="faq-q">Q48: How to avoid infinite JSON recursion when serializing entities?</div><div class="faq-a">Use DTOs (preferred) or use <code>@JsonIgnore</code> / <code>@JsonManagedReference</code>.</div></div>
+      <div class="faq-item"><div class="faq-q">Q49: What is Open Session in View (OSIV)?</div><div class="faq-a">A Spring Boot setting keeping the JPA EntityManager open during HTTP response rendering. Recommended to disable in production!</div></div>
+      <div class="faq-item"><div class="faq-q">Q50: How to disable OSIV in Spring Boot?</div><div class="faq-a">Set <code>spring.jpa.open-in-view=false</code> in <code>application.properties</code>.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q51: What is a Soft Delete in JPA?</div><div class="faq-a">Updating a boolean flag (e.g. <code>is_deleted = true</code>) instead of physically executing an SQL DELETE row removal.</div></div>
+      <div class="faq-item"><div class="faq-q">Q52: What is @SQLDelete and @Where in Hibernate?</div><div class="faq-a">@SQLDelete overrides default SQL DELETE with custom soft delete UPDATE. @Where filters out soft-deleted records.</div></div>
+      <div class="faq-item"><div class="faq-q">Q53: How to test Spring Data JPA Repositories?</div><div class="faq-a">Using <code>@DataJpaTest</code> with an embedded H2/Testcontainers database.</div></div>
+      <div class="faq-item"><div class="faq-q">Q54: What is HikariCP?</div><div class="faq-a">The default high-performance JDBC connection pool library utilized by Spring Boot.</div></div>
+      <div class="faq-item"><div class="faq-q">Q55: What is the difference between SQL and JPQL?</div><div class="faq-a">SQL targets database tables and columns directly. JPQL targets Java Entity classes and properties.</div></div>
+      <div class="faq-item"><div class="faq-q">Q56: What is LockModeType.PESSIMISTIC_WRITE?</div><div class="faq-a">Acquires an exclusive database row lock (FOR UPDATE) preventing concurrent reads or writes.</div></div>
+      <div class="faq-item"><div class="faq-q">Q57: What is LockModeType.OPTIMISTIC?</div><div class="faq-a">Validates entity @Version numbers upon transaction flush without acquiring database row locks.</div></div>
+      <div class="faq-item"><div class="faq-q">Q58: What is @CreatedDate and @LastModifiedDate?</div><div class="faq-a">Spring Data JPA auditing annotations that automatically populate creation and update timestamps on entities.</div></div>
+      <div class="faq-item"><div class="faq-q">Q59: How to enable JPA Auditing in Spring Boot?</div><div class="faq-a">Add <code>@EnableJpaAuditing</code> on configuration class and <code>@EntityListeners(AuditingEntityListener.class)</code> on entity.</div></div>
+      <div class="faq-item"><div class="faq-q">Q60: What is the main architectural takeaway of Spring Data JPA?</div><div class="faq-a">Automated repository implementations, object-relational mapping, dirty checking updates, and declarative transaction management.</div></div>
+    </section>
+
+    <!-- SECTION 20 -->
+    <section id="sec20">
+      <h2>20. Revision Cheatsheet</h2>
+      <div class="card">
+        <p><b>JPA:</b> Standard ORM Specification Interface &middot; <b>Hibernate:</b> ORM Engine Implementation &middot; <b>Spring Data JPA:</b> Repository Abstraction Layer.</p>
+        <p><b>Entity Lifecycle:</b> Transient (new) &rarr; Persistent (managed in L1 Cache) &rarr; Detached (session closed) &rarr; Removed (deleted).</p>
+        <p><b>Dirty Checking:</b> Automatic SQL <code>UPDATE</code> generation for modified Persistent entities upon transaction commit.</p>
+        <p><b>N+1 Problem Fix:</b> Use <code>JOIN FETCH</code> in JPQL queries or <code>@EntityGraph</code>.</p>
+        <p><b>Fetch Strategy:</b> Always set <code>fetch = FetchType.LAZY</code> explicitly on all relationships!</p>
+      </div>
+    </section>
+
+    <!-- SECTION 21 -->
+    <section id="sec21">
+      <h2>21. Visual Infographic Summary</h2>
+      <div class="diagram">
+        <h4>Spring Data JPA Complete Architectural Ecosystem</h4>
+        <div class="grid">
+          <div class="card" style="border-color: var(--teal);">
+            <b style="color: var(--teal);">1. Developer Code</b>
+            <p>Entities (@Entity, @Id) &middot; Spring Data JpaRepository &middot; DTO Projections &middot; @Transactional</p>
+          </div>
+          <div class="card" style="border-color: var(--amber);">
+            <b style="color: var(--amber);">2. JPA &amp; Hibernate Engine</b>
+            <p>EntityManager &middot; Persistence Context &middot; L1 Cache &middot; Dirty Checking &middot; JPQL to SQL Generator</p>
+          </div>
+          <div class="card" style="border-color: var(--purple);">
+            <b style="color: var(--purple);">3. Database Layer</b>
+            <p>HikariCP Connection Pool &middot; JDBC Driver &middot; PostgreSQL / MySQL RDBMS Engine</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+</body>
+</html>

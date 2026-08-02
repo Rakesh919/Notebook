@@ -76,6 +76,40 @@
           ],
           "difficulty": "Beginner",
           "lastUpdated": "2026-07-18"
+        },
+                                {
+          "id": "spring-boot-startup",
+          "title": "Spring Boot Startup Process",
+          "file": "notes/spring-boot/spring-boot-startup.html",
+          "tags": [
+            "spring",
+            "spring startup"
+          ],
+          "difficulty": "Beginner",
+          "lastUpdated": "2026-07-18"
+        },
+                                {
+          "id": "spring-mvc",
+          "title": "Spring MVC",
+          "file": "notes/spring-boot/spring-mvc.html",
+          "tags": [
+            "mvc",
+            "spring"
+          ],
+          "difficulty": "Beginner",
+          "lastUpdated": "2026-07-18"
+        },
+                                        {
+          "id": "spring-jpa-hibernate",
+          "title": "Spring JPA & Hibernate",
+          "file": "notes/spring-boot/jpa-hibernate.html",
+          "tags": [
+            "jpa",
+            "hibernate",
+            "spring"
+          ],
+          "difficulty": "Beginner",
+          "lastUpdated": "2026-07-18"
         }
       ]
     },
