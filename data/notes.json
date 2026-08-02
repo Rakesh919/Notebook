@@ -134,6 +134,30 @@
           ],
           "difficulty": "Beginner",
           "lastUpdated": "2026-07-18"
+        },
+        {
+          "id": "spring-security",
+          "title": "Spring Security",
+          "file": "notes/spring-boot/spring-security.html",
+          "tags": [
+            "security",
+            "spring"
+          ],
+          "difficulty": "Beginner",
+          "lastUpdated": "2026-07-18"
+        },
+                {
+          "id": "aop-interceptor-filterchain",
+          "title": "AOP, Interceptors, and Filter Chains",
+          "file": "notes/spring-boot/aop-interceptor-filterchain.html",
+          "tags": [
+            "AOP",
+            "interceptors",
+            "filter chain",
+            "spring"
+          ],
+          "difficulty": "Beginner",
+          "lastUpdated": "2026-07-18"
         }
       ]
     },

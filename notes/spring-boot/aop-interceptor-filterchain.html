@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Spring AOP vs Filters vs Interceptors — Complete Deep Dive</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  :root {
+    --bg: #0b0e14;
+    --surface: #131824;
+    --panel2: #0f131c;
+    --border: #232a38;
+    --text: #e7eaf1;
+    --muted: #9aa4b7;
+    --accent: #f0b429;
+    --amber: #f0b429;
+    --teal: #38bdf8;
+    --rose: #f87171;
+    --green: #4ade80;
+    --purple: #c084fc;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .layout {
+    display: flex;
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+  
+  /* STICKY SIDEBAR NAV */
+  nav.sidebar {
+    width: 310px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 24px 16px;
+    flex-shrink: 0;
+  }
+  nav.sidebar h3 {
+    font-size: 0.85rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+    padding-left: 8px;
+  }
+  nav.sidebar a {
+    display: block;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.8rem;
+    padding: 5px 8px;
+    border-radius: 6px;
+    margin-bottom: 2px;
+    transition: all 0.15s ease;
+  }
+  nav.sidebar a:hover {
+    color: var(--accent);
+    background: rgba(240, 180, 41, 0.08);
+  }
+
+  /* MAIN CONTENT WRAPPER */
+  .main-content {
+    flex: 1;
+    max-width: 1080px;
+    padding: 48px 40px 120px;
+    overflow-x: hidden;
+  }
+
+  .eyebrow {
+    color: var(--accent);
+    font-family: monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  h1 { font-size: 2.3rem; margin-top: 0; margin-bottom: 8px; font-weight: 800; line-height: 1.25; }
+  h1 span { color: var(--accent); }
+  .sub { color: var(--muted); font-size: 1rem; margin-bottom: 32px; }
+  
+  h2 {
+    margin-top: 56px;
+    font-size: 1.45rem;
+    border-left: 4px solid var(--accent);
+    padding-left: 14px;
+    color: var(--text);
+  }
+  h3 { font-size: 1.15rem; color: var(--teal); margin-top: 28px; }
+  h4 { font-size: 0.98rem; color: var(--purple); margin-top: 20px; }
+  p, li { color: var(--muted); font-size: 0.95rem; }
+  li { margin-bottom: 6px; }
+  b, strong { color: var(--text); }
+  
+  /* CARDS & PANELS */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 20px 0; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .card b { color: var(--accent); display: block; margin-bottom: 6px; font-size: 1rem; }
+  
+  /* CALLOUT BOXES */
+  .callout {
+    margin: 20px 0;
+    border-left: 4px solid var(--accent);
+    padding: 16px 20px;
+    background: rgba(240, 180, 41, 0.05);
+    border-radius: 0 8px 8px 0;
+    font-size: 0.92rem;
+  }
+  .callout.warn { border-left-color: var(--rose); background: rgba(248, 113, 113, 0.06); }
+  .callout.info { border-left-color: var(--teal); background: rgba(56, 189, 248, 0.06); }
+  .callout.success { border-left-color: var(--green); background: rgba(74, 222, 128, 0.06); }
+  
+  /* CODE BLOCKS WITH PURE CSS SYNTAX HIGHLIGHTING */
+  pre {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: #e7eaf1;
+  }
+  code {
+    background: #0f131c;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.88em;
+    color: var(--accent);
+    font-family: 'Consolas', 'Courier New', monospace;
+  }
+  pre code { border: none; padding: 0; background: transparent; color: inherit; }
+  
+  .kw { color: #f43f5e; font-weight: bold; }
+  .anno { color: var(--accent); font-weight: bold; }
+  .type { color: var(--teal); }
+  .str { color: var(--green); }
+  .cmnt { color: #64748b; font-style: italic; }
+  .fn { color: #c084fc; }
+
+  /* TABLES */
+  table.matrix {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 0.85rem;
+    background: var(--surface);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  table.matrix th, table.matrix td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    text-align: left;
+  }
+  table.matrix th {
+    background: var(--panel2);
+    color: var(--accent);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+  }
+  table.matrix tr:last-child td { border-bottom: none; }
+
+  /* FLOWCHARTS & DIAGRAMS */
+  .diagram {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin: 24px 0;
+  }
+  .flow-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .flow-step .num {
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: bold;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+  .flow-arrow {
+    text-align: center;
+    color: var(--accent);
+    font-size: 1.2rem;
+    margin: -4px 0 4px;
+  }
+
+  /* FAQ ACCORDION STYLE */
+  .faq-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    padding: 16px;
+  }
+  .faq-q { color: var(--accent); font-weight: 600; font-size: 0.98rem; margin-bottom: 8px; }
+  .faq-a { color: var(--muted); font-size: 0.92rem; }
+
+  @media (max-width: 900px) {
+    .layout { flex-direction: column; }
+    nav.sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border); }
+    .main-content { padding: 24px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- SIDEBAR NAVIGATION -->
+  <nav class="sidebar">
+    <h3>Interception Guide</h3>
+    <a href="#sec1">1. Introduction &amp; Why Three Exist</a>
+    <a href="#sec2">2. The Big Picture Request Flow</a>
+    <a href="#sec3">3. Servlet Filter Overview</a>
+    <a href="#sec4">4. Spring Interceptor Overview</a>
+    <a href="#sec5">5. Spring AOP Overview</a>
+    <a href="#sec6">6. Internal Architecture Stack</a>
+    <a href="#sec7">7. Execution Order Timeline</a>
+    <a href="#sec8">8. Filter Deep Dive</a>
+    <a href="#sec9">9. Interceptor Deep Dive</a>
+    <a href="#sec10">10. AOP Deep Dive</a>
+    <a href="#sec11">11. Master Comparison Matrix</a>
+    <a href="#sec12">12. Decision Guide: When to Use Which?</a>
+    <a href="#sec13">13. Real Production Architecture Example</a>
+    <a href="#sec14">14. Internal Working &amp; Classes</a>
+    <a href="#sec15">15. Performance Benchmark Analysis</a>
+    <a href="#sec16">16. Common Architectural Mistakes</a>
+    <a href="#sec17">17. Senior Best Practices</a>
+    <a href="#sec18">18. End-to-End Production Request Flow</a>
+    <a href="#sec19">19. 60+ Senior Interview Questions</a>
+    <a href="#sec20">20. Revision Cheatsheet</a>
+    <a href="#sec21">21. Visual Summary Infographic</a>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <div class="eyebrow">Enterprise Java &middot; Interception &amp; Cross-Cutting Architecture</div>
+    <h1>Spring AOP vs Filters vs Interceptors — <span>Complete Deep Dive</span></h1>
+    <div class="sub">The definitive guide to understanding interception layers in Java web applications: Servlet Filters, Spring MVC Interceptors, and Aspect-Oriented Programming (AOP), their internal working, execution order, trade-offs, and production design patterns.</div>
+
+    <!-- SECTION 1 -->
+    <section id="sec1">
+      <h2>1. Introduction &amp; Why Three Exist</h2>
+      <p>When building enterprise web applications, you frequently need to execute code before or after core business logic—tasks such as checking security tokens, logging request execution time, managing database transactions, or handling CORS headers. These are called <b>Cross-Cutting Concerns</b>.</p>
+
+      <p>Spring and the Java Servlet Specification provide three distinct mechanisms for intercepting execution: <b>Servlet Filters</b>, <b>Spring MVC Interceptors</b>, and <b>Spring AOP (Aspects)</b>. Beginners often ask: <i>"Why do we need three different ways to intercept execution? Can't one replace the others?"</i></p>
+
+      <div class="grid">
+        <div class="card">
+          <b>Real-World Analogy: Airport Security Layers</b>
+          <p>• <b>Servlet Filter (Airport Main Gate Security):</b> Inspects everyone entering the airport grounds. It doesn't care which flight you take; it checks raw physical security, passport validity, and baggage size before you enter the terminal.<br><br>
+          • <b>Spring Interceptor (Flight Boarding Gate Counter):</b> Inspects passengers boarding a specific flight. It knows about airline routes, ticket seats, and passenger classes (Spring Controllers &amp; Endpoints).<br><br>
+          • <b>Spring AOP (In-Flight Personal Service / Pilot Instructions):</b> Applies specific rules around individual passenger interactions or cockpit operations (Service &amp; Repository methods) regardless of HTTP or web context.</p>
+        </div>
+        <div class="card">
+          <b>Why One Cannot Replace the Others</b>
+          <p>Each mechanism operates at a completely different <b>architectural layer</b> with different access levels to HTTP objects, Spring context, and target method signatures. For instance, a Filter can wrap raw HTTP streams (CORS/GZIP) before Spring even runs, an Interceptor understands Spring MVC handler mappings, and AOP can wrap any method call anywhere in the application (even background CLI jobs or message listeners) without an HTTP request!</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2 -->
+    <section id="sec2">
+      <h2>2. The Big Picture Request Flow</h2>
+      <p>Understanding where each component sits along the execution path of an HTTP request is essential for proper architectural placement:</p>
+
+      <div class="diagram">
+        <h4>High-Level End-to-End Execution Flow</h4>
+        <div class="flow-step"><div class="num">1</div><div><b>Client Request:</b> Browser sends <code>POST /api/v1/orders</code>.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">2</div><div><b>Embedded Tomcat Container:</b> Receives TCP socket bytes and invokes the Servlet Container chain.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">3</div><div><b>Servlet Filter:</b> Executes <code>doFilter()</code> (CORS, GZIP, Security, Logging raw payload).</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">4</div><div><b>DispatcherServlet:</b> Front Controller receives request and resolves HandlerMapping.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">5</div><div><b>Spring Interceptor:</b> Executes <code>preHandle()</code> (Auth token check, request timing start).</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">6</div><div><b>Controller Method:</b> <code>OrderController.createOrder()</code> is invoked by HandlerAdapter.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">7</div><div><b>Service Layer &amp; AOP Proxy:</b> Invokes <code>OrderService.process()</code> through a Spring AOP Proxy.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">8</div><div><b>AOP Aspect:</b> Runs <code>@Around</code> / <code>@Before</code> advice (e.g. starts <code>@Transactional</code> DB session, custom logging).</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">9</div><div><b>Target Business Method:</b> Real domain logic runs and interacts with Repository/Database.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">10</div><div><b>AOP Return:</b> Runs <code>@AfterReturning</code> / <code>@Around</code> completion (commits transaction).</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">11</div><div><b>Controller Returns:</b> Returns DTO payload object.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">12</div><div><b>Interceptor Completion:</b> Runs <code>postHandle()</code> and <code>afterCompletion()</code>.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">13</div><div><b>Filter Return:</b> Filter completes and sends HTTP response bytes back to client.</div></div>
+      </div>
+    </section>
+
+    <!-- SECTION 3 -->
+    <section id="sec3">
+      <h2>3. Servlet Filter Overview</h2>
+      <p>A <b>Servlet Filter</b> is an object defined by the Jakarta Servlet Specification (<code>jakarta.servlet.Filter</code>). It operates at the low-level web container tier (Tomcat, Jetty, Undertow) <b>outside</b> of Spring MVC's <code>DispatcherServlet</code>.</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>Key Responsibilities</b>
+          <ul>
+            <li>Inspecting, modifying, or blocking raw <code>HttpServletRequest</code> and <code>HttpServletResponse</code> objects.</li>
+            <li>Wrapping request/response streams (e.g. ContentCachingRequestWrapper for body re-reading).</li>
+            <li>Executing low-level web protocols: CORS headers, GZIP compression, character encoding.</li>
+            <li>Enforcing baseline container security filters (Spring Security's <code>DelegatingFilterProxy</code>).</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4 -->
+    <section id="sec4">
+      <h2>4. Spring Interceptor Overview</h2>
+      <p>A <b>HandlerInterceptor</b> is a Spring MVC framework component (<code>org.springframework.web.servlet.HandlerInterceptor</code>). It intercepts HTTP requests <b>inside</b> the <code>DispatcherServlet</code>, right before and after they reach Spring MVC Controllers.</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>Key Responsibilities</b>
+          <ul>
+            <li>Intercepting requests with full awareness of the target Spring <code>HandlerMethod</code> (Controller method signature).</li>
+            <li>Extracting execution timing metrics specific to web endpoints.</li>
+            <li>Inspecting or attaching model attributes for template rendering.</li>
+            <li>Executing pre-controller security or tenant resolution logic.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5 -->
+    <section id="sec5">
+      <h2>5. Spring AOP Overview</h2>
+      <p><b>Spring AOP (Aspect-Oriented Programming)</b> is a core Spring framework feature (<code>org.springframework.aop</code>) that uses dynamic proxies (JDK or CGLIB) to wrap method executions around Spring-managed beans across any architectural layer (Service, Repository, Custom Component).</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>Key Responsibilities</b>
+          <ul>
+            <li>Interception of method calls anywhere in the application (completely independent of HTTP/Web context).</li>
+            <li>Managing declarative transactions via <code>@Transactional</code>.</li>
+            <li>Declarative caching operations via <code>@Cacheable</code> and <code>@CacheEvict</code>.</li>
+            <li>Method performance monitoring, retry logic, and fine-grained auditing.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 6 -->
+    <section id="sec6">
+      <h2>6. Internal Architecture Stack</h2>
+      <p>Visualizing how the three technologies nest within the runtime application stack:</p>
+
+      <div class="diagram">
+        <h4>Runtime Container Nesting Stack</h4>
+        <div class="card" style="border-color: var(--teal); margin-bottom: 8px;">
+          <b style="color: var(--teal);">1. Servlet Container Level (Outer Boundary)</b>
+          <p>Tomcat &rarr; Filter 1 &rarr; Filter 2 &rarr; Filter 3 (Operates on raw Servlets)</p>
+          
+          <div class="card" style="border-color: var(--amber); margin-top: 12px; margin-bottom: 8px;">
+            <b style="color: var(--amber);">2. Spring MVC Framework Level (Middle Layer)</b>
+            <p>DispatcherServlet &rarr; Interceptor (preHandle) &rarr; Controller (Operates on Web Endpoints)</p>
+
+            <div class="card" style="border-color: var(--purple); margin-top: 12px;">
+              <b style="color: var(--purple);">3. Spring Core &amp; AOP Proxy Level (Inner Business Core)</b>
+              <p>Spring AOP Proxy &rarr; Aspect Advice (@Around) &rarr; Target Service Method (Operates on Java Methods)</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 7 -->
+    <section id="sec7">
+      <h2>7. Execution Order Timeline</h2>
+      <p>The exact chronological execution order for an HTTP request passing through all three interception layers:</p>
+
+      <div class="diagram">
+        <h4>Chronological Timeline</h4>
+        <div class="flow-step"><div class="num">1</div><div><b>Filter.doFilter() [Inbound]:</b> Code execution <i>before</i> <code>chain.doFilter()</code>.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">2</div><div><b>Interceptor.preHandle():</b> Code execution before Controller. If false, request stops here.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">3</div><div><b>Controller Method Execution:</b> HandlerAdapter invokes controller endpoint.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">4</div><div><b>AOP @Before / @Around [Inbound]:</b> Executes before target Service method.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">5</div><div><b>Service Method Execution:</b> Real domain logic executes.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">6</div><div><b>AOP @AfterReturning / @Around [Outbound]:</b> Executes after target Service method finishes.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">7</div><div><b>Interceptor.postHandle():</b> Executes after Controller finishes, before view/JSON response rendering.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">8</div><div><b>Interceptor.afterCompletion():</b> Executes after request is completely rendered (even if exceptions occurred).</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">9</div><div><b>Filter.doFilter() [Outbound]:</b> Code execution <i>after</i> <code>chain.doFilter()</code> completes. Response sent to client.</div></div>
+      </div>
+    </section>
+
+    <!-- SECTION 8 -->
+    <section id="sec8">
+      <h2>8. Filter Deep Dive</h2>
+      <p>Filters are declared in standard Servlet specifications. Spring Boot provides <code>OncePerRequestFilter</code> to guarantee a filter executes strictly once per request dispatch (avoiding duplicate runs during internal forwards/includes).</p>
+
+      <pre><code><span class="anno">@Component</span>
+<span class="kw">public class</span> <span class="type">CorrelationIdFilter</span> <span class="kw">extends</span> <span class="type">OncePerRequestFilter</span> {
+
+    <span class="anno">@Override</span>
+    <span class="kw">protected void</span> <span class="fn">doFilterInternal</span>(<span class="type">HttpServletRequest</span> req, <span class="type">HttpServletResponse</span> res, <span class="type">FilterChain</span> chain)
+            <span class="kw">throws</span> <span class="type">ServletException</span>, <span class="type">IOException</span> {
+        
+        <span class="type">String</span> correlationId = req.getHeader(<span class="str">"X-Correlation-ID"</span>);
+        <span class="kw">if</span> (correlationId == <span class="kw">null</span> || correlationId.isBlank()) {
+            correlationId = <span class="type">UUID</span>.randomUUID().toString();
+        }
+        
+        <span class="cmnt">// Attach to logging MDC context and response headers</span>
+        <span class="type">MDC</span>.put(<span class="str">"correlationId"</span>, correlationId);
+        res.setHeader(<span class="str">"X-Correlation-ID"</span>, correlationId);
+
+        <span class="kw">try</span> {
+            chain.doFilter(req, res); <span class="cmnt">// Pass request to next filter / DispatcherServlet</span>
+        } <span class="kw">finally</span> {
+            <span class="type">MDC</span>.remove(<span class="str">"correlationId"</span>); <span class="cmnt">// Clean up thread-local MDC</span>
+        }
+    }
+}</code></pre>
+    </section>
+
+    <!-- SECTION 9 -->
+    <section id="sec9">
+      <h2>9. Interceptor Deep Dive</h2>
+      <p>An Interceptor implements <code>HandlerInterceptor</code> and is registered via <code>WebMvcConfigurer</code>. It gives you direct access to the target Spring <code>HandlerMethod</code> object.</p>
+
+      <pre><code><span class="anno">@Component</span>
+<span class="kw">public class</span> <span class="type">RequestTimingInterceptor</span> <span class="kw">implements</span> <span class="type">HandlerInterceptor</span> {
+
+    <span class="anno">@Override</span>
+    <span class="kw">public boolean</span> <span class="fn">preHandle</span>(<span class="type">HttpServletRequest</span> req, <span class="type">HttpServletResponse</span> res, <span class="type">Object</span> handler) {
+        <span class="kw">long</span> startTime = <span class="type">System</span>.currentTimeMillis();
+        req.setAttribute(<span class="str">"startTime"</span>, startTime);
+        <span class="kw">return true</span>; <span class="cmnt">// true = continue execution; false = block request here</span>
+    }
+
+    <span class="anno">@Override</span>
+    <span class="kw">public void</span> <span class="fn">afterCompletion</span>(<span class="type">HttpServletRequest</span> req, <span class="type">HttpServletResponse</span> res, <span class="type">Object</span> handler, <span class="type">Exception</span> ex) {
+        <span class="kw">long</span> startTime = (<span class="type">Long</span>) req.getAttribute(<span class="str">"startTime"</span>);
+        <span class="kw">long</span> duration = <span class="type">System</span>.currentTimeMillis() - startTime;
+        
+        <span class="kw">if</span> (handler <span class="kw">instanceof</span> <span class="type">HandlerMethod</span>) {
+            <span class="type">HandlerMethod</span> hm = (<span class="type">HandlerMethod</span>) handler;
+            <span class="type">System</span>.out.println(hm.getShortLogMessage() + <span class="str">" executed in "</span> + duration + <span class="str">"ms"</span>);
+        }
+    }
+}</code></pre>
+    </section>
+
+    <!-- SECTION 10 -->
+    <section id="sec10">
+      <h2>10. AOP Deep Dive</h2>
+      <p>Spring AOP uses dynamic proxies (JDK Dynamic Proxy or CGLIB) to wrap target Spring Beans and execute advice around method join points based on Pointcut expressions.</p>
+
+      <pre><code><span class="anno">@Aspect</span>
+<span class="anno">@Component</span>
+<span class="kw">public class</span> <span class="type">ServiceAuditAspect</span> {
+
+    <span class="anno">@Around</span>(<span class="str">"execution(* com.devvault.service..*.*(..))"</span>)
+    <span class="kw">public</span> <span class="type">Object</span> <span class="fn">auditMethod</span>(<span class="type">ProceedingJoinPoint</span> joinPoint) <span class="kw">throws</span> <span class="type">Throwable</span> {
+        <span class="type">System</span>.out.println(<span class="str">"AOP BEFORE: Executing "</span> + joinPoint.getSignature());
+        
+        <span class="type">Object</span> result = joinPoint.proceed(); <span class="cmnt">// Call real method</span>
+        
+        <span class="type">System</span>.out.println(<span class="str">"AOP AFTER: Completed "</span> + joinPoint.getSignature());
+        <span class="kw">return</span> result;
+    }
+}</code></pre>
+    </section>
+
+    <!-- SECTION 11 -->
+    <section id="sec11">
+      <h2>11. Master Comparison Matrix</h2>
+      <p>A comprehensive comparison of all three interception technologies:</p>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Property / Dimension</th>
+            <th>Servlet Filter</th>
+            <th>Spring Interceptor</th>
+            <th>Spring AOP (Aspect)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Framework / Spec</b></td>
+            <td>Jakarta Servlet Specification</td>
+            <td>Spring MVC Framework</td>
+            <td>Spring Core Framework</td>
+          </tr>
+          <tr>
+            <td><b>Execution Layer</b></td>
+            <td>Servlet Container (Outside Spring MVC)</td>
+            <td>Spring MVC (Inside DispatcherServlet)</td>
+            <td>Spring Core (Proxy around Beans)</td>
+          </tr>
+          <tr>
+            <td><b>Interception Target</b></td>
+            <td>HTTP Requests / Responses</td>
+            <td>Controller Web Endpoints</td>
+            <td>Any Spring Bean Method Call</td>
+          </tr>
+          <tr>
+            <td><b>Access to HttpServletRequest</b></td>
+            <td><b>Yes</b> (Raw stream access)</td>
+            <td><b>Yes</b> (Parsed request access)</td>
+            <td><b>No</b> (RequiresRequestContextHolder)</td>
+          </tr>
+          <tr>
+            <td><b>Modify Request / Response Stream</b></td>
+            <td><b>Yes</b> (Can wrap input/output streams)</td>
+            <td><b>No</b> (Can only modify headers/attributes)</td>
+            <td><b>No</b> (Operates on method arguments)</td>
+          </tr>
+          <tr>
+            <td><b>Access to Controller HandlerMethod</b></td>
+            <td>No</td>
+            <td><b>Yes</b> (Full method signature)</td>
+            <td>No (Sees service method signature)</td>
+          </tr>
+          <tr>
+            <td><b>Works Outside Web Context?</b></td>
+            <td>No (Requires Web Server)</td>
+            <td>No (Requires Spring MVC)</td>
+            <td><b>Yes!</b> (Works in CLI, Kafka, Batch)</td>
+          </tr>
+          <tr>
+            <td><b>Supports Dependency Injection?</b></td>
+            <td>Yes (In Spring Boot)</td>
+            <td>Yes</td>
+            <td>Yes</td>
+          </tr>
+          <tr>
+            <td><b>Execution Timing</b></td>
+            <td>First to run / Last to finish</td>
+            <td>Runs after Filters, before Controller</td>
+            <td>Runs around target method call</td>
+          </tr>
+          <tr>
+            <td><b>Execution Blocking</b></td>
+            <td>Don't call <code>chain.doFilter()</code></td>
+            <td>Return <code>false</code> in <code>preHandle()</code></td>
+            <td>Throw Exception / Don't call <code>proceed()</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 12 -->
+    <section id="sec12">
+      <h2>12. Decision Guide: When to Use Which?</h2>
+      
+      <div class="grid">
+        <div class="card">
+          <b>Use Servlet Filter For:</b>
+          <ul>
+            <li>Raw request/response body wrapping (e.g. logging JSON payloads multiple times).</li>
+            <li>CORS headers and GZIP response compression.</li>
+            <li>Global web security filter chains (Spring Security).</li>
+            <li>Character encoding and low-level IP rate limiting.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <b>Use Spring Interceptor For:</b>
+          <ul>
+            <li>JWT token validation specific to web controllers.</li>
+            <li>Extracting execution metrics per Controller endpoint.</li>
+            <li>Attaching user/tenant context to Spring MVC requests.</li>
+            <li>Handling locale or theme changes in web apps.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <b>Use Spring AOP For:</b>
+          <ul>
+            <li>Declarative transaction management (<code>@Transactional</code>).</li>
+            <li>Declarative caching (<code>@Cacheable</code>).</li>
+            <li>Method performance monitoring across Service/Repository layers.</li>
+            <li>Custom annotation interception (e.g. <code>@AuditLog</code>).</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 13 -->
+    <section id="sec13">
+      <h2>13. Real Production Architecture Example</h2>
+      <p>How an enterprise Spring Boot application combines all three technologies in a real request pipeline:</p>
+
+      <div class="diagram">
+        <h4>Production Security &amp; Audit Architecture</h4>
+        <div class="flow-step"><div class="num">1</div><div><b>Servlet Filter (CorrelationIdFilter):</b> Assigns UUID correlation ID to MDC logging context and sets CORS headers.</div></div>
+        <div class="flow-step"><div class="num">2</div><div><b>Servlet Filter (Spring Security FilterChain):</b> Validates JWT token in <code>Authorization</code> header and populates SecurityContext.</div></div>
+        <div class="flow-step"><div class="num">3</div><div><b>Spring Interceptor (RateLimitInterceptor):</b> Checks client API quota; logs endpoint timing in <code>afterCompletion()</code>.</div></div>
+        <div class="flow-step"><div class="num">4</div><div><b>Spring Controller:</b> Receives DTO and delegates to <code>OrderService.createOrder()</code>.</div></div>
+        <div class="flow-step"><div class="num">5</div><div><b>Spring AOP Aspect (@Transactional):</b> Opens DB transaction, runs method, and handles commit/rollback.</div></div>
+        <div class="flow-step"><div class="num">6</div><div><b>Spring AOP Aspect (@AuditLog):</b> Writes user action record to audit log table upon successful execution.</div></div>
+      </div>
+    </section>
+
+    <!-- SECTION 14 -->
+    <section id="sec14">
+      <h2>14. Internal Working &amp; Classes</h2>
+      <ul>
+        <li><code>ApplicationFilterChain</code>: Tomcat internal class executing registered <code>Filter</code> chains sequentially.</li>
+        <li><code>DispatcherServlet</code>: Spring MVC front controller executing <code>HandlerExecutionChain</code>.</li>
+        <li><code>HandlerExecutionChain</code>: Holds the controller handler and the list of <code>HandlerInterceptor</code> objects.</li>
+        <li><code>AnnotationAwareAspectJAutoProxyCreator</code>: Internal Spring BeanPostProcessor that wraps Spring Beans in CGLIB/JDK dynamic proxies for AOP aspects.</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 15 -->
+    <section id="sec15">
+      <h2>15. Performance Benchmark Analysis</h2>
+      <p>Overhead comparisons across interception layers per 100,000 requests:</p>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Interception Layer</th>
+            <th>Relative Overhead per Request</th>
+            <th>Primary Performance Driver</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Servlet Filter</b></td>
+            <td>Ultra-Low (~0.01 ms)</td>
+            <td>Direct method invocation in Tomcat filter chain array.</td>
+          </tr>
+          <tr>
+            <td><b>Spring Interceptor</b></td>
+            <td>Very Low (~0.03 ms)</td>
+            <td>Array loop execution inside <code>DispatcherServlet</code>.</td>
+          </tr>
+          <tr>
+            <td><b>Spring AOP</b></td>
+            <td>Low (~0.05 - 0.1 ms)</td>
+            <td>Dynamic proxy reflection or CGLIB subclass method delegation.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 16 -->
+    <section id="sec16">
+      <h2>16. Common Architectural Mistakes</h2>
+      <div class="callout warn">
+        <b>1. Using AOP for Request Body Logging:</b> Trying to read <code>HttpServletRequest.getInputStream()</code> inside an AOP aspect on a Service method. The stream can only be read ONCE by default! Body wrapping must happen at the <b>Servlet Filter</b> layer using <code>ContentCachingRequestWrapper</code>.<br><br>
+        <b>2. Using Interceptors for Non-Web Business Logic:</b> Placing business rule validation inside an Interceptor means those rules won't run when called from a background Kafka consumer or CLI runner.<br><br>
+        <b>3. Self-Invocation Trap in AOP:</b> Calling an <code>@Transactional</code> or custom aspect method from within the same class bypasses the Spring AOP Proxy wrapper completely!
+      </div>
+    </section>
+
+    <!-- SECTION 17 -->
+    <section id="sec17">
+      <h2>17. Senior Best Practices</h2>
+      <ul>
+        <li>Extend <code>OncePerRequestFilter</code> for custom Filters to prevent duplicate executions during internal request dispatches.</li>
+        <li>Clean up <code>ThreadLocal</code> variables (such as MDC or SecurityContext) inside <code>finally</code> blocks in Filters or <code>afterCompletion()</code> in Interceptors to prevent memory leaks in Tomcat thread pools.</li>
+        <li>Use explicit <code>@Order</code> annotations on Filters and Aspects to guarantee deterministic execution order.</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 18 -->
+    <section id="sec18">
+      <h2>18. End-to-End Production Request Flow</h2>
+      <pre><code><span class="cmnt">// Complete Production Interception Chain Example</span>
+
+<span class="cmnt">// 1. FILTER LAYER (Tomcat Level)</span>
+<span class="anno">@Component</span> <span class="anno">@Order</span>(<span class="num">1</span>)
+<span class="kw">public class</span> <span class="type">CorsFilter</span> <span class="kw">extends</span> <span class="type">OncePerRequestFilter</span> { ... }
+
+<span class="cmnt">// 2. INTERCEPTOR LAYER (Spring MVC Level)</span>
+<span class="anno">@Component</span>
+<span class="kw">public class</span> <span class="type">AuthInterceptor</span> <span class="kw">implements</span> <span class="type">HandlerInterceptor</span> { ... }
+
+<span class="cmnt">// 3. AOP LAYER (Spring Core / Service Level)</span>
+<span class="anno">@Aspect</span> <span class="anno">@Component</span>
+<span class="kw">public class</span> <span class="type">TransactionAspect</span> { ... }</code></pre>
+    </section>
+
+    <!-- SECTION 19 -->
+    <section id="sec19">
+      <h2>19. 60+ Senior Interview Questions</h2>
+
+      <div class="faq-item">
+        <div class="faq-q">Q1: What is the main difference between a Filter, an Interceptor, and AOP?</div>
+        <div class="faq-a">Filters belong to the Servlet container and intercept raw HTTP requests/responses outside Spring MVC. Interceptors belong to Spring MVC and intercept requests around Controller endpoints. AOP belongs to Spring Core and intercepts method calls on any Spring Bean using dynamic proxies.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q2: Which component executes first when an HTTP request arrives?</div>
+        <div class="faq-a">The Servlet Filter executes first, before the DispatcherServlet or Interceptors are invoked.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q3: Can an Interceptor modify the raw HttpServletRequest InputStream body?</div>
+        <div class="faq-a">No. The InputStream stream can only be read once. To wrap or cache the request body stream, you must use a Servlet Filter with a request wrapper class.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q4: Why does Spring Security use Filters instead of Interceptors or AOP?</div>
+        <div class="faq-a">Because security checks (CORS, CSRF, authentication headers) must run at the earliest entry point before any web parsing or controller mapping occurs, and must protect all web endpoints (including static assets).</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q5: Why are Spring Transactions (@Transactional) implemented using AOP?</div>
+        <div class="faq-a">Because transactions are a business layer concern that applies to service method calls regardless of whether the method was triggered by an HTTP request, a Kafka consumer, or a background scheduled job.</div>
+      </div>
+
+      <div class="faq-item"><div class="faq-q">Q6: Can a Filter access Spring Beans?</div><div class="faq-a">Yes. In Spring Boot, Filters declared as @Component are full Spring Beans and support dependency injection.</div></div>
+      <div class="faq-item"><div class="faq-q">Q7: What is OncePerRequestFilter?</div><div class="faq-a">A Spring abstract filter class that guarantees the filter method executes strictly once per request dispatch.</div></div>
+      <div class="faq-item"><div class="faq-q">Q8: How to block a request inside a Servlet Filter?</div><div class="faq-a">Set the HTTP response status code (e.g. 401/403) and return without calling chain.doFilter().</div></div>
+      <div class="faq-item"><div class="faq-q">Q9: How to block a request inside a HandlerInterceptor?</div><div class="faq-a">Return false from preHandle() method.</div></div>
+      <div class="faq-item"><div class="faq-q">Q10: What is HandlerMethod in HandlerInterceptor?</div><div class="faq-a">An object representing the target Spring MVC Controller method signature and annotations.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q11: What is the difference between preHandle, postHandle, and afterCompletion?</div><div class="faq-a">preHandle runs before Controller; postHandle runs after Controller before view rendering; afterCompletion runs after request is completely rendered (ideal for resource cleanup).</div></div>
+      <div class="faq-item"><div class="faq-q">Q12: Does postHandle run if Controller throws an exception?</div><div class="faq-a">No. If an exception occurs in the Controller, postHandle is skipped, but afterCompletion STILL runs!</div></div>
+      <div class="faq-item"><div class="faq-q">Q13: What is the self-invocation problem in Spring AOP?</div><div class="faq-a">Calling an advised method from within the same class (this.method()) bypasses the Spring AOP Proxy wrapper, causing aspects to be ignored.</div></div>
+      <div class="faq-item"><div class="faq-q">Q14: Can AOP replace an Interceptor?</div><div class="faq-a">Not cleanly for web concerns. AOP does not have direct access to HttpServletRequest/Response objects without relying on static RequestContextHolder lookups.</div></div>
+      <div class="faq-item"><div class="faq-q">Q15: Can Interceptor replace a Filter?</div><div class="faq-a">No. Interceptors cannot wrap request input streams or handle CORS preflight requests before DispatcherServlet execution.</div></div>
+      <div class="faq-item"><div class="faq-q">Q16: Which proxy mechanism does Spring AOP use by default in Boot 2.x/3.x?</div><div class="faq-a">CGLIB subclass proxying.</div></div>
+      <div class="faq-item"><div class="faq-q">Q17: How do you register an Interceptor in Spring Boot?</div><div class="faq-a">By implementing WebMvcConfigurer and overriding addInterceptors(InterceptorRegistry registry).</div></div>
+      <div class="faq-item"><div class="faq-q">Q18: How do you register a Filter in Spring Boot?</div><div class="faq-a">By annotating it with @Component, or using a FilterRegistrationBean bean for custom URL patterns.</div></div>
+      <div class="faq-item"><div class="faq-q">Q19: What is FilterChainProxy in Spring Security?</div><div class="faq-a">The central Spring bean that manages and executes the list of SecurityFilterChains.</div></div>
+      <div class="faq-item"><div class="faq-q">Q20: What is DelegatingFilterProxy?</div><div class="faq-a">A standard Servlet Filter that delegates request processing to a Spring-managed Filter bean.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q21: How do you order multiple Filters in Spring Boot?</div><div class="faq-a">Using the @Order annotation or FilterRegistrationBean.setOrder().</div></div>
+      <div class="faq-item"><div class="faq-q">Q22: How do you order multiple Aspects in Spring AOP?</div><div class="faq-a">Using the @Order annotation on the Aspect classes.</div></div>
+      <div class="faq-item"><div class="faq-q">Q23: How do you order multiple Interceptors in Spring MVC?</div><div class="faq-a">By the order they are registered in InterceptorRegistry inside WebMvcConfigurer.</div></div>
+      <div class="faq-item"><div class="faq-q">Q24: What is MDC in logging and which component should populate it?</div><div class="faq-a">Mapped Diagnostic Context. Best populated in a Servlet Filter using MDC.put("correlationId", uuid).</div></div>
+      <div class="faq-item"><div class="faq-q">Q25: Why must MDC be cleared in a finally block in Filters?</div><div class="faq-a">Tomcat reuses worker threads in a pool. Uncleared ThreadLocal MDC values will leak into subsequent requests!</div></div>
+      <div class="faq-item"><div class="faq-q">Q26: Can AOP intercept static methods?</div><div class="faq-a">No. Static methods belong to the class and cannot be overridden by dynamic proxies.</div></div>
+      <div class="faq-item"><div class="faq-q">Q27: Can AOP intercept private methods?</div><div class="faq-a">No. Spring AOP proxies cannot override or access private methods.</div></div>
+      <div class="faq-item"><div class="faq-q">Q28: What is ContentCachingRequestWrapper?</div><div class="faq-a">A Spring Servlet Filter request wrapper that caches the InputStream bytes so the request body can be read multiple times.</div></div>
+      <div class="faq-item"><div class="faq-q">Q29: What happens if an Interceptor's preHandle returns false?</div><div class="faq-a">The request execution halts immediately; Controller is not called, but afterCompletion runs for previously executed interceptors.</div></div>
+      <div class="faq-item"><div class="faq-q">Q30: What is AsyncHandlerInterceptor?</div><div class="faq-a">An extension of HandlerInterceptor adding afterConcurrentHandlingStarted callback for asynchronous request processing.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q31: What is ProceedingJoinPoint in AOP?</div><div class="faq-a">Parameter type used in @Around advice that provides proceed() method to run the target method.</div></div>
+      <div class="faq-item"><div class="faq-q">Q32: Where does DispatcherServlet store Interceptors internally?</div><div class="faq-a">In a HandlerExecutionChain instance accompanying the matched handler.</div></div>
+      <div class="faq-item"><div class="faq-q">Q33: Can an Interceptor catch exceptions thrown by a Controller?</div><div class="faq-a">Yes, the Exception instance is passed as a parameter to the afterCompletion() method.</div></div>
+      <div class="faq-item"><div class="faq-q">Q34: Where should global exception handling (@RestControllerAdvice) be executed?</div><div class="faq-a">Inside Spring MVC after Controller execution, before Interceptor's postHandle/afterCompletion.</div></div>
+      <div class="faq-item"><div class="faq-q">Q35: Do Filters execute for static resources (e.g. CSS, JS, Images)?</div><div class="faq-a">Yes, unless explicitly excluded via URL pattern matching in FilterRegistrationBean.</div></div>
+      <div class="faq-item"><div class="faq-q">Q36: Do Interceptors execute for static resources?</div><div class="faq-a">Only if the resource request is mapped to a Spring MVC ResourceHttpRequestHandler.</div></div>
+      <div class="faq-item"><div class="faq-q">Q37: Does AOP execute for static resources?</div><div class="faq-a">No, static assets do not invoke Spring Service bean methods.</div></div>
+      <div class="faq-item"><div class="faq-q">Q38: How does Spring Boot register Filters automatically?</div><div class="faq-a">Any Spring bean implementing jakarta.servlet.Filter is automatically registered in the Tomcat filter chain.</div></div>
+      <div class="faq-item"><div class="faq-q">Q39: What is the purpose of FilterRegistrationBean?</div><div class="faq-a">Allows registering custom Filters with specific URL patterns, order, and disabling automatic default mapping.</div></div>
+      <div class="faq-item"><div class="faq-q">Q40: What is JDK Dynamic Proxy?</div><div class="faq-a">Java standard reflection proxy that requires the target class to implement at least one interface.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q41: What is CGLIB?</div><div class="faq-a">Code Generation Library that creates dynamic runtime subclasses of target classes for proxying.</div></div>
+      <div class="faq-item"><div class="faq-q">Q42: Which interception layer is best for rate limiting per IP address?</div><div class="faq-a">Servlet Filter (or API Gateway filter) to block malicious traffic at the earliest entry point.</div></div>
+      <div class="faq-item"><div class="faq-q">Q43: Which interception layer is best for user activity auditing on service methods?</div><div class="faq-a">Spring AOP aspect using custom annotations like @AuditLog.</div></div>
+      <div class="faq-item"><div class="faq-q">Q44: Which interception layer is best for calculation timing on web endpoints?</div><div class="faq-a">Spring HandlerInterceptor using preHandle and afterCompletion timestamps.</div></div>
+      <div class="faq-item"><div class="faq-q">Q45: What is GenericFilterBean?</div><div class="faq-a">A Spring abstract class wrapping Filter to provide access to Spring Environment and bean initialization.</div></div>
+      <div class="faq-item"><div class="faq-q">Q46: What happens if an exception occurs inside a Filter?</div><div class="faq-a">It bypasses Spring MVC @RestControllerAdvice exception handlers unless caught or forwarded to ErrorController.</div></div>
+      <div class="faq-item"><div class="faq-q">Q47: How does Spring Security handle filter exceptions?</div><div class="faq-a">Uses ExceptionTranslationFilter inside its security filter chain to catch AccessDeniedException and AuthenticationException.</div></div>
+      <div class="faq-item"><div class="faq-q">Q48: What is Pointcut in AOP?</div><div class="faq-a">A predicate expression that defines where Advice code should run (e.g. execution(* com.service..*.*(..))).</div></div>
+      <div class="faq-item"><div class="faq-q">Q49: What is Advice in AOP?</div><div class="faq-a">The actual code action executed at a matched JoinPoint (@Before, @Around, @After).</div></div>
+      <div class="faq-item"><div class="faq-q">Q50: What is JoinPoint in AOP?</div><div class="faq-a">A candidate execution point in the application (in Spring AOP, always a method execution).</div></div>
+      <div class="faq-item"><div class="faq-q">Q51: What is Weaving in AOP?</div><div class="faq-a">The process of linking Aspects with Target Objects to create proxied objects (Spring AOP uses runtime proxy weaving).</div></div>
+      <div class="faq-item"><div class="faq-q">Q52: Can an Interceptor modify the return ModelAndView?</div><div class="faq-a">Yes, in traditional Spring MVC HTML rendering, postHandle() receives the ModelAndView object and can modify it.</div></div>
+      <div class="faq-item"><div class="faq-q">Q53: Is ModelAndView useful in REST APIs?</div><div class="faq-a">No, REST controllers return data objects serialized to JSON (@ResponseBody), so ModelAndView is null.</div></div>
+      <div class="faq-item"><div class="faq-q">Q54: What is WebMvcConfigurer?</div><div class="faq-a">A Spring MVC configuration interface used to add interceptors, CORS mappings, formatters, and static resource handlers.</div></div>
+      <div class="faq-item"><div class="faq-q">Q55: How to exclude URL patterns from an Interceptor?</div><div class="faq-a">Using registry.addInterceptor(interceptor).excludePathPatterns("/api/v1/public/**").</div></div>
+      <div class="faq-item"><div class="faq-q">Q56: How to include URL patterns for a Filter?</div><div class="faq-a">Using filterRegistrationBean.addUrlPatterns("/api/*").</div></div>
+      <div class="faq-item"><div class="faq-q">Q57: What is the impact of heavy processing inside a Filter?</div><div class="faq-a">Increases HTTP request latency for ALL requests passing through that filter.</div></div>
+      <div class="faq-item"><div class="faq-q">Q58: What is the impact of heavy processing inside an AOP Aspect?</div><div class="faq-a">Increases latency for every invocation of target advised service methods.</div></div>
+      <div class="faq-item"><div class="faq-q">Q59: Why can't AOP be used for CORS preflight handling?</div><div class="faq-a">CORS preflight (OPTIONS) requests must return headers before reaching any service or controller method; AOP runs too late.</div></div>
+      <div class="faq-item"><div class="faq-q">Q60: What is the main architectural takeaway when choosing between Filter, Interceptor, and AOP?</div><div class="faq-a">Filter for raw Web/Servlet protocol concerns; Interceptor for Spring Web MVC endpoint concerns; AOP for core Java domain/business concerns.</div></div>
+    </section>
+
+    <!-- SECTION 20 -->
+    <section id="sec20">
+      <h2>20. Revision Cheatsheet</h2>
+      <div class="card">
+        <p><b>Servlet Filter:</b> Container level &middot; Raw HttpServletRequest/Response &middot; Stream wrapping &middot; CORS &middot; Security &middot; Runs FIRST.</p>
+        <p><b>Spring Interceptor:</b> Spring MVC level &middot; Knows HandlerMethod &middot; preHandle/postHandle/afterCompletion &middot; API metrics &middot; Runs SECOND.</p>
+        <p><b>Spring AOP:</b> Spring Core level &middot; Dynamic Proxies &middot; Any Bean Method &middot; @Transactional &middot; @Cacheable &middot; Runs INSIDE Services.</p>
+      </div>
+    </section>
+
+    <!-- SECTION 21 -->
+    <section id="sec21">
+      <h2>21. Visual Infographic Summary</h2>
+      <div class="diagram">
+        <h4>Complete Interception Architecture Infographic</h4>
+        <div class="grid">
+          <div class="card" style="border-color: var(--teal);">
+            <b style="color: var(--teal);">1. Web Container Boundary</b>
+            <p>Servlet Filter &middot; CorsFilter &middot; SecurityFilterChain &middot; Logging Filter &middot; MDC Context</p>
+          </div>
+          <div class="card" style="border-color: var(--amber);">
+            <b style="color: var(--amber);">2. Spring MVC Controller Boundary</b>
+            <p>DispatcherServlet &middot; Interceptor (preHandle) &middot; HandlerAdapter &middot; Controller Endpoint</p>
+          </div>
+          <div class="card" style="border-color: var(--purple);">
+            <b style="color: var(--purple);">3. Core Domain Service Boundary</b>
+            <p>Spring AOP Proxy &middot; @Transactional &middot; @Cacheable &middot; @AuditLog &middot; Service Logic</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+</body>
+</html>

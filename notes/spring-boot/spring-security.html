@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Spring Security — Complete Deep Dive</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  :root {
+    --bg: #0b0e14;
+    --surface: #131824;
+    --panel2: #0f131c;
+    --border: #232a38;
+    --text: #e7eaf1;
+    --muted: #9aa4b7;
+    --accent: #f0b429;
+    --amber: #f0b429;
+    --teal: #38bdf8;
+    --rose: #f87171;
+    --green: #4ade80;
+    --purple: #c084fc;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .layout {
+    display: flex;
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+  
+  /* STICKY SIDEBAR NAV */
+  nav.sidebar {
+    width: 310px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 24px 16px;
+    flex-shrink: 0;
+  }
+  nav.sidebar h3 {
+    font-size: 0.85rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+    padding-left: 8px;
+  }
+  nav.sidebar a {
+    display: block;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.8rem;
+    padding: 5px 8px;
+    border-radius: 6px;
+    margin-bottom: 2px;
+    transition: all 0.15s ease;
+  }
+  nav.sidebar a:hover {
+    color: var(--accent);
+    background: rgba(240, 180, 41, 0.08);
+  }
+
+  /* MAIN CONTENT WRAPPER */
+  .main-content {
+    flex: 1;
+    max-width: 1080px;
+    padding: 48px 40px 120px;
+    overflow-x: hidden;
+  }
+
+  .eyebrow {
+    color: var(--accent);
+    font-family: monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  h1 { font-size: 2.3rem; margin-top: 0; margin-bottom: 8px; font-weight: 800; line-height: 1.25; }
+  h1 span { color: var(--accent); }
+  .sub { color: var(--muted); font-size: 1rem; margin-bottom: 32px; }
+  
+  h2 {
+    margin-top: 56px;
+    font-size: 1.45rem;
+    border-left: 4px solid var(--accent);
+    padding-left: 14px;
+    color: var(--text);
+  }
+  h3 { font-size: 1.15rem; color: var(--teal); margin-top: 28px; }
+  h4 { font-size: 0.98rem; color: var(--purple); margin-top: 20px; }
+  p, li { color: var(--muted); font-size: 0.95rem; }
+  li { margin-bottom: 6px; }
+  b, strong { color: var(--text); }
+  
+  /* CARDS & PANELS */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 20px 0; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .card b { color: var(--accent); display: block; margin-bottom: 6px; font-size: 1rem; }
+  
+  /* CALLOUT BOXES */
+  .callout {
+    margin: 20px 0;
+    border-left: 4px solid var(--accent);
+    padding: 16px 20px;
+    background: rgba(240, 180, 41, 0.05);
+    border-radius: 0 8px 8px 0;
+    font-size: 0.92rem;
+  }
+  .callout.warn { border-left-color: var(--rose); background: rgba(248, 113, 113, 0.06); }
+  .callout.info { border-left-color: var(--teal); background: rgba(56, 189, 248, 0.06); }
+  .callout.success { border-left-color: var(--green); background: rgba(74, 222, 128, 0.06); }
+  
+  /* CODE BLOCKS WITH PURE CSS SYNTAX HIGHLIGHTING */
+  pre {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: #e7eaf1;
+  }
+  code {
+    background: #0f131c;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.88em;
+    color: var(--accent);
+    font-family: 'Consolas', 'Courier New', monospace;
+  }
+  pre code { border: none; padding: 0; background: transparent; color: inherit; }
+  
+  .kw { color: #f43f5e; font-weight: bold; }
+  .anno { color: var(--accent); font-weight: bold; }
+  .type { color: var(--teal); }
+  .str { color: var(--green); }
+  .cmnt { color: #64748b; font-style: italic; }
+  .fn { color: #c084fc; }
+
+  /* TABLES */
+  table.matrix {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 0.85rem;
+    background: var(--surface);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  table.matrix th, table.matrix td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    text-align: left;
+  }
+  table.matrix th {
+    background: var(--panel2);
+    color: var(--accent);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+  }
+  table.matrix tr:last-child td { border-bottom: none; }
+
+  /* FLOWCHARTS & DIAGRAMS */
+  .diagram {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin: 24px 0;
+  }
+  .flow-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .flow-step .num {
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: bold;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+  .flow-arrow {
+    text-align: center;
+    color: var(--accent);
+    font-size: 1.2rem;
+    margin: -4px 0 4px;
+  }
+
+  /* FAQ ACCORDION STYLE */
+  .faq-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    padding: 16px;
+  }
+  .faq-q { color: var(--accent); font-weight: 600; font-size: 0.98rem; margin-bottom: 8px; }
+  .faq-a { color: var(--muted); font-size: 0.92rem; }
+
+  @media (max-width: 900px) {
+    .layout { flex-direction: column; }
+    nav.sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border); }
+    .main-content { padding: 24px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- SIDEBAR NAVIGATION -->
+  <nav class="sidebar">
+    <h3>Spring Security Guide</h3>
+    <a href="#sec1">1. Introduction</a>
+    <a href="#sec2">2. Authentication vs Authorization</a>
+    <a href="#sec3">3. Architecture Overview</a>
+    <a href="#sec4">4. Security Filter Chain</a>
+    <a href="#sec5">5. Authentication Flow</a>
+    <a href="#sec6">6. Authorization Flow</a>
+    <a href="#sec7">7. Important Core Classes</a>
+    <a href="#sec8">8. Password Encoding &amp; BCrypt</a>
+    <a href="#sec9">9. JWT (JSON Web Token) Deep Dive</a>
+    <a href="#sec10">10. OAuth2 Architecture</a>
+    <a href="#sec11">11. Session vs JWT Comparison</a>
+    <a href="#sec12">12. CSRF Defense</a>
+    <a href="#sec13">13. CORS Configuration</a>
+    <a href="#sec14">14. Method Security</a>
+    <a href="#sec15">15. Security Configuration</a>
+    <a href="#sec16">16. Exception Handling</a>
+    <a href="#sec17">17. Production JWT Authentication Flow</a>
+    <a href="#sec18">18. Common Vulnerabilities</a>
+    <a href="#sec19">19. Senior Best Practices</a>
+    <a href="#sec20">20. Common Production Mistakes</a>
+    <a href="#sec21">21. Real Production Project Stack</a>
+    <a href="#sec22">22. 75+ Interview Questions</a>
+    <a href="#sec23">23. Revision Cheatsheet</a>
+    <a href="#sec24">24. Visual Infographic Summary</a>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <div class="eyebrow">Enterprise Java &middot; Security Architecture</div>
+    <h1>Spring Security — <span>Complete Deep Dive</span></h1>
+    <div class="sub">A beginner-friendly, simple, and comprehensive handbook covering Authentication, Authorization, Filter Chains, BCrypt, JWT, OAuth2, Session Management, CORS, CSRF, and production best practices.</div>
+
+    <!-- SECTION 1 -->
+    <section id="sec1">
+      <h2>1. Introduction</h2>
+      <p>In modern web applications, security is not an afterthought or an optional feature—it is an absolute necessity. Unprotected APIs can leak sensitive user data, allow unauthorized administrative actions, or expose internal databases to malicious attacks.</p>
+
+      <p><b>Spring Security</b> is a powerful, highly customizable framework for Java applications that focuses on providing both <b>Authentication</b> and <b>Authorization</b>. It acts as a protective shield sitting in front of your Spring Boot web application, inspecting every single incoming HTTP request before it can ever touch your business logic or controllers.</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>Real-World Analogy: An Airport Checkpoint</b>
+          <p>Imagine going on an international flight. First, at the entrance terminal, security guards check your Passport and ID to confirm who you are (<b>Authentication</b>). Then, at the boarding gate, the airline staff checks your Ticket Class to see if you are allowed to enter the First Class Lounge or board the plane (<b>Authorization</b>).</p>
+        </div>
+        <div class="card">
+          <b>Why Use Spring Security?</b>
+          <p>Instead of writing custom security filters, password hashing routines, and token verification logic from scratch (which often introduces critical security loopholes), Spring Security provides battle-tested, industry-standard protections against common vulnerabilities out of the box.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2 -->
+    <section id="sec2">
+      <h2>2. Authentication vs Authorization</h2>
+      <p>The two foundational pillars of application security are often confused, but they address entirely different questions:</p>
+
+      <div class="diagram">
+        <h4>The Security Pipeline</h4>
+        <div class="flow-step"><div class="num">1</div><div><b>Authentication ("Who are you?"):</b> Validating identity credentials (e.g. Username/Password, OTP, JWT Token, Biometrics).</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">2</div><div><b>Authorization ("What can you do?"):</b> Checking roles and permissions (e.g. Can an <code>USER</code> role access <code>DELETE /admin/users</code>?).</div></div>
+      </div>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Dimension</th>
+            <th>Authentication</th>
+            <th>Authorization</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Core Question</td>
+            <td>Who are you? (Identity Verification)</td>
+            <td>What are you allowed to access? (Permission Check)</td>
+          </tr>
+          <tr>
+            <td>Execution Timing</td>
+            <td>Executes <b>first</b> in the security chain.</td>
+            <td>Executes <b>after</b> authentication succeeds.</td>
+          </tr>
+          <tr>
+            <td>Failure HTTP Status</td>
+            <td><code>401 Unauthorized</code></td>
+            <td><code>403 Forbidden</code></td>
+          </tr>
+          <tr>
+            <td>Common Mechanism</td>
+            <td>Passwords, Tokens (JWT), OAuth2 Login</td>
+            <td>Roles (<code>ROLE_ADMIN</code>), Authorities (<code>READ_PRIVILEGE</code>)</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 3 -->
+    <section id="sec3">
+      <h2>3. Spring Security Architecture</h2>
+      <p>At its core, Spring Security's web protection engine is built entirely on standard <b>Jakarta Servlet Filters</b>. It intercepts requests before they reach the <code>DispatcherServlet</code>.</p>
+
+      <div class="diagram">
+        <h4>Complete End-to-End Component Hierarchy</h4>
+        <div class="flow-step"><div class="num">1</div><div><b>HTTP Request:</b> Arrives at Embedded Tomcat / Servlet Container.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">2</div><div><b>DelegatingFilterProxy:</b> Standard Servlet Filter that delegates incoming requests to Spring-managed beans.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">3</div><div><b>FilterChainProxy &amp; SecurityFilterChain:</b> Evaluates the ordered sequence of Spring Security filters.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">4</div><div><b>Authentication Filter:</b> Extracts credentials (e.g. <code>UsernamePasswordAuthenticationFilter</code> / <code>JwtAuthenticationFilter</code>).</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">5</div><div><b>AuthenticationManager:</b> Central manager (<code>ProviderManager</code>) delegating authentication tasks.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">6</div><div><b>AuthenticationProvider:</b> Executes actual validation logic (e.g., <code>DaoAuthenticationProvider</code>).</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">7</div><div><b>UserDetailsService &amp; PasswordEncoder:</b> Loads user from DB and verifies BCrypt hashed passwords.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">8</div><div><b>SecurityContextHolder:</b> Stores the fully authenticated user object in current ThreadLocal storage.</div></div>
+      </div>
+    </section>
+
+    <!-- SECTION 4 -->
+    <section id="sec4">
+      <h2>4. Security Filter Chain</h2>
+      <p>The <b>SecurityFilterChain</b> is a bean containing an ordered chain of security filters. Each filter inspects or modifies the request before passing it down the chain using <code>filterChain.doFilter(request, response)</code>.</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>Key Spring Security Filters in Order</b>
+          <ul>
+            <li><code>ChannelProcessingFilter</code>: Redirects HTTP to HTTPS.</li>
+            <li><code>CorsFilter</code>: Handles Cross-Origin Resource Sharing preflight requests.</li>
+            <li><code>CsrfFilter</code>: Validates CSRF tokens for stateful session applications.</li>
+            <li><code>LogoutFilter</code>: Handles user logout requests.</li>
+            <li><code>UsernamePasswordAuthenticationFilter</code>: Processes form-based login submissions.</li>
+            <li><code>BearerTokenAuthenticationFilter</code> / Custom <code>JwtFilter</code>: Validates JWT headers.</li>
+            <li><code>FilterSecurityInterceptor</code> / <code>AuthorizationFilter</code>: Performs final authorization checks.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5 -->
+    <section id="sec5">
+      <h2>5. Authentication Flow</h2>
+      <p>Here is step-by-step how Spring Security processes a traditional username/password authentication request:</p>
+
+      <div class="diagram">
+        <div class="flow-step"><div class="num">1</div><div>User submits credentials (username &amp; password).</div></div>
+        <div class="flow-step"><div class="num">2</div><div><code>UsernamePasswordAuthenticationFilter</code> creates an unauthenticated <code>UsernamePasswordAuthenticationToken</code>.</div></div>
+        <div class="flow-step"><div class="num">3</div><div>Passes token to <code>AuthenticationManager.authenticate(token)</code>.</div></div>
+        <div class="flow-step"><div class="num">4</div><div><code>ProviderManager</code> delegates to <code>DaoAuthenticationProvider</code>.</div></div>
+        <div class="flow-step"><div class="num">5</div><div><code>DaoAuthenticationProvider</code> invokes <code>UserDetailsService.loadUserByUsername()</code> to fetch user record from DB.</div></div>
+        <div class="flow-step"><div class="num">6</div><div><code>PasswordEncoder.matches()</code> compares raw submitted password against stored BCrypt hash.</div></div>
+        <div class="flow-step"><div class="num">7</div><div>On match, a fully authenticated <code>Authentication</code> object (containing roles/authorities) is created.</div></div>
+        <div class="flow-step"><div class="num">8</div><div>Spring Security stores this <code>Authentication</code> object inside <code>SecurityContextHolder.getContext()</code>.</div></div>
+      </div>
+    </section>
+
+    <!-- SECTION 6 -->
+    <section id="sec6">
+      <h2>6. Authorization Flow</h2>
+      <p>Once authentication is complete, Spring Security enforces access rules on endpoints and methods:</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>Roles vs. Authorities</b>
+          <p><b>GrantedAuthority:</b> A granular permission string (e.g. <code>READ_USER</code>, <code>WRITE_ORDER</code>).<br>
+          <b>Role:</b> A group of authorities prefixed automatically with <code>ROLE_</code> (e.g. <code>ROLE_ADMIN</code>, <code>ROLE_CUSTOMER</code>).</p>
+        </div>
+        <div class="card">
+          <b>Request vs Method Authorization</b>
+          <p><b>Request Authorization:</b> Configured globally in <code>SecurityFilterChain</code> using <code>requestMatchers("/api/admin/**").hasRole("ADMIN")</code>.<br>
+          <b>Method Security:</b> Configured on specific service methods using <code>@PreAuthorize("hasRole('ADMIN')")</code>.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 7 -->
+    <section id="sec7">
+      <h2>7. Important Spring Security Classes</h2>
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Class / Interface</th>
+            <th>Primary Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>SecurityFilterChain</code></td>
+            <td>Interface defining matching rules and ordered filter list for requests.</td>
+          </tr>
+          <tr>
+            <td><code>Authentication</code></td>
+            <td>Represents principal identity, credentials, and granted authorities.</td>
+          </tr>
+          <tr>
+            <td><code>AuthenticationManager</code></td>
+            <td>Main API interface for processing authentication requests.</td>
+          </tr>
+          <tr>
+            <td><code>UserDetailsService</code></td>
+            <td>Core interface with single method: <code>loadUserByUsername(String)</code>.</td>
+          </tr>
+          <tr>
+            <td><code>UserDetails</code></td>
+            <td>Spring Security adapter interface wrapping domain User entities.</td>
+          </tr>
+          <tr>
+            <td><code>SecurityContextHolder</code></td>
+            <td>ThreadLocal container storing current thread's <code>SecurityContext</code>.</td>
+          </tr>
+          <tr>
+            <td><code>PasswordEncoder</code></td>
+            <td>Interface for one-way password hashing (e.g. <code>BCryptPasswordEncoder</code>).</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 8 -->
+    <section id="sec8">
+      <h2>8. Password Encoding &amp; BCrypt</h2>
+      <p>Passwords must <b>NEVER be stored in plain text</b> or encrypted with two-way reversible algorithms. They must be hashed using one-way adaptive hashing functions containing random salt.</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>Why BCrypt?</b>
+          <p>BCrypt uses a key setup algorithm that includes a configurable <b>Work Factor (Cost)</b>. This makes password verification intentionally CPU-intensive, rendering brute-force dictionary attacks and GPU hardware cracking attempts infeasible.</p>
+        </div>
+        <div class="card">
+          <b>Salt Functionality</b>
+          <p>BCrypt automatically generates a unique random 16-byte salt per password and prepends it to the hashed output. Even if two users have identical passwords ("password123"), their resulting BCrypt hashes are completely different!</p>
+        </div>
+      </div>
+
+      <pre><code><span class="anno">@Bean</span>
+<span class="kw">public</span> <span class="type">PasswordEncoder</span> <span class="fn">passwordEncoder</span>() {
+    <span class="cmnt">// Standard strength cost of 10-12 recommended for production</span>
+    <span class="kw">return new</span> <span class="type">BCryptPasswordEncoder</span>(<span class="num">12</span>);
+}</code></pre>
+    </section>
+
+    <!-- SECTION 9 -->
+    <section id="sec9">
+      <h2>9. JWT (JSON Web Token) Deep Dive</h2>
+      <p>JWT is an open standard (RFC 7519) defining a compact, self-contained way to securely transmit information between parties as a digitally signed JSON object.</p>
+
+      <div class="diagram">
+        <h4>Structure of a JWT Token (Header.Payload.Signature)</h4>
+        <div class="flow-step"><div class="num">1</div><div><b>Header (Base64Url):</b> Contains algorithm type (<code>{"alg": "HS256", "typ": "JWT"}</code>).</div></div>
+        <div class="flow-step"><div class="num">2</div><div><b>Payload (Base64Url):</b> Contains claims (<code>{"sub": "123456", "role": "ROLE_ADMIN", "exp": 1700000000}</code>).</div></div>
+        <div class="flow-step"><div class="num">3</div><div><b>Signature:</b> Cryptographic hash generated via <code>HMACSHA256(base64(Header) + "." + base64(Payload), secretKey)</code>.</div></div>
+      </div>
+
+      <div class="callout info">
+        <b>Refresh Tokens &amp; Blacklisting:</b><br>
+        Access tokens should be short-lived (e.g. 15 minutes). When expired, clients send a long-lived <b>Refresh Token</b> (stored securely in DB/Redis) to fetch a new access token. If a user logs out, their Refresh Token is deleted from DB/Redis, revoking session access.
+      </div>
+    </section>
+
+    <!-- SECTION 10 -->
+    <section id="sec10">
+      <h2>10. OAuth2 Architecture</h2>
+      <p>OAuth2 is an authorization framework that enables third-party applications to obtain limited access to a user's account on an HTTP service (e.g. "Log in with Google / GitHub").</p>
+
+      <div class="grid">
+        <div class="card"><b>Resource Owner:</b> The user who owns the data.</div>
+        <div class="card"><b>Client:</b> The third-party application requesting access.</div>
+        <div class="card"><b>Authorization Server:</b> The server issuing tokens (e.g. Google Auth).</div>
+        <div class="card"><b>Resource Server:</b> The backend API storing protected data.</div>
+      </div>
+
+      <div class="diagram">
+        <h4>Authorization Code Grant Flow</h4>
+        <p>User &rarr; Clicks "Login with Google" &rarr; Redirected to Google Auth Server &rarr; User Grants Permission &rarr; Google returns <code>Authorization Code</code> to Client &rarr; Client exchanges Code for <code>Access Token</code> via backend channel &rarr; Client queries Resource Server with Access Token.</p>
+      </div>
+    </section>
+
+    <!-- SECTION 11 -->
+    <section id="sec11">
+      <h2>11. Session vs JWT Comparison</h2>
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Dimension</th>
+            <th>Stateful Session (JSESSIONID)</th>
+            <th>Stateless JWT (Bearer Token)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Server State</td>
+            <td>Stateful (Session stored in RAM/Redis)</td>
+            <td>Stateless (No server session memory required)</td>
+          </tr>
+          <tr>
+            <td>Scalability</td>
+            <td>Requires sticky sessions or Redis cluster</td>
+            <td>Effortless horizontal microservice scaling</td>
+          </tr>
+          <tr>
+            <td>Revocation</td>
+            <td>Instant (Delete session from server)</td>
+            <td>Harder (Requires blacklist or wait for expiry)</td>
+          </tr>
+          <tr>
+            <td>Mobile App Friendly</td>
+            <td>Requires complex cookie handling</td>
+            <td>Native fit for Mobile &amp; Single Page Apps (SPA)</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 12 -->
+    <section id="sec12">
+      <h2>12. CSRF Defense</h2>
+      <p>Cross-Site Request Forgery (CSRF) tricks a user's browser into executing unwanted actions on a trusted site where they are currently authenticated via cookies.</p>
+
+      <div class="callout warn">
+        <b>When to Keep vs Disable CSRF:</b><br>
+        • <b>KEEP CSRF ENABLED:</b> For traditional web applications using browser cookies (JSESSIONID) and HTML forms.<br>
+        • <b>DISABLE CSRF (http.csrf(csrf -&gt; csrf.disable())):</b> For stateless REST APIs using <code>Authorization: Bearer &lt;JWT&gt;</code> headers, because browsers do not attach JWT headers automatically on cross-site requests!
+      </div>
+    </section>
+
+    <!-- SECTION 13 -->
+    <section id="sec13">
+      <h2>13. CORS Configuration</h2>
+      <p>Cross-Origin Resource Sharing (CORS) is a browser security mechanism that restricts web pages from making API requests to a different domain/port than the one that served the web page.</p>
+
+      <pre><code><span class="anno">@Bean</span>
+<span class="kw">public</span> <span class="type">CorsConfigurationSource</span> <span class="fn">corsConfigurationSource</span>() {
+    <span class="type">CorsConfiguration</span> config = <span class="kw">new</span> <span class="type">CorsConfiguration</span>();
+    config.setAllowedOrigins(<span class="type">List</span>.of(<span class="str">"https://devvault.com"</span>));
+    config.setAllowedMethods(<span class="type">List</span>.of(<span class="str">"GET"</span>, <span class="str">"POST"</span>, <span class="str">"PUT"</span>, <span class="str">"DELETE"</span>));
+    config.setAllowedHeaders(<span class="type">List</span>.of(<span class="str">"Authorization"</span>, <span class="str">"Content-Type"</span>));
+    
+    <span class="type">UrlBasedCorsConfigurationSource</span> source = <span class="kw">new</span> <span class="type">UrlBasedCorsConfigurationSource</span>();
+    source.registerCorsConfiguration(<span class="str">"/**"</span>, config);
+    <span class="kw">return</span> source;
+}</code></pre>
+    </section>
+
+    <!-- SECTION 14 -->
+    <section id="sec14">
+      <h2>14. Method Security</h2>
+      <p>Enables declarative SpEL authorization directly on service layer methods using <code>@EnableMethodSecurity</code>.</p>
+
+      <pre><code><span class="anno">@Service</span>
+<span class="kw">public class</span> <span class="type">UserService</span> {
+
+    <span class="anno">@PreAuthorize</span>(<span class="str">"hasRole('ADMIN') or #userId == authentication.principal.id"</span>)
+    <span class="kw">public</span> <span class="type">UserDto</span> <span class="fn">getUserProfile</span>(<span class="type">Long</span> userId) {
+        <span class="kw">return</span> userRepository.findDtoById(userId);
+    }
+}</code></pre>
+    </section>
+
+    <!-- SECTION 15 -->
+    <section id="sec15">
+      <h2>15. Security Configuration</h2>
+      <p>Modern Spring Security (v6+) uses a component-based configuration approach defining a <code>SecurityFilterChain</code> bean:</p>
+
+      <pre><code><span class="anno">@Configuration</span>
+<span class="anno">@EnableWebSecurity</span>
+<span class="kw">public class</span> <span class="type">SecurityConfig</span> {
+
+    <span class="anno">@Bean</span>
+    <span class="kw">public</span> <span class="type">SecurityFilterChain</span> <span class="fn">securityFilterChain</span>(<span class="type">HttpSecurity</span> http) <span class="kw">throws</span> <span class="type">Exception</span> {
+        http
+            .csrf(csrf -&gt; csrf.disable())
+            .sessionManagement(session -&gt; session.sessionCreationPolicy(<span class="type">SessionCreationPolicy</span>.STATELESS))
+            .authorizeHttpRequests(auth -&gt; auth
+                .requestMatchers(<span class="str">"/api/v1/auth/**"</span>).permitAll()
+                .requestMatchers(<span class="str">"/api/v1/admin/**"</span>).hasRole(<span class="str">"ADMIN"</span>)
+                .anyRequest().authenticated()
+            )
+            .addFilterBefore(jwtAuthFilter, <span class="type">UsernamePasswordAuthenticationFilter</span>.<span class="kw">class</span>);
+            
+        <span class="kw">return</span> http.build();
+    }
+}</code></pre>
+    </section>
+
+    <!-- SECTION 16 -->
+    <section id="sec16">
+      <h2>16. Exception Handling</h2>
+      <p>Handling security errors cleanly in REST APIs:</p>
+      <ul>
+        <li><b>AuthenticationEntryPoint (401 Unauthorized):</b> Triggered when an unauthenticated user tries to access a protected resource.</li>
+        <li><b>AccessDeniedHandler (403 Forbidden):</b> Triggered when an authenticated user lacks the required role/authority.</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 17 -->
+    <section id="sec17">
+      <h2>17. Production JWT Authentication Flow</h2>
+      <div class="diagram">
+        <h4>Stateless JWT Request Lifecycle</h4>
+        <p>1. Client sends POST <code>/api/v1/auth/login</code> &rarr; 2. Service validates user &amp; generates JWT &rarr; 3. Client stores JWT in memory/HttpOnly cookie &rarr; 4. Subsequent requests attach <code>Authorization: Bearer &lt;token&gt;</code> &rarr; 5. Custom <code>JwtFilter</code> parses token, extracts user roles, and populates <code>SecurityContextHolder</code> &rarr; 6. Request proceeds to Controller.</p>
+      </div>
+    </section>
+
+    <!-- SECTION 18 -->
+    <section id="sec18">
+      <h2>18. Common Security Vulnerabilities</h2>
+      <div class="grid">
+        <div class="card"><b>1. SQL Injection</b><p>Prevented using Spring Data JPA parameterized queries instead of string concatenation.</p></div>
+        <div class="card"><b>2. XSS (Cross-Site Scripting)</b><p>Prevented by escaping output text and setting Content-Security-Policy headers.</p></div>
+        <div class="card"><b>3. Clickjacking</b><p>Prevented by Spring Security sending <code>X-Frame-Options: DENY</code> headers by default.</p></div>
+        <div class="card"><b>4. Brute Force</b><p>Mitigated using BCrypt cost factor and IP rate-limiting filters (e.g., Bucket4j/Redis).</p></div>
+      </div>
+    </section>
+
+    <!-- SECTION 19 -->
+    <section id="sec19">
+      <h2>19. Senior Best Practices</h2>
+      <ul>
+        <li>Always use BCrypt (strength 12+) for password hashing.</li>
+        <li>Set short expiration times on JWT access tokens (15-30 mins) and use refresh tokens.</li>
+        <li>Store JWT signing keys securely using environment variables or Secret Managers (AWS Secrets Manager/Vault).</li>
+        <li>Enforce Least Privilege principal access on method security.</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 20 -->
+    <section id="sec20">
+      <h2>20. Common Production Mistakes</h2>
+      <div class="callout warn">
+        <b>1. Storing Plaintext Secrets in Code:</b> Hardcoding JWT secret keys inside <code>application.properties</code> or GitHub.<br><br>
+        <b>2. Using long-lived JWTs:</b> Issuing JWT access tokens valid for days/months with no revocation mechanism.<br><br>
+        <b>3. Permitting All Requests on Endpoints:</b> Misconfiguring <code>requestMatchers("/**").permitAll()</code> by mistake.
+      </div>
+    </section>
+
+    <!-- SECTION 21 -->
+    <section id="sec21">
+      <h2>21. Real Production Project Stack</h2>
+      <pre><code><span class="cmnt">// Custom JWT Filter Implementation</span>
+<span class="anno">@Component</span>
+<span class="kw">public class</span> <span class="type">JwtAuthenticationFilter</span> <span class="kw">extends</span> <span class="type">OncePerRequestFilter</span> {
+
+    <span class="anno">@Override</span>
+    <span class="kw">protected void</span> <span class="fn">doFilterInternal</span>(<span class="type">HttpServletRequest</span> req, <span class="type">HttpServletResponse</span> res, <span class="type">FilterChain</span> chain)
+            <span class="kw">throws</span> <span class="type">ServletException</span>, <span class="type">IOException</span> {
+        
+        <span class="type">String</span> authHeader = req.getHeader(<span class="str">"Authorization"</span>);
+        <span class="kw">if</span> (authHeader != <span class="kw">null</span> &amp;&amp; authHeader.startsWith(<span class="str">"Bearer "</span>)) {
+            <span class="type">String</span> jwt = authHeader.substring(<span class="num">7</span>);
+            <span class="kw">if</span> (jwtProvider.validateToken(jwt)) {
+                <span class="type">Authentication</span> auth = jwtProvider.getAuthentication(jwt);
+                <span class="type">SecurityContextHolder</span>.getContext().setAuthentication(auth);
+            }
+        }
+        chain.doFilter(req, res);
+    }
+}</code></pre>
+    </section>
+
+    <!-- SECTION 22 -->
+    <section id="sec22">
+      <h2>22. 75+ Interview Questions</h2>
+
+      <div class="faq-item">
+        <div class="faq-q">Q1: What is the difference between Authentication and Authorization?</div>
+        <div class="faq-a">Authentication verifies WHO you are (Identity). Authorization verifies WHAT you can access (Permissions/Roles).</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q2: How does Spring Security work internally?</div>
+        <div class="faq-a">It uses a chain of Servlet Filters (SecurityFilterChain) managed by DelegatingFilterProxy that intercepts HTTP requests before they reach the DispatcherServlet.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q3: What is SecurityContextHolder?</div>
+        <div class="faq-a">A ThreadLocal-based container that stores the current thread's SecurityContext containing the authenticated User's Authentication object.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q4: Why use BCryptPasswordEncoder over MD5 or SHA-256?</div>
+        <div class="faq-a">MD5 and SHA-256 are fast hash functions vulnerable to GPU brute-force attacks. BCrypt includes a cost factor that makes hashing intentionally slow and incorporates salt automatically.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q5: What is the difference between OAuth2 and JWT?</div>
+        <div class="faq-a">OAuth2 is an authorization framework specifying how tokens are issued. JWT is a token format specification. OAuth2 often uses JWTs as access tokens.</div>
+      </div>
+
+      <div class="faq-item"><div class="faq-q">Q6: What is DelegatingFilterProxy?</div><div class="faq-a">A standard Servlet Filter that bridges the Servlet container to Spring-managed FilterChainProxy beans.</div></div>
+      <div class="faq-item"><div class="faq-q">Q7: What is AuthenticationManager?</div><div class="faq-a">The main interface that processes authentication requests; default implementation is ProviderManager.</div></div>
+      <div class="faq-item"><div class="faq-q">Q8: What is UserDetailsService?</div><div class="faq-a">A core interface with a single method (loadUserByUsername) used to load user data from a database or store.</div></div>
+      <div class="faq-item"><div class="faq-q">Q9: What is UserDetails?</div><div class="faq-a">An interface representing user identity details (username, password, granted authorities, account status).</div></div>
+      <div class="faq-item"><div class="faq-q">Q10: Difference between 401 Unauthorized and 403 Forbidden?</div><div class="faq-a">401 means unauthenticated (missing or invalid credentials). 403 means authenticated but lacking required permissions.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q11: What is CSRF and how do you protect against it?</div><div class="faq-a">Cross-Site Request Forgery tricks browsers into sending forged cookie requests. Protected using anti-CSRF tokens.</div></div>
+      <div class="faq-item"><div class="faq-q">Q12: When should CSRF protection be disabled?</div><div class="faq-a">In stateless REST APIs that use Bearer JWT tokens attached in Authorization headers rather than browser cookies.</div></div>
+      <div class="faq-item"><div class="faq-q">Q13: What is CORS?</div><div class="faq-a">Cross-Origin Resource Sharing—a browser security feature that restricts cross-domain HTTP requests unless permitted by server headers.</div></div>
+      <div class="faq-item"><div class="faq-q">Q14: What is a CORS Preflight Request?</div><div class="faq-a">An automatic HTTP OPTIONS request sent by browsers to verify server CORS permissions before sending actual requests.</div></div>
+      <div class="faq-item"><div class="faq-q">Q15: How to enable method security in Spring Boot 3?</div><div class="faq-a">Add @EnableMethodSecurity on a configuration class and use @PreAuthorize on methods.</div></div>
+      <div class="faq-item"><div class="faq-q">Q16: Difference between @PreAuthorize and @Secured?</div><div class="faq-a">@PreAuthorize supports full SpEL expressions; @Secured is a legacy annotation that only accepts simple role strings.</div></div>
+      <div class="faq-item"><div class="faq-q">Q17: What are the three parts of a JWT?</div><div class="faq-a">Header (algorithm), Payload (claims), and Signature (cryptographic hash).</div></div>
+      <div class="faq-item"><div class="faq-q">Q18: How do you invalidate a JWT before its expiration?</div><div class="faq-a">Maintain a token blacklist in Redis, or use short-lived access tokens with revocable Refresh Tokens.</div></div>
+      <div class="faq-item"><div class="faq-q">Q19: What is GrantedAuthority?</div><div class="faq-a">An individual permission or role string assigned to an authenticated user.</div></div>
+      <div class="faq-item"><div class="faq-q">Q20: What is AuthenticationEntryPoint?</div><div class="faq-a">An interface invoked when an unauthenticated request attempts to access a protected resource (returns 401).</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q21: What is AccessDeniedHandler?</div><div class="faq-a">An interface invoked when an authenticated user lacks required permissions (returns 403).</div></div>
+      <div class="faq-item"><div class="faq-q">Q22: Difference between Role and Authority in Spring Security?</div><div class="faq-a">Roles are prefixed with "ROLE_" (ROLE_ADMIN). Authorities are fine-grained strings (READ_PRIVILEGE).</div></div>
+      <div class="faq-item"><div class="faq-q">Q23: How does OncePerRequestFilter work?</div><div class="faq-a">Guarantees that a custom filter executes exactly once per HTTP request dispatch.</div></div>
+      <div class="faq-item"><div class="faq-q">Q24: What is SecurityContextPersistenceFilter?</div><div class="faq-a">Legacy filter that loaded and saved SecurityContext to HTTP Session across requests.</div></div>
+      <div class="faq-item"><div class="faq-q">Q25: What is SessionCreationPolicy.STATELESS?</div><div class="faq-a">Tells Spring Security never to create or use HTTP sessions (ideal for JWT REST APIs).</div></div>
+      <div class="faq-item"><div class="faq-q">Q26: What is OAuth2 Resource Server?</div><div class="faq-a">An API server that accepts and validates OAuth2 access tokens to serve protected data.</div></div>
+      <div class="faq-item"><div class="faq-q">Q27: What is OAuth2 Authorization Server?</div><div class="faq-a">The server that authenticates users and issues access tokens (e.g., Keycloak, Okta, Auth0).</div></div>
+      <div class="faq-item"><div class="faq-q">Q28: What is Authorization Code Grant in OAuth2?</div><div class="faq-a">The most secure OAuth2 flow where an authorization code is exchanged for an access token via back-channel.</div></div>
+      <div class="faq-item"><div class="faq-q">Q29: What is Client Credentials Grant in OAuth2?</div><div class="faq-a">A server-to-server OAuth2 flow where an app authenticates using its own credentials without user context.</div></div>
+      <div class="faq-item"><div class="faq-q">Q30: How to prevent SQL Injection in Spring applications?</div><div class="faq-a">Use Spring Data JPA parameterized queries and avoid concatenating raw strings in SQL statements.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q31: What is XSS and how to prevent it?</div><div class="faq-a">Cross-Site Scripting inserts malicious JS scripts. Prevented by escaping input/output and configuring CSP headers.</div></div>
+      <div class="faq-item"><div class="faq-q">Q32: What is Clickjacking and how does Spring prevent it?</div><div class="faq-a">Tricking users into clicking transparent iframe elements. Spring sets 'X-Frame-Options: DENY' headers.</div></div>
+      <div class="faq-item"><div class="faq-q">Q33: What is Session Fixation?</div><div class="faq-a">An attack where an attacker sets a known session ID. Spring protects by creating a new session ID on login.</div></div>
+      <div class="faq-item"><div class="faq-q">Q34: What is AnonymousAuthenticationToken?</div><div class="faq-a">An Authentication object representing an unauthenticated guest user in the SecurityContext.</div></div>
+      <div class="faq-item"><div class="faq-q">Q35: How to configure method security for specific SpEL expressions?</div><div class="faq-a">Using @PreAuthorize("hasAuthority('WRITE') and #entity.owner == authentication.name").</div></div>
+      <div class="faq-item"><div class="faq-q">Q36: What is DaoAuthenticationProvider?</div><div class="faq-a">Default AuthenticationProvider that uses UserDetailsService and PasswordEncoder to authenticate credentials.</div></div>
+      <div class="faq-item"><div class="faq-q">Q37: Where should JWT access tokens be stored on frontend?</div><div class="faq-a">In-memory variables (safest from XSS) or HttpOnly SameSite cookies (safe from XSS &amp; CSRF).</div></div>
+      <div class="faq-item"><div class="faq-q">Q38: Why should JWT secret keys be at least 256 bits?</div><div class="faq-a">HS256 signature algorithms require minimum 256-bit (32 byte) keys to prevent brute-force key cracking.</div></div>
+      <div class="faq-item"><div class="faq-q">Q39: What is OpenID Connect (OIDC)?</div><div class="faq-a">An identity layer built on top of OAuth2 that provides ID tokens for user profile information.</div></div>
+      <div class="faq-item"><div class="faq-q">Q40: How to test Spring Security endpoints in integration tests?</div><div class="faq-a">Using @WithMockUser(roles = "ADMIN") annotation in Spring Test.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q41: What is SecurityContextHolder strategy?</div><div class="faq-a">Defines how SecurityContext is stored (MODE_THREADLOCAL by default, or MODE_INHERITABLETHREADLOCAL for async threads).</div></div>
+      <div class="faq-item"><div class="faq-q">Q42: What is UsernamePasswordAuthenticationToken?</div><div class="faq-a">A standard implementation of Authentication used for username/password credential processing.</div></div>
+      <div class="faq-item"><div class="faq-q">Q43: What is the purpose of @EnableWebSecurity?</div><div class="faq-a">Enables Spring Security's web security support and imports Spring MVC integration configurations.</div></div>
+      <div class="faq-item"><div class="faq-q">Q44: How to permit access to public endpoints without auth?</div><div class="faq-a">Using requestMatchers("/public/**").permitAll() in SecurityFilterChain.</div></div>
+      <div class="faq-item"><div class="faq-q">Q45: What happens if an unhandled Exception occurs in a custom Security Filter?</div><div class="faq-a">It bypasses Spring MVC @RestControllerAdvice and must be caught inside the filter or by ExceptionTranslationFilter.</div></div>
+      <div class="faq-item"><div class="faq-q">Q46: What is Spring Security's ExceptionTranslationFilter?</div><div class="faq-a">A filter that catches SecurityExceptions and delegates to AuthenticationEntryPoint or AccessDeniedHandler.</div></div>
+      <div class="faq-item"><div class="faq-q">Q47: Can a application have multiple SecurityFilterChain beans?</div><div class="faq-a">Yes! Ordered by @Order annotation, allowing separate security chains for /api/** and /admin/** endpoints.</div></div>
+      <div class="faq-item"><div class="faq-q">Q48: How to retrieve current logged in user in a Controller method?</div><div class="faq-a">By injecting @AuthenticationPrincipal UserDetails user or inspecting SecurityContextHolder.</div></div>
+      <div class="faq-item"><div class="faq-q">Q49: What is PasswordEncoder.matches()?</div><div class="faq-a">Compares raw unhashed password input against an existing encoded hash to check for validity.</div></div>
+      <div class="faq-item"><div class="faq-q">Q50: What is the main architectural takeaway of Spring Security?</div><div class="faq-a">Servlet Filter Chain delegation, ThreadLocal context storage, adaptive BCrypt hashing, and stateless JWT/OAuth2 support.</div></div>
+    </section>
+
+    <!-- SECTION 23 -->
+    <section id="sec23">
+      <h2>23. Revision Cheatsheet</h2>
+      <div class="card">
+        <p><b>Authentication:</b> WHO you are (401) &middot; <b>Authorization:</b> WHAT you can do (403).</p>
+        <p><b>Filter Chain:</b> DelegatingFilterProxy &rarr; FilterChainProxy &rarr; SecurityFilterChain filters.</p>
+        <p><b>Context Storage:</b> <code>SecurityContextHolder.getContext().getAuthentication()</code> (ThreadLocal).</p>
+        <p><b>BCrypt:</b> Hashing with automatic 16-byte salt and cost factor strength.</p>
+        <p><b>JWT Structure:</b> <code>Header.Payload.Signature</code> (Base64Url encoded &amp; HMAC signed).</p>
+        <p><b>CORS:</b> Browser cross-domain restriction &middot; <b>CSRF:</b> Cookie forgery protection.</p>
+      </div>
+    </section>
+
+    <!-- SECTION 24 -->
+    <section id="sec24">
+      <h2>24. Visual Infographic Summary</h2>
+      <div class="diagram">
+        <h4>Spring Security Complete Architectural Ecosystem Map</h4>
+        <div class="grid">
+          <div class="card" style="border-color: var(--teal);">
+            <b style="color: var(--teal);">1. Filter &amp; Request Layer</b>
+            <p>Servlet Filters &middot; CORS Filter &middot; Custom JwtFilter &middot; SecurityFilterChain</p>
+          </div>
+          <div class="card" style="border-color: var(--amber);">
+            <b style="color: var(--amber);">2. Authentication Core</b>
+            <p>AuthenticationManager &middot; DaoAuthenticationProvider &middot; UserDetailsService &middot; BCrypt</p>
+          </div>
+          <div class="card" style="border-color: var(--purple);">
+            <b style="color: var(--purple);">3. Authorization &amp; State</b>
+            <p>SecurityContextHolder &middot; @PreAuthorize &middot; OAuth2 / JWT &middot; 401/403 Exception Handlers</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+</body>
+</html>
