@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Spring AOP — Complete Deep Dive</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  :root {
+    --bg: #0b0e14;
+    --surface: #131824;
+    --panel2: #0f131c;
+    --border: #232a38;
+    --text: #e7eaf1;
+    --muted: #9aa4b7;
+    --accent: #f0b429;
+    --amber: #f0b429;
+    --teal: #38bdf8;
+    --rose: #f87171;
+    --green: #4ade80;
+    --purple: #c084fc;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .layout {
+    display: flex;
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+  
+  /* STICKY SIDEBAR NAV */
+  nav.sidebar {
+    width: 310px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 24px 16px;
+    flex-shrink: 0;
+  }
+  nav.sidebar h3 {
+    font-size: 0.85rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+    padding-left: 8px;
+  }
+  nav.sidebar a {
+    display: block;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.8rem;
+    padding: 5px 8px;
+    border-radius: 6px;
+    margin-bottom: 2px;
+    transition: all 0.15s ease;
+  }
+  nav.sidebar a:hover {
+    color: var(--accent);
+    background: rgba(240, 180, 41, 0.08);
+  }
+
+  /* MAIN CONTENT WRAPPER */
+  .main-content {
+    flex: 1;
+    max-width: 1080px;
+    padding: 48px 40px 120px;
+    overflow-x: hidden;
+  }
+
+  .eyebrow {
+    color: var(--accent);
+    font-family: monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  h1 { font-size: 2.3rem; margin-top: 0; margin-bottom: 8px; font-weight: 800; line-height: 1.25; }
+  h1 span { color: var(--accent); }
+  .sub { color: var(--muted); font-size: 1rem; margin-bottom: 32px; }
+  
+  h2 {
+    margin-top: 56px;
+    font-size: 1.45rem;
+    border-left: 4px solid var(--accent);
+    padding-left: 14px;
+    color: var(--text);
+  }
+  h3 { font-size: 1.15rem; color: var(--teal); margin-top: 28px; }
+  h4 { font-size: 0.98rem; color: var(--purple); margin-top: 20px; }
+  p, li { color: var(--muted); font-size: 0.95rem; }
+  li { margin-bottom: 6px; }
+  b, strong { color: var(--text); }
+  
+  /* CARDS & PANELS */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 20px 0; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .card b { color: var(--accent); display: block; margin-bottom: 6px; font-size: 1rem; }
+  
+  /* CALLOUT BOXES */
+  .callout {
+    margin: 20px 0;
+    border-left: 4px solid var(--accent);
+    padding: 16px 20px;
+    background: rgba(240, 180, 41, 0.05);
+    border-radius: 0 8px 8px 0;
+    font-size: 0.92rem;
+  }
+  .callout.warn { border-left-color: var(--rose); background: rgba(248, 113, 113, 0.06); }
+  .callout.info { border-left-color: var(--teal); background: rgba(56, 189, 248, 0.06); }
+  .callout.success { border-left-color: var(--green); background: rgba(74, 222, 128, 0.06); }
+  
+  /* CODE BLOCKS WITH PURE CSS SYNTAX HIGHLIGHTING */
+  pre {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: #e7eaf1;
+  }
+  code {
+    background: #0f131c;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.88em;
+    color: var(--accent);
+    font-family: 'Consolas', 'Courier New', monospace;
+  }
+  pre code { border: none; padding: 0; background: transparent; color: inherit; }
+  
+  .kw { color: #f43f5e; font-weight: bold; }
+  .anno { color: var(--accent); font-weight: bold; }
+  .type { color: var(--teal); }
+  .str { color: var(--green); }
+  .cmnt { color: #64748b; font-style: italic; }
+  .fn { color: #c084fc; }
+
+  /* TABLES */
+  table.matrix {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 0.85rem;
+    background: var(--surface);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  table.matrix th, table.matrix td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    text-align: left;
+  }
+  table.matrix th {
+    background: var(--panel2);
+    color: var(--accent);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+  }
+  table.matrix tr:last-child td { border-bottom: none; }
+
+  /* FLOWCHARTS & DIAGRAMS */
+  .diagram {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin: 24px 0;
+  }
+  .flow-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .flow-step .num {
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: bold;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+  .flow-arrow {
+    text-align: center;
+    color: var(--accent);
+    font-size: 1.2rem;
+    margin: -4px 0 4px;
+  }
+
+  /* FAQ ACCORDION STYLE */
+  .faq-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    padding: 16px;
+  }
+  .faq-q { color: var(--accent); font-weight: 600; font-size: 0.98rem; margin-bottom: 8px; }
+  .faq-a { color: var(--muted); font-size: 0.92rem; }
+
+  @media (max-width: 900px) {
+    .layout { flex-direction: column; }
+    nav.sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border); }
+    .main-content { padding: 24px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- SIDEBAR NAVIGATION -->
+  <nav class="sidebar">
+    <h3>Spring AOP Deep Dive</h3>
+    <a href="#sec1">1. Introduction</a>
+    <a href="#sec2">2. Why Do We Need AOP?</a>
+    <a href="#sec3">3. Core Concepts</a>
+    <a href="#sec4">4. Types of Advice</a>
+    <a href="#sec5">5. Pointcut Expressions</a>
+    <a href="#sec6">6. Proxy Mechanism</a>
+    <a href="#sec7">7. JDK Dynamic Proxy vs CGLIB</a>
+    <a href="#sec8">8. Spring AOP Workflow</a>
+    <a href="#sec9">9. Transactions &amp; AOP</a>
+    <a href="#sec10">10. Common Production Use Cases</a>
+    <a href="#sec11">11. Spring AOP vs AspectJ</a>
+    <a href="#sec12">12. Real Production Example</a>
+    <a href="#sec13">13. Common Mistakes</a>
+    <a href="#sec14">14. Senior Best Practices</a>
+    <a href="#sec15">15. 50+ Interview Questions</a>
+    <a href="#sec16">16. Revision Cheatsheet</a>
+    <a href="#sec17">17. Visual Summary Infographic</a>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <div class="eyebrow">Enterprise Java &middot; Spring Framework Core</div>
+    <h1>Spring AOP (Aspect-Oriented Programming) — <span>Complete Deep Dive</span></h1>
+    <div class="sub">A beginner-friendly, simple, and comprehensive guide to Aspect-Oriented Programming in Spring—explaining Cross-Cutting Concerns, Aspects, Advices, Pointcuts, JDK vs CGLIB Proxies, Transactions, and Production Architecture.</div>
+
+    <!-- SECTION 1 -->
+    <section id="sec1">
+      <h2>1. Introduction</h2>
+      <p>In standard Object-Oriented Programming (OOP), modularity is achieved through classes and objects. However, when building large enterprise applications, certain code requirements—such as logging, transaction management, security checks, and performance monitoring—must be repeated across almost every single class and layer.</p>
+
+      <p><b>Aspect-Oriented Programming (AOP)</b> is a programming paradigm designed to complement OOP by providing a way to extract these secondary, repeating tasks out of your core business logic.</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>Real-World Analogy: Security Guards at an Airport</b>
+          <p>Imagine an airport. Passengers walk through various gates to check in, drop luggage, pass passport control, and board flights. Instead of making every single pilot, flight attendant, and passenger carry their own metal detector and verify security individually, the airport places a <b>Security Checkpoint (Aspect)</b> across the passageway. Everyone passes through it automatically before reaching their gate!</p>
+        </div>
+        <div class="card">
+          <b>What are Cross-Cutting Concerns?</b>
+          <p>Features that "cut across" multiple layers of an application (e.g. Controllers, Services, Repositories) without belonging to the core business logic of any single component. AOP encapsulates these into clean, modular components called <b>Aspects</b>.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2 -->
+    <section id="sec2">
+      <h2>2. Why Do We Need AOP?</h2>
+      <p>Without AOP, secondary concerns clutter your core business logic, leading to two major software code smells: <b>Code Tangling</b> and <b>Code Scattering</b>.</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>1. Code Tangling</b>
+          <p>A single method becomes tangled with multiple unrelated responsibilities (e.g. 10 lines of logging, security, and transaction setup surrounding 2 lines of actual business calculation).</p>
+        </div>
+        <div class="card">
+          <b>2. Code Scattering</b>
+          <p>The exact same boilerplate setup code (e.g. <code>logger.info("Entering method...")</code>) is scattered across hundreds of classes across the entire codebase.</p>
+        </div>
+      </div>
+
+      <h4>Without AOP (Cluttered Business Logic):</h4>
+      <pre><code><span class="kw">public class</span> <span class="type">OrderService</span> {
+    <span class="kw">public void</span> <span class="fn">placeOrder</span>(<span class="type">Order</span> order) {
+        <span class="cmnt">// 1. Security Check (Boilerplate)</span>
+        <span class="kw">if</span> (!securityContext.isAuthenticated()) <span class="kw">throw new</span> <span class="type">SecurityException</span>();
+        
+        <span class="cmnt">// 2. Transaction Start (Boilerplate)</span>
+        Transaction tx = transactionManager.beginTransaction();
+        
+        <span class="kw">try</span> {
+            <span class="cmnt">// 3. Performance Logging (Boilerplate)</span>
+            <span class="kw">long</span> start = System.currentTimeMillis();
+            
+            <span class="cmnt">// --- ACTUAL BUSINESS LOGIC (2 lines) ---</span>
+            orderRepository.save(order);
+            paymentGateway.charge(order);
+            <span class="cmnt">// ---------------------------------------</span>
+            
+            logger.info("Placed order in " + (System.currentTimeMillis() - start) + "ms");
+            tx.commit();
+        } <span class="kw">catch</span> (Exception e) {
+            tx.rollback();
+            <span class="kw">throw</span> e;
+        }
+    }
+}</code></pre>
+
+      <h4>With AOP (Clean Business Logic):</h4>
+      <pre><code><span class="kw">public class</span> <span class="type">OrderService</span> {
+    <span class="anno">@Transactional</span>
+    <span class="kw">public void</span> <span class="fn">placeOrder</span>(<span class="type">Order</span> order) {
+        <span class="cmnt">// PURE BUSINESS LOGIC ONLY!</span>
+        orderRepository.save(order);
+        paymentGateway.charge(order);
+    }
+}</code></pre>
+    </section>
+
+    <!-- SECTION 3 -->
+    <section id="sec3">
+      <h2>3. Core Concepts</h2>
+      <p>To master Spring AOP, you must understand its core terminology:</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>1. Aspect</b>
+          <p>A modular class containing cross-cutting logic (e.g., a <code>LoggingAspect</code> class marked with <code>@Aspect</code>).</p>
+        </div>
+        <div class="card">
+          <b>2. Advice</b>
+          <p>The action taken by an Aspect at a particular join point (i.e. the actual code that runs, like <i>WHAT</i> to do: log, check security, start transaction).</p>
+        </div>
+        <div class="card">
+          <b>3. Join Point</b>
+          <p>A candidate point during execution where an Aspect can plug in (in Spring AOP, a Join Point is <b>always a method execution</b>).</p>
+        </div>
+        <div class="card">
+          <b>4. Pointcut</b>
+          <p>A predicate expression that matches specific Join Points (i.e. <i>WHERE</i> to run the advice, e.g. "all methods in <code>com.app.service</code>").</p>
+        </div>
+        <div class="card">
+          <b>5. Target Object</b>
+          <p>The real domain object containing business logic being advised/proxied by Spring AOP.</p>
+        </div>
+        <div class="card">
+          <b>6. Proxy</b>
+          <p>A dynamically created wrapper object created by Spring AOP to intercept method calls to the Target Object.</p>
+        </div>
+        <div class="card">
+          <b>7. Weaving</b>
+          <p>The process of linking Aspects with Target Objects to create proxied objects. Spring AOP performs runtime weaving.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4 -->
+    <section id="sec4">
+      <h2>4. Types of Advice</h2>
+      <p>Spring AOP provides five types of Advice depending on when you want your cross-cutting code to run relative to the target method execution:</p>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Advice Annotation</th>
+            <th>When It Runs</th>
+            <th>Can It Prevent Method Execution?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>@Before</code></td>
+            <td>Executes <b>before</b> the target method is called.</td>
+            <td>Yes (by throwing an exception).</td>
+          </tr>
+          <tr>
+            <td><code>@AfterReturning</code></td>
+            <td>Executes <b>after</b> the target method returns successfully (no exceptions).</td>
+            <td>No. Can inspect the return value.</td>
+          </tr>
+          <tr>
+            <td><code>@AfterThrowing</code></td>
+            <td>Executes <b>after</b> the target method throws an exception.</td>
+            <td>No. Can inspect or log the thrown exception.</td>
+          </tr>
+          <tr>
+            <td><code>@After</code></td>
+            <td>Executes <b>after</b> the method finishes (finally block behavior, regardless of outcome).</td>
+            <td>No.</td>
+          </tr>
+          <tr>
+            <td><code>@Around</code></td>
+            <td>Wraps around the target method call completely (before, after, exceptions).</td>
+            <td><b>Yes!</b> Most powerful. Controls when/if <code>joinPoint.proceed()</code> runs.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <pre><code><span class="anno">@Aspect</span>
+<span class="anno">@Component</span>
+<span class="kw">public class</span> <span class="type">PerformanceAspect</span> {
+
+    <span class="anno">@Around</span>(<span class="str">"execution(* com.devvault.service..*.*(..))"</span>)
+    <span class="kw">public</span> <span class="type">Object</span> <span class="fn">measureExecutionTime</span>(<span class="type">ProceedingJoinPoint</span> joinPoint) <span class="kw">throws</span> <span class="type">Throwable</span> {
+        <span class="kw">long</span> start = System.currentTimeMillis();
+        
+        <span class="cmnt">// Proceed with actual target method call</span>
+        <span class="type">Object</span> result = joinPoint.proceed(); 
+        
+        <span class="kw">long</span> elapsed = System.currentTimeMillis() - start;
+        System.out.println(joinPoint.getSignature() + " executed in " + elapsed + "ms");
+        
+        <span class="kw">return</span> result;
+    }
+}</code></pre>
+    </section>
+
+    <!-- SECTION 5 -->
+    <section id="sec5">
+      <h2>5. Pointcut Expressions</h2>
+      <p>Pointcuts define <b>where</b> Advice should be applied using AspectJ expression syntax:</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>1. execution()</b>
+          <p>Matches method execution signatures. The most frequently used designator.</p>
+          <code>execution(public * com.app.service.*.*(..))</code>
+        </div>
+        <div class="card">
+          <b>2. within()</b>
+          <p>Matches any method execution within specific packages or classes.</p>
+          <code>within(com.app.service..)</code>
+        </div>
+        <div class="card">
+          <b>3. @annotation()</b>
+          <p>Matches methods annotated with a specific custom Java annotation.</p>
+          <code>@annotation(com.app.annotation.LogExecution)</code>
+        </div>
+        <div class="card">
+          <b>4. bean()</b>
+          <p>Matches method executions on Spring beans with matching bean IDs or names.</p>
+          <code>bean(*Service)</code>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 6 -->
+    <section id="sec6">
+      <h2>6. Proxy Mechanism</h2>
+      <p>How does Spring AOP secretly execute your aspect code when a client calls a method on your bean?</p>
+
+      <p>It uses <b>Dynamic Proxies</b>! When Spring creates a bean that matches an Aspect's pointcut, it does <b>not</b> inject the raw class instance into other beans. Instead, Spring wraps your target bean inside a dynamically generated <b>Proxy Object</b>.</p>
+
+      <div class="diagram">
+        <h4>Proxy Interception Mechanism</h4>
+        <div class="flow-step"><div class="num">1</div><div><b>Client Call:</b> Client calls <code>orderService.placeOrder(order)</code>.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">2</div><div><b>Proxy Interception:</b> Client actually holds a reference to the <b>Spring Proxy Object</b>.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">3</div><div><b>Aspect Advice Execution:</b> Proxy runs <code>@Before</code> advice (e.g., starts transaction, logs start).</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">4</div><div><b>Target Method Invocation:</b> Proxy delegates execution to the actual <code>Target Object</code>.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">5</div><div><b>After Advice &amp; Return:</b> Proxy runs <code>@AfterReturning</code> (e.g., commits transaction) and returns response to client.</div></div>
+      </div>
+    </section>
+
+    <!-- SECTION 7 -->
+    <section id="sec7">
+      <h2>7. JDK Dynamic Proxy vs CGLIB</h2>
+      <p>Spring AOP uses two distinct proxy generation mechanisms depending on your bean structure and configuration:</p>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Dimension</th>
+            <th>JDK Dynamic Proxy</th>
+            <th>CGLIB Proxy (Code Generation Library)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Requirement</td>
+            <td>Target class <b>MUST implement an Interface</b>.</td>
+            <td>Target class does NOT require an interface.</td>
+          </tr>
+          <tr>
+            <td>Mechanism</td>
+            <td>Uses standard Java Reflection <code>java.lang.reflect.Proxy</code>.</td>
+            <td>Generates dynamic runtime subclass bytecode overriding methods.</td>
+          </tr>
+          <tr>
+            <td>Limitations</td>
+            <td>Cannot proxy classes without interfaces.</td>
+            <td>Cannot proxy <code>final</code> classes or <code>final</code> methods!</td>
+          </tr>
+          <tr>
+            <td>Spring Boot Default</td>
+            <td>Default in older Spring 4.x versions.</td>
+            <td><b>Default in Spring Boot 2.x / 3.x</b> (via <code>spring.aop.proxy-target-class=true</code>).</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 8 -->
+    <section id="sec8">
+      <h2>8. Spring AOP Workflow</h2>
+      <p>Here is the end-to-end request flow through a proxied Spring bean:</p>
+
+      <div class="diagram">
+        <h4>Complete Interception Sequence Flow</h4>
+        <p>Client &rarr; Invokes Method &rarr; Spring AOP Proxy &rarr; Runs @Before Advice &rarr; Target Method Execution &rarr; Runs @AfterReturning / @AfterThrowing &rarr; Runs @After &rarr; Returns Response to Client</p>
+      </div>
+    </section>
+
+    <!-- SECTION 9 -->
+    <section id="sec9">
+      <h2>9. Transactions &amp; AOP</h2>
+      <p>One of the most important built-in uses of Spring AOP is <b>@Transactional</b> management.</p>
+
+      <p>When you annotate a method with <code>@Transactional</code>, Spring creates an AOP proxy around your service bean using <code>TransactionInterceptor</code>. The proxy opens a database connection, begins a transaction before your method runs, commits if your method succeeds, or automatically executes a <b>rollback</b> if an unhandled <code>RuntimeException</code> is thrown!</p>
+    </section>
+
+    <!-- SECTION 10 -->
+    <section id="sec10">
+      <h2>10. Common Production Use Cases</h2>
+      <div class="grid">
+        <div class="card"><b>1. Centralized Logging</b><p>Log incoming parameters and outgoing execution durations across all controllers/services automatically.</p></div>
+        <div class="card"><b>2. Declarative Transactions</b><p>Manage DB connections and commit/rollback semantics via <code>@Transactional</code>.</p></div>
+        <div class="card"><b>3. Audit Trail Logging</b><p>Track user actions (who modified what record and when) for security compliance.</p></div>
+        <div class="card"><b>4. Custom Rate Limiting</b><p>Intercept endpoints with custom annotations to enforce request limits per IP/user.</p></div>
+      </div>
+    </section>
+
+    <!-- SECTION 11 -->
+    <section id="sec11">
+      <h2>11. Spring AOP vs AspectJ</h2>
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Spring AOP</th>
+            <th>Full AspectJ Framework</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Goal</td>
+            <td>Simple AOP solution for common Spring IoC needs.</td>
+            <td>Complete, robust, full-featured AOP framework.</td>
+          </tr>
+          <tr>
+            <td>Weaving Type</td>
+            <td>Runtime Proxy weaving.</td>
+            <td>Compile-time (ajc), Post-compile, or Load-time (LTW) weaving.</td>
+          </tr>
+          <tr>
+            <td>Join Points</td>
+            <td><b>Method execution ONLY</b> on Spring managed beans.</td>
+            <td>Method execution, field access, constructor execution, static init.</td>
+          </tr>
+          <tr>
+            <td>Performance</td>
+            <td>Slightly slower (runtime proxy generation overhead).</td>
+            <td>Faster (direct bytecode modification).</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 12 -->
+    <section id="sec12">
+      <h2>12. Real Production Example</h2>
+      <p>Here is a complete, production-ready logging aspect targeting a custom <code>@Loggable</code> annotation:</p>
+
+      <pre><code><span class="cmnt">// 1. Custom Annotation Definition</span>
+<span class="anno">@Target</span>(ElementType.METHOD)
+<span class="anno">@Retention</span>(RetentionPolicy.RUNTIME)
+<span class="kw">public @interface</span> <span class="type">Loggable</span> {}
+
+<span class="cmnt">// 2. Aspect Implementation</span>
+<span class="anno">@Aspect</span>
+<span class="anno">@Component</span>
+<span class="kw">public class</span> <span class="type">LoggingAspect</span> {
+
+    <span class="kw">private static final</span> <span class="type">Logger</span> log = LoggerFactory.getLogger(LoggingAspect.<span class="kw">class</span>);
+
+    <span class="anno">@Around</span>(<span class="str">"@annotation(com.devvault.annotation.Loggable)"</span>)
+    <span class="kw">public</span> <span class="type">Object</span> <span class="fn">logMethodCall</span>(<span class="type">ProceedingJoinPoint</span> joinPoint) <span class="kw">throws</span> <span class="type">Throwable</span> {
+        <span class="type">String</span> methodName = joinPoint.getSignature().getName();
+        log.info(<span class="str">"Entering method: {} with args: {}"</span>, methodName, joinPoint.getArgs());
+        
+        <span class="kw">long</span> start = System.currentTimeMillis();
+        <span class="type">Object</span> result = joinPoint.proceed();
+        <span class="kw">long</span> duration = System.currentTimeMillis() - start;
+        
+        log.info(<span class="str">"Exiting method: {} in {}ms"</span>, methodName, duration);
+        <span class="kw">return</span> result;
+    }
+}
+
+<span class="cmnt">// 3. Service Layer Usage</span>
+<span class="anno">@Service</span>
+<span class="kw">public class</span> <span class="type">UserServiceImpl</span> <span class="kw">implements</span> <span class="type">UserService</span> {
+
+    <span class="anno">@Loggable</span> <span class="cmnt">// Aspect intercepts this automatically!</span>
+    <span class="kw">public</span> <span class="type">User</span> <span class="fn">getUserById</span>(<span class="type">Long</span> id) {
+        <span class="kw">return</span> userRepository.findById(id).orElseThrow();
+    }
+}</code></pre>
+    </section>
+
+    <!-- SECTION 13 -->
+    <section id="sec13">
+      <h2>13. Common Mistakes</h2>
+      <div class="callout warn">
+        <b>1. Self-Invocation (Internal Method Calls):</b><br>
+        If Method A inside a service calls Method B inside the <i>same class</i> (e.g. <code>this.methodB()</code>), Method B's <code>@Transactional</code> or custom aspect will NOT execute! Why? Because the call stays inside the target object and bypasses the Spring Proxy wrapper completely!<br><br>
+        <b>2. Annotating Private or Final Methods:</b><br>
+        Spring AOP proxies cannot override <code>private</code> or <code>final</code> methods. Annotations on private/final methods will be silently ignored.<br><br>
+        <b>3. Non-Spring Managed Beans:</b><br>
+        Aspects only apply to objects managed inside Spring's <code>ApplicationContext</code> (Spring Beans). Objects created using <code>new MyService()</code> cannot be proxied by Spring AOP.
+      </div>
+    </section>
+
+    <!-- SECTION 14 -->
+    <section id="sec14">
+      <h2>14. Senior Best Practices</h2>
+      <ul>
+        <li>Use custom annotations (e.g. <code>@annotation(...)</code>) for clean, explicit pointcut matching rather than brittle string execution regexes.</li>
+        <li>Keep advice methods lightweight and non-blocking to avoid inflating method latency.</li>
+        <li>Always rethrow exceptions or return values properly inside <code>@Around</code> advice using <code>return joinPoint.proceed()</code>.</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 15 -->
+    <section id="sec15">
+      <h2>15. 50+ Interview Questions</h2>
+
+      <div class="faq-item">
+        <div class="faq-q">Q1: What is AOP and why is it used?</div>
+        <div class="faq-a">Aspect-Oriented Programming is a paradigm that modularizes cross-cutting concerns (like logging, security, transactions) separately from core business logic to prevent code tangling and scattering.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q2: What is the difference between Join Point and Pointcut?</div>
+        <div class="faq-a">A Join Point is any candidate method execution point in the application where advice can run. A Pointcut is an expression that filters and matches specific Join Points.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q3: How does Spring AOP create proxies?</div>
+        <div class="faq-a">Spring AOP uses JDK Dynamic Proxies (for classes implementing interfaces) or CGLIB proxies (subclassing target classes using byte code generation).</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q4: Why doesn't @Transactional work on private methods?</div>
+        <div class="faq-a">Spring AOP creates proxies around target classes. Proxies override public methods to intercept calls. Private methods cannot be overridden or accessed by proxies.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q5: What is the Self-Invocation problem in Spring AOP?</div>
+        <div class="faq-a">When a method in a class calls another method in the same class using 'this', the call bypasses the Spring Proxy object, causing aspects like @Transactional or @Async to be ignored.</div>
+      </div>
+
+      <div class="faq-item"><div class="faq-q">Q6: Which advice type is most powerful?</div><div class="faq-a">@Around advice, because it controls whether, when, and how many times the target method proceeds.</div></div>
+      <div class="faq-item"><div class="faq-q">Q7: Difference between @After and @AfterReturning?</div><div class="faq-a">@After runs regardless of outcome (like a finally block). @AfterReturning runs only if the method completes without exceptions.</div></div>
+      <div class="faq-item"><div class="faq-q">Q8: What is Weaving in AOP?</div><div class="faq-a">The process of linking aspect modules with target objects to create proxied objects (Spring AOP performs runtime weaving).</div></div>
+      <div class="faq-item"><div class="faq-q">Q9: Difference between JDK Dynamic Proxy and CGLIB?</div><div class="faq-a">JDK proxy requires an interface and uses reflection. CGLIB subclasses the target class at runtime and doesn't require an interface.</div></div>
+      <div class="faq-item"><div class="faq-q">Q10: What is default proxy mechanism in Spring Boot 2.x / 3.x?</div><div class="faq-a">CGLIB proxying is the default (via spring.aop.proxy-target-class=true).</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q11: Can Spring AOP intercept field modifications?</div><div class="faq-a">No. Spring AOP supports method execution join points only. AspectJ is required for field access interception.</div></div>
+      <div class="faq-item"><div class="faq-q">Q12: What is ProceedingJoinPoint?</div><div class="faq-a">A parameter type used exclusively in @Around advice that provides the proceed() method to execute the target method.</div></div>
+      <div class="faq-item"><div class="faq-q">Q13: Difference between Spring AOP and AspectJ?</div><div class="faq-a">Spring AOP uses runtime proxies for method execution on Spring beans. AspectJ uses compile/load-time bytecode weaving for all join points.</div></div>
+      <div class="faq-item"><div class="faq-q">Q14: How to fix the self-invocation problem?</div><div class="faq-a">By moving the target method to a separate Spring bean, or injecting the bean into itself via @Lazy / AopContext.currentProxy().</div></div>
+      <div class="faq-item"><div class="faq-q">Q15: What annotation enables AspectJ auto-proxying in Spring?</div><div class="faq-a">@EnableAspectJAutoProxy.</div></div>
+      <div class="faq-item"><div class="faq-q">Q16: Can CGLIB proxy final classes?</div><div class="faq-a">No. CGLIB creates runtime subclasses, and final classes cannot be subclassed in Java.</div></div>
+      <div class="faq-item"><div class="faq-q">Q17: What happens if an exception is thrown in @Before advice?</div><div class="faq-a">Target method execution is aborted immediately, and the exception bubbles up the call stack.</div></div>
+      <div class="faq-item"><div class="faq-q">Q18: How to control advice execution order when multiple aspects target the same method?</div><div class="faq-a">By decorating aspect classes with @Order(number) annotation or implementing the Ordered interface.</div></div>
+      <div class="faq-item"><div class="faq-q">Q19: What is a Cross-Cutting Concern?</div><div class="faq-a">A requirement (like logging or security) that applies across multiple operational layers of an application.</div></div>
+      <div class="faq-item"><div class="faq-q">Q20: What is Target Object in AOP?</div><div class="faq-a">The underlying real business class instance being proxied and advised by Spring AOP.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q21: How does @Transactional use AOP?</div><div class="faq-a">Spring wraps service beans in a transaction proxy that opens connection/transaction before method execution and commits/rolls back after.</div></div>
+      <div class="faq-item"><div class="faq-q">Q22: Can Spring AOP intercept static methods?</div><div class="faq-a">No. Static methods belong to the class rather than bean instances and cannot be overridden by proxies.</div></div>
+      <div class="faq-item"><div class="faq-q">Q23: What is pointcut execution syntax format?</div><div class="faq-a">execution(modifiers-pattern? ret-type-pattern declaring-type-pattern? name-pattern(param-pattern) throws-pattern?).</div></div>
+      <div class="faq-item"><div class="faq-q">Q24: What does execution(* com.app.service..*.*(..)) mean?</div><div class="faq-a">Matches any method in any class inside com.app.service package and all its sub-packages.</div></div>
+      <div class="faq-item"><div class="faq-q">Q25: What does @annotation pointcut designator do?</div><div class="faq-a">Matches methods that are annotated with a specific custom annotation.</div></div>
+      <div class="faq-item"><div class="faq-q">Q26: What is the purpose of @Pointcut annotation?</div><div class="faq-a">Defines a named, reusable pointcut expression method to avoid repeating pointcut strings.</div></div>
+      <div class="faq-item"><div class="faq-q">Q27: What is Compile-Time Weaving?</div><div class="faq-a">AspectJ process where aspects are woven directly into target class bytecode during compilation using ajc compiler.</div></div>
+      <div class="faq-item"><div class="faq-q">Q28: What is Load-Time Weaving (LTW)?</div><div class="faq-a">AspectJ process where aspects are woven when classes are loaded into the JVM by a specialized ClassLoader agent.</div></div>
+      <div class="faq-item"><div class="faq-q">Q29: How to get method arguments inside @Before advice?</div><div class="faq-a">Using JoinPoint parameter and calling joinPoint.getArgs().</div></div>
+      <div class="faq-item"><div class="faq-q">Q30: How to get return value inside @AfterReturning advice?</div><div class="faq-a">Using returning attribute: @AfterReturning(pointcut = "...", returning = "result").</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q31: How to catch exceptions inside @AfterThrowing advice?</div><div class="faq-a">Using throwing attribute: @AfterThrowing(pointcut = "...", throwing = "ex").</div></div>
+      <div class="faq-item"><div class="faq-q">Q32: Is Spring AOP thread-safe?</div><div class="faq-a">Aspect beans are singletons by default. They are thread-safe as long as they don't maintain mutable instance state.</div></div>
+      <div class="faq-item"><div class="faq-q">Q33: Can an Aspect class be proxied by another Aspect?</div><div class="faq-a">By default, Spring AOP excludes @Aspect classes from auto-proxying to avoid infinite recursion loops.</div></div>
+      <div class="faq-item"><div class="faq-q">Q34: What is the role of AnnotationAwareAspectJAutoProxyCreator?</div><div class="faq-a">Internal Spring BeanPostProcessor that automatically creates AOP proxy wrappers around matching beans.</div></div>
+      <div class="faq-item"><div class="faq-q">Q35: What happens if proceed() is called multiple times in @Around advice?</div><div class="faq-a">The target method will execute multiple times (useful for retry mechanisms).</div></div>
+      <div class="faq-item"><div class="faq-q">Q36: What happens if proceed() is never called in @Around advice?</div><div class="faq-a">The target method will never execute.</div></div>
+      <div class="faq-item"><div class="faq-q">Q37: Can you combine pointcut expressions using boolean operators?</div><div class="faq-a">Yes! Pointcuts support AND (&amp;&amp;), OR (||), and NOT (!).</div></div>
+      <div class="faq-item"><div class="faq-q">Q38: What is within() pointcut designator?</div><div class="faq-a">Limits matching to join points within specific types or packages.</div></div>
+      <div class="faq-item"><div class="faq-q">Q39: What is args() pointcut designator?</div><div class="faq-a">Matches methods whose runtime argument types match specified classes.</div></div>
+      <div class="faq-item"><div class="faq-q">Q40: What is bean() pointcut designator?</div><div class="faq-a">Limits matching to specific Spring bean names or name patterns.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q41: How does Spring Security use AOP?</div><div class="faq-a">Via method security (@PreAuthorize/@PostAuthorize) where AOP proxies check user roles before running target methods.</div></div>
+      <div class="faq-item"><div class="faq-q">Q42: How does Spring Caching use AOP?</div><div class="faq-a">@Cacheable creates proxies that query cache managers before running target methods.</div></div>
+      <div class="faq-item"><div class="faq-q">Q43: What is the impact of AOP on application startup time?</div><div class="faq-a">Slight increase due to scanning aspects and generating dynamic proxy subclasses during container boot.</div></div>
+      <div class="faq-item"><div class="faq-q">Q44: What is the impact of AOP on execution performance?</div><div class="faq-a">Minimal sub-microsecond overhead per method call due to proxy method delegation.</div></div>
+      <div class="faq-item"><div class="faq-q">Q45: Can Aspect classes have dependencies injected via @Autowired?</div><div class="faq-a">Yes! Aspects marked with @Component are full Spring beans and support dependency injection.</div></div>
+      <div class="faq-item"><div class="faq-q">Q46: Why should pointcuts avoid overly broad matching like execution(* *(..))?</div><div class="faq-a">Broad matching creates unnecessary proxies for every bean in the container, degrading performance and causing bugs.</div></div>
+      <div class="faq-item"><div class="faq-q">Q47: What is ProxyTargetClass attribute in Spring AOP?</div><div class="faq-a">Setting proxyTargetClass=true forces Spring AOP to use CGLIB subclass proxies instead of JDK interface proxies.</div></div>
+      <div class="faq-item"><div class="faq-q">Q48: How to log exception details without suppressing the exception in AOP?</div><div class="faq-a">Use @AfterThrowing advice or log and rethrow inside @Around advice.</div></div>
+      <div class="faq-item"><div class="faq-q">Q49: How to pass custom data from @Before advice to @AfterReturning advice?</div><div class="faq-a">Use @Around advice instead, where local variables persist across the proceed() method call.</div></div>
+      <div class="faq-item"><div class="faq-q">Q50: What is the main architectural goal of Spring AOP?</div><div class="faq-a">To enforce Separation of Concerns by modularizing cross-cutting requirements cleanly outside core business logic.</div></div>
+    </section>
+
+    <!-- SECTION 16 -->
+    <section id="sec16">
+      <h2>16. Revision Cheatsheet</h2>
+      <div class="card">
+        <p><b>Aspect:</b> Module class containing cross-cutting logic (<code>@Aspect @Component</code>).</p>
+        <p><b>Advice:</b> Action code to run (<code>@Before</code>, <code>@After</code>, <code>@AfterReturning</code>, <code>@AfterThrowing</code>, <code>@Around</code>).</p>
+        <p><b>Pointcut:</b> Expression defining target method locations (<code>execution()</code>, <code>@annotation()</code>).</p>
+        <p><b>JDK Proxy:</b> Default interface-based proxying mechanism.</p>
+        <p><b>CGLIB Proxy:</b> Class subclassing proxying mechanism (Default in Spring Boot).</p>
+        <p><b>Self-Invocation Trap:</b> Internal method calls (<code>this.method()</code>) bypass proxies!</p>
+      </div>
+    </section>
+
+    <!-- SECTION 17 -->
+    <section id="sec17">
+      <h2>17. Visual Infographic Summary</h2>
+      <div class="diagram">
+        <h4>Spring AOP Architectural Overview</h4>
+        <div class="grid">
+          <div class="card" style="border-color: var(--teal);">
+            <b style="color: var(--teal);">1. Core Concept</b>
+            <p>Aspects &middot; Cross-Cutting Concerns &middot; Separation of Concerns &middot; Modularization</p>
+          </div>
+          <div class="card" style="border-color: var(--amber);">
+            <b style="color: var(--amber);">2. Proxy Execution</b>
+            <p>Spring Proxy Wrapper &middot; Pointcut Matching &middot; JDK Dynamic / CGLIB Bytecode</p>
+          </div>
+          <div class="card" style="border-color: var(--purple);">
+            <b style="color: var(--purple);">3. Enterprise Features</b>
+            <p>@Transactional &middot; @PreAuthorize &middot; @Cacheable &middot; Logging &amp; Audit Trail</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+</body>
+</html>

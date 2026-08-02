@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Spring Async &amp; Scheduling — Complete Deep Dive</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  :root {
+    --bg: #0b0e14;
+    --surface: #131824;
+    --panel2: #0f131c;
+    --border: #232a38;
+    --text: #e7eaf1;
+    --muted: #9aa4b7;
+    --accent: #f0b429;
+    --amber: #f0b429;
+    --teal: #38bdf8;
+    --rose: #f87171;
+    --green: #4ade80;
+    --purple: #c084fc;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .layout {
+    display: flex;
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+  
+  /* STICKY SIDEBAR NAV */
+  nav.sidebar {
+    width: 310px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 24px 16px;
+    flex-shrink: 0;
+  }
+  nav.sidebar h3 {
+    font-size: 0.85rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+    padding-left: 8px;
+  }
+  nav.sidebar a {
+    display: block;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.8rem;
+    padding: 5px 8px;
+    border-radius: 6px;
+    margin-bottom: 2px;
+    transition: all 0.15s ease;
+  }
+  nav.sidebar a:hover {
+    color: var(--accent);
+    background: rgba(240, 180, 41, 0.08);
+  }
+
+  /* MAIN CONTENT WRAPPER */
+  .main-content {
+    flex: 1;
+    max-width: 1080px;
+    padding: 48px 40px 120px;
+    overflow-x: hidden;
+  }
+
+  .eyebrow {
+    color: var(--accent);
+    font-family: monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  h1 { font-size: 2.3rem; margin-top: 0; margin-bottom: 8px; font-weight: 800; line-height: 1.25; }
+  h1 span { color: var(--accent); }
+  .sub { color: var(--muted); font-size: 1rem; margin-bottom: 32px; }
+  
+  h2 {
+    margin-top: 56px;
+    font-size: 1.45rem;
+    border-left: 4px solid var(--accent);
+    padding-left: 14px;
+    color: var(--text);
+  }
+  h3 { font-size: 1.15rem; color: var(--teal); margin-top: 28px; }
+  h4 { font-size: 0.98rem; color: var(--purple); margin-top: 20px; }
+  p, li { color: var(--muted); font-size: 0.95rem; }
+  li { margin-bottom: 6px; }
+  b, strong { color: var(--text); }
+  
+  /* CARDS & PANELS */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 20px 0; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .card b { color: var(--accent); display: block; margin-bottom: 6px; font-size: 1rem; }
+  
+  /* CALLOUT BOXES */
+  .callout {
+    margin: 20px 0;
+    border-left: 4px solid var(--accent);
+    padding: 16px 20px;
+    background: rgba(240, 180, 41, 0.05);
+    border-radius: 0 8px 8px 0;
+    font-size: 0.92rem;
+  }
+  .callout.warn { border-left-color: var(--rose); background: rgba(248, 113, 113, 0.06); }
+  .callout.info { border-left-color: var(--teal); background: rgba(56, 189, 248, 0.06); }
+  .callout.success { border-left-color: var(--green); background: rgba(74, 222, 128, 0.06); }
+  
+  /* CODE BLOCKS WITH PURE CSS SYNTAX HIGHLIGHTING */
+  pre {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: #e7eaf1;
+  }
+  code {
+    background: #0f131c;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.88em;
+    color: var(--accent);
+    font-family: 'Consolas', 'Courier New', monospace;
+  }
+  pre code { border: none; padding: 0; background: transparent; color: inherit; }
+  
+  .kw { color: #f43f5e; font-weight: bold; }
+  .anno { color: var(--accent); font-weight: bold; }
+  .type { color: var(--teal); }
+  .str { color: var(--green); }
+  .cmnt { color: #64748b; font-style: italic; }
+  .fn { color: #c084fc; }
+
+  /* TABLES */
+  table.matrix {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 0.85rem;
+    background: var(--surface);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  table.matrix th, table.matrix td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    text-align: left;
+  }
+  table.matrix th {
+    background: var(--panel2);
+    color: var(--accent);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+  }
+  table.matrix tr:last-child td { border-bottom: none; }
+
+  /* FLOWCHARTS & DIAGRAMS */
+  .diagram {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin: 24px 0;
+  }
+  .flow-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .flow-step .num {
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: bold;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+  .flow-arrow {
+    text-align: center;
+    color: var(--accent);
+    font-size: 1.2rem;
+    margin: -4px 0 4px;
+  }
+
+  /* FAQ ACCORDION STYLE */
+  .faq-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    padding: 16px;
+  }
+  .faq-q { color: var(--accent); font-weight: 600; font-size: 0.98rem; margin-bottom: 8px; }
+  .faq-a { color: var(--muted); font-size: 0.92rem; }
+
+  @media (max-width: 900px) {
+    .layout { flex-direction: column; }
+    nav.sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border); }
+    .main-content { padding: 24px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- SIDEBAR NAVIGATION -->
+  <nav class="sidebar">
+    <h3>Async &amp; Scheduling Guide</h3>
+    <a href="#sec1">1. Introduction</a>
+    <a href="#sec2">2. Synchronous vs Asynchronous</a>
+    <a href="#sec3">3. Spring @Async</a>
+    <a href="#sec4">4. @EnableAsync</a>
+    <a href="#sec5">5. ThreadPoolTaskExecutor</a>
+    <a href="#sec6">6. Executor Framework Hierarchy</a>
+    <a href="#sec7">7. Future &amp; CompletableFuture</a>
+    <a href="#sec8">8. Task Scheduling Overview</a>
+    <a href="#sec9">9. @EnableScheduling</a>
+    <a href="#sec10">10. @Scheduled Modes</a>
+    <a href="#sec11">11. Cron Expressions Guide</a>
+    <a href="#sec12">12. Scheduling Internals</a>
+    <a href="#sec13">13. Async vs Scheduling Comparison</a>
+    <a href="#sec14">14. Real Production Use Cases</a>
+    <a href="#sec15">15. Production Architectures</a>
+    <a href="#sec16">16. Core Internal Classes</a>
+    <a href="#sec17">17. Performance &amp; Tuning</a>
+    <a href="#sec18">18. Common Mistakes</a>
+    <a href="#sec19">19. Best Practices</a>
+    <a href="#sec20">20. 50+ Interview Questions</a>
+    <a href="#sec21">21. Cheatsheet</a>
+    <a href="#sec22">22. Visual Infographic Summary</a>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <div class="eyebrow">Enterprise Java &middot; Concurrency &amp; Automation</div>
+    <h1>Spring Async &amp; Scheduling — <span>Complete Deep Dive</span></h1>
+    <div class="sub">A beginner-friendly, comprehensive guide to background multi-threading with @Async, ThreadPoolTaskExecutor tuning, CompletableFuture composition, Task Scheduling, Cron expressions, and production-grade architectures.</div>
+
+    <!-- SECTION 1 -->
+    <section id="sec1">
+      <h2>1. Introduction</h2>
+      <p>In web applications, responsiveness and automation are paramount. When a user clicks "Place Order," they shouldn't wait 5 seconds for a confirmation email to send before seeing the success page. Similarly, database cleanups or generating daily reports shouldn't require a developer to press a button manually at midnight.</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>Asynchronous Programming</b>
+          <p>Executes long-running, non-critical tasks in a separate background thread without blocking the caller thread. The primary HTTP response is returned immediately to the user while work finishes concurrently.</p>
+        </div>
+        <div class="card">
+          <b>Task Scheduling</b>
+          <p>Automates the repetitive execution of methods at specific intervals (e.g. every 10 seconds) or exact clock times (e.g. 2:00 AM every Sunday) using background timer threads.</p>
+        </div>
+      </div>
+
+      <div class="callout info">
+        <b>Real-World Analogy: Fast Food Counter vs. Table Reservation</b><br>
+        • <b>Synchronous:</b> Standing at a food counter waiting 15 minutes for your burger to cook before the cashier takes the next person's order.<br>
+        • <b>Asynchronous:</b> The cashier gives you a buzzer (Token) and immediately takes the next customer's order while the kitchen cooks your meal in the background.<br>
+        • <b>Scheduling:</b> An automated alarm clock that rings at 6:00 AM every day to start making coffee automatically.
+      </div>
+    </section>
+
+    <!-- SECTION 2 -->
+    <section id="sec2">
+      <h2>2. Synchronous vs Asynchronous</h2>
+      <p>Visualizing execution flow differences between blocking and non-blocking tasks:</p>
+
+      <div class="diagram">
+        <h4>Synchronous Execution (Blocking)</h4>
+        <div class="flow-step"><div class="num">1</div><div><b>HTTP Request Arrives:</b> Tomcat Thread-1 starts processing.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">2</div><div><b>Execute DB Insert:</b> Takes 50ms &rarr; Thread waits.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">3</div><div><b>Send Welcome Email:</b> Connects to SMTP server &rarr; Takes 3000ms &rarr; Thread waits.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">4</div><div><b>HTTP Response Returned:</b> Total user wait time = <b>3050ms</b>.</div></div>
+      </div>
+
+      <div class="diagram">
+        <h4>Asynchronous Execution (Non-Blocking)</h4>
+        <div class="flow-step"><div class="num">1</div><div><b>HTTP Request Arrives:</b> Tomcat Thread-1 starts processing.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">2</div><div><b>Execute DB Insert:</b> Takes 50ms &rarr; Thread saves record.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">3</div><div><b>Offload Email Task:</b> Hands SMTP task to background Async-Thread-1.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">4</div><div><b>HTTP Response Returned Instantly:</b> Total user wait time = <b>50ms</b>! (Email finishes in background).</div></div>
+      </div>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Dimension</th>
+            <th>Synchronous Execution</th>
+            <th>Asynchronous Execution</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Thread Utilization</td>
+            <td>Caller thread blocks and waits until task completes.</td>
+            <td>Caller thread returns immediately; background thread runs task.</td>
+          </tr>
+          <tr>
+            <td>User Latency</td>
+            <td>High (Sum of all sequential tasks).</td>
+            <td>Low (Limited to critical path operations only).</td>
+          </tr>
+          <tr>
+            <td>Complexity</td>
+            <td>Simple, linear debugging and error handling.</td>
+            <td>Requires careful thread pool tuning, context propagation, and async exception handling.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 3 -->
+    <section id="sec3">
+      <h2>3. Spring @Async</h2>
+      <p>Spring's <code>@Async</code> annotation marks a method to be executed asynchronously in a separate background thread pool using Spring AOP proxying.</p>
+
+      <pre><code><span class="anno">@Service</span>
+<span class="kw">public class</span> <span class="type">NotificationService</span> {
+
+    <span class="cmnt">// Fire-and-Forget Async Method (Void Return)</span>
+    <span class="anno">@Async</span>
+    <span class="kw">public void</span> <span class="fn">sendEmailAsync</span>(<span class="type">String</span> recipient, <span class="type">String</span> message) {
+        <span class="cmnt">// Executes in a separate thread pool thread</span>
+        smtpClient.send(recipient, message);
+    }
+
+    <span class="cmnt">// Async Method with Return Value (CompletableFuture)</span>
+    <span class="anno">@Async</span>
+    <span class="kw">public</span> <span class="type">CompletableFuture</span>&lt;<span class="type">Boolean</span>&gt; <span class="fn">verifyUserAsync</span>(<span class="type">String</span> userId) {
+        <span class="kw">boolean</span> isValid = remoteVerificationApi.check(userId);
+        <span class="kw">return</span> <span class="type">CompletableFuture</span>.completedFuture(isValid);
+    }
+}</code></pre>
+
+      <div class="callout warn">
+        <b>Core Limitations of @Async (AOP Proxy Traps):</b><br>
+        1. <b>Self-Invocation Trap:</b> Calling an <code>@Async</code> method from within the <i>same class</i> (e.g. <code>this.sendEmailAsync()</code>) bypasses the Spring Proxy wrapper, causing the method to run synchronously on the calling thread!<br>
+        2. <b>Must Be Public:</b> <code>@Async</code> cannot intercept <code>private</code> or <code>static</code> methods.<br>
+        3. <b>Return Types:</b> Must return <code>void</code> or <code>Future</code>/<code>CompletableFuture&lt;T&gt;</code>. Returning plain objects (e.g. <code>String</code>) results in <code>null</code> because the proxy returns immediately before the background thread completes execution.
+      </div>
+    </section>
+
+    <!-- SECTION 4 -->
+    <section id="sec4">
+      <h2>4. @EnableAsync</h2>
+      <p>By default, asynchronous processing is disabled in Spring. Adding <code>@EnableAsync</code> to a <code>@Configuration</code> class instructs Spring to register the <code>AsyncAnnotationBeanPostProcessor</code>, enabling detection of <code>@Async</code> annotations on managed beans.</p>
+
+      <pre><code><span class="anno">@Configuration</span>
+<span class="anno">@EnableAsync</span> <span class="cmnt">// Activates background proxy interception for @Async</span>
+<span class="kw">public class</span> <span class="type">AsyncConfig</span> {}</code></pre>
+    </section>
+
+    <!-- SECTION 5 -->
+    <section id="sec5">
+      <h2>5. ThreadPoolTaskExecutor</h2>
+      <p>If no custom thread pool is defined, Spring defaults to using <code>SimpleAsyncTaskExecutor</code>, which <b>creates a brand-new OS thread for every single task and destroys it afterward</b>. In high-traffic production environments, this can exhaust server RAM and crash the JVM!</p>
+
+      <p>To avoid this, you should configure a custom <code>ThreadPoolTaskExecutor</code> bean:</p>
+
+      <pre><code><span class="anno">@Configuration</span>
+<span class="anno">@EnableAsync</span>
+<span class="kw">public class</span> <span class="type">CustomAsyncConfig</span> {
+
+    <span class="anno">@Bean</span>(name = <span class="str">"taskExecutor"</span>)
+    <span class="kw">public</span> <span class="type">Executor</span> <span class="fn">taskExecutor</span>() {
+        <span class="type">ThreadPoolTaskExecutor</span> executor = <span class="kw">new</span> <span class="type">ThreadPoolTaskExecutor</span>();
+        executor.setCorePoolSize(<span class="num">10</span>);          <span class="cmnt">// Always active baseline threads</span>
+        executor.setMaxPoolSize(<span class="num">50</span>);           <span class="cmnt">// Peak maximum threads</span>
+        executor.setQueueCapacity(<span class="num">500</span>);        <span class="cmnt">// Backlog queue before creating threads &gt; corePoolSize</span>
+        executor.setThreadNamePrefix(<span class="str">"AsyncApp-"</span>);
+        executor.setRejectedExecutionHandler(<span class="kw">new</span> <span class="type">ThreadPoolExecutor</span>.<span class="type">CallerRunsPolicy</span>());
+        executor.initialize();
+        <span class="kw">return</span> executor;
+    }
+}</code></pre>
+
+      <div class="diagram">
+        <h4>ThreadPoolTaskExecutor Task Allocation Logic</h4>
+        <div class="flow-step"><div class="num">1</div><div><b>Task Submitted:</b> Is active threads &lt; <code>corePoolSize</code>? If yes, spawn new thread immediately.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">2</div><div><b>Queue Buffer:</b> If core threads are busy, place task into <code>BlockingQueue</code> up to <code>queueCapacity</code>.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">3</div><div><b>Scale to Max Pool:</b> If queue is 100% full, spawn extra temporary threads up to <code>maxPoolSize</code>.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">4</div><div><b>Rejection Policy:</b> If queue is full AND active threads == <code>maxPoolSize</code>, execute the configured <code>RejectedExecutionHandler</code> (e.g., <code>CallerRunsPolicy</code> runs task on caller thread to prevent data loss).</div></div>
+      </div>
+    </section>
+
+    <!-- SECTION 6 -->
+    <section id="sec6">
+      <h2>6. Executor Framework Hierarchy</h2>
+      <p>How Spring task abstractions map to standard Java concurrency structures:</p>
+
+      <div class="diagram">
+        <h4>Java &amp; Spring Task Executor Hierarchy</h4>
+        <p><code>java.util.concurrent.Executor</code> (Root Interface)</p>
+        <div class="flow-arrow">&darr;</div>
+        <p><code>java.util.concurrent.ExecutorService</code> (Adds lifecycle management &amp; Futures)</p>
+        <div class="flow-arrow">&darr;</div>
+        <p><code>org.springframework.core.task.TaskExecutor</code> (Spring Abstract Extension)</p>
+        <div class="flow-arrow">&darr;</div>
+        <p><code>org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor</code> (Primary Spring Wrapper around <code>ThreadPoolExecutor</code>)</p>
+      </div>
+    </section>
+
+    <!-- SECTION 7 -->
+    <section id="sec7">
+      <h2>7. Future &amp; CompletableFuture</h2>
+      <p>When an asynchronous method needs to return a result to the caller, Java provides two options:</p>
+
+      <div class="grid">
+        <div class="card">
+          <b>Java 5 Future&lt;T&gt; (Legacy Blocking)</b>
+          <p>Represents a pending result. Calling <code>future.get()</code> blocks the caller thread completely until the task finishes, defeating the purpose of asynchronous non-blocking execution!</p>
+        </div>
+        <div class="card">
+          <b>Java 8 CompletableFuture&lt;T&gt; (Modern Reactive)</b>
+          <p>Allows chaining asynchronous stages non-blockingly using functional pipelines (e.g. <code>thenApply</code>, <code>thenCombine</code>, <code>exceptionally</code>).</p>
+        </div>
+      </div>
+
+      <pre><code><span class="cmnt">// Modern Non-Blocking Composition with CompletableFuture</span>
+<span class="type">CompletableFuture</span>.supplyAsync(() -&gt; userService.fetchProfile(userId), taskExecutor)
+    .thenApply(profile -&gt; orderPlacementService.enrichOrder(profile))
+    .thenAccept(enrichedOrder -&gt; notificationService.sendReceipt(enrichedOrder))
+    .exceptionally(ex -&gt; {
+        logger.error(<span class="str">"Pipeline error occurred"</span>, ex);
+        <span class="kw">return null</span>;
+    });</code></pre>
+    </section>
+
+    <!-- SECTION 8 -->
+    <section id="sec8">
+      <h2>8. Task Scheduling Overview</h2>
+      <p>Task Scheduling allows executing tasks automatically based on fixed delays, fixed rates, or custom Cron schedules without requiring user triggers or HTTP requests.</p>
+    </section>
+
+    <!-- SECTION 9 -->
+    <section id="sec9">
+      <h2>9. @EnableScheduling</h2>
+      <p>Annotating a configuration class with <code>@EnableScheduling</code> imports <code>SchedulingConfiguration</code>, registering a <code>ScheduledAnnotationBeanPostProcessor</code> that scans managed beans for methods decorated with <code>@Scheduled</code>.</p>
+
+      <pre><code><span class="anno">@Configuration</span>
+<span class="anno">@EnableScheduling</span> <span class="cmnt">// Enables background task scheduling engine</span>
+<span class="kw">public class</span> <span class="type">SchedulingConfig</span> {}</code></pre>
+    </section>
+
+    <!-- SECTION 10 -->
+    <section id="sec10">
+      <h2>10. @Scheduled Modes</h2>
+      <p>Spring supports three core scheduling execution modes:</p>
+
+      <h3>1. fixedRate</h3>
+      <p>Invokes the method at a fixed interval measured from the **start time** of the previous execution. If task execution takes longer than the fixed rate, subsequent executions queue up.</p>
+      <pre><code><span class="anno">@Scheduled</span>(fixedRate = <span class="num">5000</span>) <span class="cmnt">// Runs every 5000ms (5s) from previous START</span>
+<span class="kw">public void</span> <span class="fn">pollSystemMetrics</span>() { ... }</code></pre>
+
+      <h3>2. fixedDelay</h3>
+      <p>Invokes the method at a fixed interval measured from the **completion time (end time)** of the previous execution. Guarantees that only one instance of the task runs at any given time.</p>
+      <pre><code><span class="anno">@Scheduled</span>(fixedDelay = <span class="num">5000</span>, initialDelay = <span class="num">10000</span>) <span class="cmnt">// Waits 10s on boot, then 5s after previous END</span>
+<span class="kw">public void</span> <span class="fn">cleanupExpiredTokens</span>() { ... }</code></pre>
+
+      <h3>3. cron</h3>
+      <p>Executes tasks based on precise Unix-style calendar Cron expressions.</p>
+      <pre><code><span class="anno">@Scheduled</span>(cron = <span class="str">"0 0 2 * * ?"</span>) <span class="cmnt">// Runs every night at 2:00 AM</span>
+<span class="kw">public void</span> <span class="fn">generateDailyReport</span>() { ... }</code></pre>
+    </section>
+
+    <!-- SECTION 11 -->
+    <section id="sec11">
+      <h2>11. Cron Expressions Guide</h2>
+      <p>Spring Cron expressions consist of <b>6 mandatory fields</b> separated by spaces:</p>
+
+      <pre><code>┌───────────── second (0 - 59)
+│ ┌───────────── minute (0 - 59)
+│ │ ┌───────────── hour (0 - 23)
+│ │ │ ┌───────────── day of month (1 - 31)
+│ │ │ │ ┌───────────── month (1 - 12 or JAN-DEC)
+│ │ │ │ │ ┌───────────── day of week (0 - 6 or SUN-SAT)
+│ │ │ │ │ │
+* * * * * *</code></pre>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Special Character</th>
+            <th>Meaning</th>
+            <th>Example Syntax</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>*</code> (Asterisk)</td>
+            <td>Matches any / every value in field.</td>
+            <td><code>0 * * * * *</code> (Every minute)</td>
+          </tr>
+          <tr>
+            <td><code>?</code> (Question Mark)</td>
+            <td>No specific value (used in Day-of-Month or Day-of-Week to avoid conflicts).</td>
+            <td><code>0 0 12 ? * MON</code> (At 12:00 PM every Monday)</td>
+          </tr>
+          <tr>
+            <td><code>/</code> (Slash)</td>
+            <td>Specifies increments.</td>
+            <td><code>0 */15 * * * *</code> (Every 15 minutes)</td>
+          </tr>
+          <tr>
+            <td><code>-</code> (Hyphen)</td>
+            <td>Specifies range of values.</td>
+            <td><code>0 0 9-17 * * *</code> (Hourly between 9 AM and 5 PM)</td>
+          </tr>
+          <tr>
+            <td><code>,</code> (Comma)</td>
+            <td>Specifies list of discrete values.</td>
+            <td><code>0 0 8,12,18 * * *</code> (At 8 AM, 12 PM, and 6 PM)</td>
+          </tr>
+          <tr>
+            <td><code>L</code></td>
+            <td>Last day of month or week.</td>
+            <td><code>0 0 23 L * ?</code> (11 PM on last day of month)</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 12 -->
+    <section id="sec12">
+      <h2>12. Scheduling Internals</h2>
+      <p>How Spring executes scheduled tasks under the hood:</p>
+
+      <div class="diagram">
+        <h4>Scheduling Initialization Workflow</h4>
+        <div class="flow-step"><div class="num">1</div><div><b>Boot Application:</b> <code>@EnableScheduling</code> initializes <code>ScheduledAnnotationBeanPostProcessor</code>.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">2</div><div><b>Scan Beans:</b> Scans methods for <code>@Scheduled</code> annotations.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">3</div><div><b>Register Tasks:</b> Wraps scheduled methods into <code>CronTask</code>, <code>FixedRateTask</code>, or <code>FixedDelayTask</code> objects.</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">4</div><div><b>Scheduler Assignment:</b> Registers tasks with a <code>TaskScheduler</code> (defaults to 1-thread pool).</div></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><div class="num">5</div><div><b>Execution Loop:</b> Scheduler thread wakes up at calculated triggers and executes methods.</div></div>
+      </div>
+    </section>
+
+    <!-- SECTION 13 -->
+    <section id="sec13">
+      <h2>13. Async vs Scheduling Comparison</h2>
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Dimension</th>
+            <th>Spring Async (@Async)</th>
+            <th>Spring Scheduling (@Scheduled)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Trigger Source</td>
+            <td>User/Application driven (Method called explicitly in code).</td>
+            <td>Time/Clock driven (Triggered automatically by background timer).</td>
+          </tr>
+          <tr>
+            <td>Method Arguments</td>
+            <td>Can accept dynamic parameters passed by caller.</td>
+            <td><b>Must take ZERO arguments!</b></td>
+          </tr>
+          <tr>
+            <td>Return Types</td>
+            <td>Can return <code>void</code>, <code>Future</code>, or <code>CompletableFuture</code>.</td>
+            <td><b>Must return void!</b> (Return values are discarded).</td>
+          </tr>
+          <tr>
+            <td>Primary Target</td>
+            <td>Offloading long-running request pipeline work (e.g. emails).</td>
+            <td>Automated background jobs (e.g., nightly report, cleanup).</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 14 -->
+    <section id="sec14">
+      <h2>14. Real Production Use Cases</h2>
+      <div class="grid">
+        <div class="card"><b>1. Async Email/SMS Notifications</b><p>Send transaction confirmation messages without holding up the REST API response time.</p></div>
+        <div class="card"><b>2. Nightly Database Cleanup</b><p>Scheduled job executing <code>DELETE FROM tokens WHERE expiry &lt; NOW()</code> every night at 3 AM.</p></div>
+        <div class="card"><b>3. Async Invoice PDF Generation</b><p>Generate heavy PDF invoices in background threads and notify user via WebSocket when ready.</p></div>
+        <div class="card"><b>4. Cache Pre-warming</b><p>Scheduled job refreshing Redis caches with trending product data every 15 minutes.</p></div>
+      </div>
+    </section>
+
+    <!-- SECTION 15 -->
+    <section id="sec15">
+      <h2>15. Production Architectures</h2>
+      <div class="diagram">
+        <h4>High-Throughput Asynchronous REST API Architecture</h4>
+        <p>Client HTTP POST &rarr; OrderController &rarr; OrderService &rarr; Saves DB Record &rarr; Offloads to ThreadPoolTaskExecutor (@Async) &rarr; Async Email Service &amp; Async Analytics Worker &rarr; Returns 201 Created to Client in 30ms!</p>
+      </div>
+    </section>
+
+    <!-- SECTION 16 -->
+    <section id="sec16">
+      <h2>16. Core Internal Classes</h2>
+      <ul>
+        <li><code>ThreadPoolTaskExecutor</code>: Spring's primary wrapper for multi-threaded async execution.</li>
+        <li><code>ThreadPoolTaskScheduler</code>: Spring's thread pool executor for scheduled task management.</li>
+        <li><code>AsyncAnnotationBeanPostProcessor</code>: Post-processor that creates proxy wrappers for <code>@Async</code> beans.</li>
+        <li><code>ScheduledAnnotationBeanPostProcessor</code>: Post-processor that registers <code>@Scheduled</code> tasks.</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 17 -->
+    <section id="sec17">
+      <h2>17. Performance &amp; Tuning</h2>
+      <div class="callout info">
+        <b>Sizing Thread Pools Appropriately:</b><br>
+        • <b>CPU-Bound Tasks (e.g. Encryption, Math):</b> <code>Core Pool Size = CPU Cores + 1</code><br>
+        • <b>I/O-Bound Tasks (e.g. REST APIs, DB, Email):</b> <code>Core Pool Size = CPU Cores * (1 + Wait Time / Service Time)</code>
+      </div>
+    </section>
+
+    <!-- SECTION 18 -->
+    <section id="sec18">
+      <h2>18. Common Mistakes</h2>
+      <div class="callout warn">
+        <b>1. Self-Invocation Trap:</b> Calling <code>@Async</code> or <code>@Scheduled</code> methods from within the same class bypasses Spring's AOP proxy.<br><br>
+        <b>2. Default Single-Threaded Scheduler Bottleneck:</b> Spring's default task scheduler uses a <b>1-thread pool</b>! If one <code>@Scheduled</code> task blocks or takes 10 minutes, all other scheduled tasks across your entire app are blocked from running!<br><br>
+        <b>3. Passing Parameters to @Scheduled Methods:</b> Scheduled methods must take zero parameters.
+      </div>
+    </section>
+
+    <!-- SECTION 19 -->
+    <section id="sec19">
+      <h2>19. Best Practices</h2>
+      <ul>
+        <li>Always configure explicit <code>ThreadPoolTaskExecutor</code> and <code>ThreadPoolTaskScheduler</code> beans in production.</li>
+        <li>Set explicit thread name prefixes (e.g., <code>AsyncPool-</code>, <code>SchedulerPool-</code>) for easy debugging in thread dumps and APM tools.</li>
+        <li>Configure a custom <code>AsyncUncaughtExceptionHandler</code> to catch and log unhandled exceptions thrown by void <code>@Async</code> methods.</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 20 -->
+    <section id="sec20">
+      <h2>20. 50+ Interview Questions</h2>
+
+      <div class="faq-item">
+        <div class="faq-q">Q1: How does @Async work internally?</div>
+        <div class="faq-a">Spring uses AOP proxies. When an @Async method is invoked from outside the bean, the proxy intercepts the call and submits a Runnable task wrapping the method execution to a ThreadPoolTaskExecutor.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q2: Why does @Async fail on self-invocation?</div>
+        <div class="faq-a">Internal method calls ('this.method()') stay inside the target class instance and do not pass through the Spring AOP proxy wrapper, bypassing thread offloading.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q3: Difference between fixedRate and fixedDelay in @Scheduled?</div>
+        <div class="faq-a">fixedRate measures intervals from method START time. fixedDelay measures intervals from method END time (completion).</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q4: What is the default thread pool size for Spring @Scheduled tasks?</div>
+        <div class="faq-a">A single thread (pool size = 1). You should configure a ThreadPoolTaskScheduler bean with a larger pool size in production.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Q5: What happens if a void @Async method throws an exception?</div>
+        <div class="faq-a">The exception cannot bubble up to the caller thread. It is handled by Spring's AsyncUncaughtExceptionHandler (which logs it by default).</div>
+      </div>
+
+      <div class="faq-item"><div class="faq-q">Q6: What return types are allowed on @Async methods?</div><div class="faq-a">void, Future&lt;T&gt;, or CompletableFuture&lt;T&gt;.</div></div>
+      <div class="faq-item"><div class="faq-q">Q7: Can @Scheduled methods accept parameters?</div><div class="faq-a">No. Scheduled methods must take zero parameters.</div></div>
+      <div class="faq-item"><div class="faq-q">Q8: Can @Scheduled methods return values?</div><div class="faq-a">They can declare return types, but Spring ignores and discards return values completely.</div></div>
+      <div class="faq-item"><div class="faq-q">Q9: What is the purpose of initialDelay in @Scheduled?</div><div class="faq-a">Delays the initial execution of a scheduled task by specified milliseconds after application startup.</div></div>
+      <div class="faq-item"><div class="faq-q">Q10: What is a Cron expression?</div><div class="faq-a">A string containing 6 fields (Second, Minute, Hour, Day of Month, Month, Day of Week) defining precise clock schedules.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q11: How to enable async support in Spring Boot?</div><div class="faq-a">Add @EnableAsync to a @Configuration class.</div></div>
+      <div class="faq-item"><div class="faq-q">Q12: How to enable scheduling support in Spring Boot?</div><div class="faq-a">Add @EnableScheduling to a @Configuration class.</div></div>
+      <div class="faq-item"><div class="faq-q">Q13: What happens when ThreadPoolTaskExecutor queue capacity is full?</div><div class="faq-a">Spawns temporary threads up to maxPoolSize. If maxPoolSize is reached, executes the RejectedExecutionHandler policy.</div></div>
+      <div class="faq-item"><div class="faq-q">Q14: What is CallerRunsPolicy in ThreadPoolExecutor?</div><div class="faq-a">A rejection policy where the thread submitting the task executes the task itself when the thread pool and queue are full.</div></div>
+      <div class="faq-item"><div class="faq-q">Q15: Difference between CorePoolSize and MaxPoolSize?</div><div class="faq-a">CorePoolSize is the minimum active baseline thread count. MaxPoolSize is the upper boundary thread limit during load bursts.</div></div>
+      <div class="faq-item"><div class="faq-q">Q16: How to handle exceptions in CompletableFuture?</div><div class="faq-a">Using exceptionally(), handle(), or instance-level try-catch on get()/join().</div></div>
+      <div class="faq-item"><div class="faq-q">Q17: Difference between Future.get() and CompletableFuture.join()?</div><div class="faq-a">Future.get() throws checked InterruptedException/ExecutionException. CompletableFuture.join() throws unchecked CompletionException.</div></div>
+      <div class="faq-item"><div class="faq-q">Q18: How do you specify a custom thread pool for a specific @Async method?</div><div class="faq-a">By specifying the bean name in the annotation: @Async("customExecutorBeanName").</div></div>
+      <div class="faq-item"><div class="faq-q">Q19: Can @Async and @Scheduled be used on the same method?</div><div class="faq-a">Yes. It causes the scheduled trigger to offload execution immediately to an async thread pool.</div></div>
+      <div class="faq-item"><div class="faq-q">Q20: What is SimpleAsyncTaskExecutor?</div><div class="faq-a">Spring's default non-pooling executor that spawns a new thread per task; not recommended for production.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q21: How to make @Scheduled tasks run concurrently in a multi-node cluster?</div><div class="faq-a">Use distributed scheduler locks like ShedLock or Quartz database job store.</div></div>
+      <div class="faq-item"><div class="faq-q">Q22: What does cron expression "0 0/15 * * * ?" mean?</div><div class="faq-a">Runs every 15 minutes past the hour, every hour, every day.</div></div>
+      <div class="faq-item"><div class="faq-q">Q23: What does cron expression "0 0 12 * * ?" mean?</div><div class="faq-a">Runs at 12:00 PM (noon) every day.</div></div>
+      <div class="faq-item"><div class="faq-q">Q24: What is the purpose of TaskScheduler interface?</div><div class="faq-a">Spring interface providing methods to schedule Runnables at fixed times or intervals.</div></div>
+      <div class="faq-item"><div class="faq-q">Q25: What is ScheduledAnnotationBeanPostProcessor?</div><div class="faq-a">Internal Spring BPP that scans beans for @Scheduled annotations and registers tasks with TaskScheduler.</div></div>
+      <div class="faq-item"><div class="faq-q">Q26: How to propagate SecurityContext across @Async threads?</div><div class="faq-a">Set SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL) or use DelegatingSecurityContextExecutor.</div></div>
+      <div class="faq-item"><div class="faq-q">Q27: Difference between thenApply and thenCompose in CompletableFuture?</div><div class="faq-a">thenApply maps a value to a new value (1-to-1). thenCompose flattens nested CompletableFutures (like flatMap).</div></div>
+      <div class="faq-item"><div class="faq-q">Q28: How to combine results of two independent CompletableFutures?</div><div class="faq-a">Using thenCombine().</div></div>
+      <div class="faq-item"><div class="faq-q">Q29: What is CompletableFuture.allOf()?</div><div class="faq-a">Returns a future that completes when all passed input futures finish execution.</div></div>
+      <div class="faq-item"><div class="faq-q">Q30: What is ThreadPoolTaskScheduler?</div><div class="faq-a">Spring's thread pool executor wrapper designed specifically for scheduled task execution.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q31: Why shouldn't you run blocking I/O tasks on common ForkJoinPool?</div><div class="faq-a">Because common ForkJoinPool threads are limited; blocking them starves parallel streams across the entire JVM.</div></div>
+      <div class="faq-item"><div class="faq-q">Q32: How to gracefully shut down ThreadPoolTaskExecutor?</div><div class="faq-a">Set setWaitForTasksToCompleteOnShutdown(true) and setAwaitTerminationSeconds(60).</div></div>
+      <div class="faq-item"><div class="faq-q">Q33: What is the purpose of AsyncConfigurer interface?</div><div class="faq-a">Allows customizing default Executor and AsyncUncaughtExceptionHandler globally in Spring.</div></div>
+      <div class="faq-item"><div class="faq-q">Q34: What is the purpose of SchedulingConfigurer interface?</div><div class="faq-a">Allows customizing the TaskScheduler thread pool or configuring dynamic tasks programmatically.</div></div>
+      <div class="faq-item"><div class="faq-q">Q35: What is the question mark (?) in Cron syntax?</div><div class="faq-a">Means 'no specific value'; used in Day-of-Month or Day-of-Week to avoid conflicting conditions.</div></div>
+      <div class="faq-item"><div class="faq-q">Q36: What is the L character in Cron syntax?</div><div class="faq-a">Stands for 'Last' (e.g. L in day-of-month means last day of month).</div></div>
+      <div class="faq-item"><div class="faq-q">Q37: What is the W character in Cron syntax?</div><div class="faq-a">Stands for 'Weekday' (nearest Monday through Friday to given date).</div></div>
+      <div class="faq-item"><div class="faq-q">Q38: What happens if a @Scheduled task throws an exception?</div><div class="faq-a">The error is logged, task instance terminates, but subsequent scheduled executions continue.</div></div>
+      <div class="faq-item"><div class="faq-q">Q39: How to run @Async methods on Virtual Threads (Java 21)?</div><div class="faq-a">Configure ThreadPoolTaskExecutor to use Executors.newVirtualThreadPerTaskExecutor() or set spring.threads.virtual.enabled=true.</div></div>
+      <div class="faq-item"><div class="faq-q">Q40: What is AbortPolicy in ThreadPoolExecutor?</div><div class="faq-a">Default rejection policy that throws RejectedExecutionException when queue is full.</div></div>
+
+      <div class="faq-item"><div class="faq-q">Q41: What is DiscardPolicy in ThreadPoolExecutor?</div><div class="faq-a">Rejection policy that silently drops rejected tasks without throwing exceptions.</div></div>
+      <div class="faq-item"><div class="faq-q">Q42: What is DiscardOldestPolicy in ThreadPoolExecutor?</div><div class="faq-a">Rejection policy that drops the unhandled oldest task in queue and tries re-submitting new task.</div></div>
+      <div class="faq-item"><div class="faq-q">Q43: What is the difference between TaskExecutor and ExecutorService?</div><div class="faq-a">TaskExecutor is Spring's abstraction interface; ExecutorService is Java's native concurrency interface.</div></div>
+      <div class="faq-item"><div class="faq-q">Q44: Can @Async methods be private?</div><div class="faq-a">No, Spring AOP proxies cannot override or intercept private methods.</div></div>
+      <div class="faq-item"><div class="faq-q">Q45: Can @Async methods be static?</div><div class="faq-a">No, static methods belong to class loading level and cannot be proxied.</div></div>
+      <div class="faq-item"><div class="faq-q">Q46: How does Spring resolve @Async bean proxies?</div><div class="faq-a">AsyncAnnotationBeanPostProcessor wraps target beans in JDK/CGLIB proxies during container initialization.</div></div>
+      <div class="faq-item"><div class="faq-q">Q47: What is the purpose of ThreadNamePrefix in ThreadPoolTaskExecutor?</div><div class="faq-a">Attaches custom prefix strings to thread names for easy identification in thread dumps and logs.</div></div>
+      <div class="faq-item"><div class="faq-q">Q48: How to delay execution of @Async task?</div><div class="faq-a">Combine with CompletableFuture.delayedExecutor() or use TaskScheduler.schedule().</div></div>
+      <div class="faq-item"><div class="faq-q">Q49: What is the main architectural benefit of @Async?</div><div class="faq-a">Offloads non-blocking background tasks, lowering API response latency and improving system throughput.</div></div>
+      <div class="faq-item"><div class="faq-q">Q50: What is the main architectural benefit of @Scheduled?</div><div class="faq-a">Automates recurring background maintenance jobs natively within the application.</div></div>
+    </section>
+
+    <!-- SECTION 21 -->
+    <section id="sec21">
+      <h2>21. Cheatsheet</h2>
+      <div class="card">
+        <p><b>@Async:</b> Offloads method to background thread pool. Requires <code>@EnableAsync</code>. Cannot use self-invocation!</p>
+        <p><b>ThreadPoolTaskExecutor:</b> Core Pool (Baseline) &rarr; Queue Capacity (Buffer) &rarr; Max Pool (Peak) &rarr; Rejection Policy.</p>
+        <p><b>fixedRate:</b> Interval from method START time.</p>
+        <p><b>fixedDelay:</b> Interval from method END time (completion).</p>
+        <p><b>Cron:</b> <code>Seconds Minutes Hours Day-of-Month Month Day-of-Week</code>.</p>
+        <p><b>@Scheduled Rules:</b> Must take 0 parameters &amp; return <code>void</code>!</p>
+      </div>
+    </section>
+
+    <!-- SECTION 22 -->
+    <section id="sec22">
+      <h2>22. Visual Infographic Summary</h2>
+      <div class="diagram">
+        <h4>Spring Async &amp; Scheduling Ecosystem Map</h4>
+        <div class="grid">
+          <div class="card" style="border-color: var(--teal);">
+            <b style="color: var(--teal);">1. Async Execution (@Async)</b>
+            <p>@EnableAsync &middot; ThreadPoolTaskExecutor &middot; CompletableFuture &middot; Non-Blocking HTTP</p>
+          </div>
+          <div class="card" style="border-color: var(--amber);">
+            <b style="color: var(--amber);">2. Task Scheduling (@Scheduled)</b>
+            <p>@EnableScheduling &middot; fixedRate &middot; fixedDelay &middot; Cron Expressions &middot; ThreadPoolTaskScheduler</p>
+          </div>
+          <div class="card" style="border-color: var(--purple);">
+            <b style="color: var(--purple);">3. Production Architecture</b>
+            <p>CallerRunsPolicy &middot; AsyncUncaughtExceptionHandler &middot; Microservice Automation &middot; Distributed Locks</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+</body>
+</html>
