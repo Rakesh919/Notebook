@@ -146,7 +146,7 @@
           "difficulty": "Beginner",
           "lastUpdated": "2026-07-18"
         },
-                {
+        {
           "id": "aop-interceptor-filterchain",
           "title": "AOP, Interceptors, and Filter Chains",
           "file": "notes/spring-boot/aop-interceptor-filterchain.html",
@@ -254,6 +254,25 @@
           "tags": [
             "system-design",
             "ecommerce"
+          ],
+          "difficulty": "Beginner",
+          "lastUpdated": "2026-07-10"
+        }
+      ]
+    },
+    {
+      "id": "interview-preparation",
+      "name": "Interview Preparation",
+      "icon": "🌐",
+      "description": "In-memory data structure store, used as a database, cache, and message broker.",
+      "notes": [
+        {
+          "id": "preparation-plan",
+          "title": "Preparation Plan",
+          "file": "notes/interview-preparation/interview-preparation.html",
+          "tags": [
+            "preparation",
+            "interview"
           ],
           "difficulty": "Beginner",
           "lastUpdated": "2026-07-10"

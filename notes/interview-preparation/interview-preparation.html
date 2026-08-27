@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Infosys Java Developer Interview — 12-Hour Master Prep</title>
+<style>
+:root {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-card: #1e293b;
+  --bg-accent: #334155;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent-blue: #38bdf8;
+  --accent-green: #4ade80;
+  --accent-yellow: #facc15;
+  --accent-red: #f87171;
+  --accent-purple: #c084fc;
+  --border: #334155;
+  --code-bg: #090d16;
+}
+.light-theme {
+  --bg-primary: #f1f5f9;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --bg-accent: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --accent-blue: #0284c7;
+  --accent-green: #16a34a;
+  --accent-yellow: #ca8a04;
+  --accent-red: #dc2626;
+  --accent-purple: #9333ea;
+  --border: #cbd5e1;
+  --code-bg: #1e293b;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; scroll-behavior: smooth; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; }
+body { background: var(--bg-primary); color: var(--text-primary); display: flex; min-height: 100vh; line-height: 1.6; }
+/* Sidebar */
+aside { width: 290px; background: var(--bg-secondary); border-right: 1px solid var(--border); position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 1.25rem 0.75rem; flex-shrink: 0; }
+aside h2 { font-size: 1.1rem; color: var(--accent-blue); padding: 0 0.5rem 0.75rem; border-bottom: 1px solid var(--border); margin-bottom: 0.75rem; }
+aside nav a { display: block; color: var(--text-secondary); text-decoration: none; padding: 0.45rem 0.6rem; border-radius: 6px; font-size: 0.86rem; margin-bottom: 2px; transition: all 0.2s; }
+aside nav a:hover, aside nav a.active { background: var(--bg-accent); color: var(--text-primary); }
+/* Main Layout */
+main { flex: 1; padding: 2rem; max-width: 1200px; overflow-x: hidden; }
+header { margin-bottom: 2rem; border-bottom: 2px solid var(--border); padding-bottom: 1.5rem; }
+.banner { background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%); border: 1px solid var(--accent-blue); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; }
+.banner-badge { display: inline-block; background: var(--accent-blue); color: #000; font-weight: 700; font-size: 0.75rem; padding: 0.25rem 0.6rem; border-radius: 4px; text-transform: uppercase; margin-bottom: 0.5rem; }
+.banner h1 { font-size: 1.75rem; margin-bottom: 0.5rem; }
+.warning-box { background: rgba(248, 113, 113, 0.15); border-left: 4px solid var(--accent-red); padding: 0.85rem 1.2rem; border-radius: 4px; margin: 1rem 0; font-weight: 600; color: var(--accent-red); }
+.success-box { background: rgba(74, 222, 128, 0.15); border-left: 4px solid var(--accent-green); padding: 0.85rem 1.2rem; border-radius: 4px; margin: 1rem 0; color: var(--accent-green); }
+.info-box { background: rgba(56, 189, 248, 0.1); border-left: 4px solid var(--accent-blue); padding: 0.85rem 1.2rem; border-radius: 4px; margin: 1rem 0; }
+/* Controls Bar */
+.controls-bar { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; background: var(--bg-secondary); padding: 1rem; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 2rem; position: sticky; top: 1rem; z-index: 100; }
+.search-input { background: var(--bg-primary); border: 1px solid var(--border); padding: 0.5rem 1rem; color: var(--text-primary); border-radius: 6px; width: 280px; font-size: 0.9rem; }
+.btn { background: var(--bg-accent); border: 1px solid var(--border); color: var(--text-primary); padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: 0.2s; }
+.btn:hover { filter: brightness(1.2); }
+.btn-primary { background: var(--accent-blue); color: #000; border: none; }
+.progress-container { width: 180px; background: var(--bg-primary); border-radius: 10px; height: 10px; overflow: hidden; border: 1px solid var(--border); }
+.progress-bar { height: 100%; width: 0%; background: var(--accent-green); transition: width 0.3s; }
+/* Section Styling */
+section { margin-bottom: 3.5rem; scroll-margin-top: 5rem; }
+h2.section-title { font-size: 1.5rem; color: var(--accent-blue); margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+h3.topic-title { font-size: 1.15rem; color: var(--accent-purple); margin: 1.5rem 0 0.75rem; }
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin-bottom: 1.25rem; }
+.card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; }
+.badge { font-size: 0.7rem; font-weight: bold; padding: 0.2rem 0.5rem; border-radius: 4px; text-transform: uppercase; }
+.badge-must { background: rgba(248, 113, 113, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red); }
+.badge-high { background: rgba(250, 204, 21, 0.2); color: var(--accent-yellow); border: 1px solid var(--accent-yellow); }
+.badge-priority { background: rgba(56, 189, 248, 0.2); color: var(--accent-blue); border: 1px solid var(--accent-blue); }
+/* Tables */
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.88rem; }
+th, td { border: 1px solid var(--border); padding: 0.65rem 0.8rem; text-align: left; }
+th { background: var(--bg-accent); color: var(--accent-blue); font-weight: 600; }
+tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+/* Code Blocks */
+pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; font-family: "Consolas", "Courier New", monospace; font-size: 0.85rem; color: #e2e8f0; margin: 0.75rem 0; }
+code { font-family: "Consolas", "Courier New", monospace; color: var(--accent-yellow); background: rgba(255,255,255,0.05); padding: 0.1rem 0.3rem; border-radius: 3px; font-size: 0.85rem; }
+pre code { background: transparent; color: inherit; padding: 0; }
+.step-flow { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: 0.75rem 0; font-weight: 600; font-size: 0.85rem; }
+.step { background: var(--bg-accent); padding: 0.3rem 0.7rem; border-radius: 4px; border: 1px solid var(--border); }
+.arrow { color: var(--accent-blue); }
+/* QA Blocks */
+.qa-box { background: var(--bg-primary); border-radius: 6px; padding: 1rem; border-left: 3px solid var(--accent-purple); margin: 0.75rem 0; }
+.qa-q { font-weight: 700; color: var(--text-primary); margin-bottom: 0.35rem; display: flex; gap: 0.5rem; }
+.qa-a { color: var(--text-secondary); font-size: 0.9rem; }
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+.checklist-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.checklist-item input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+.completed-text { text-decoration: line-through; opacity: 0.6; }
+@media (max-width: 900px) { aside { display: none; } main { padding: 1rem; } .search-input { width: 100%; } }
+</style>
+</head>
+<body>
+
+<aside id="sidebar">
+  <h2>Infosys 12h Master Plan</h2>
+  <nav>
+    <a href="#infosys-focus">🎯 What Infosys Focuses On</a>
+    <a href="#study-plan">⏱️ 12-Hour Crash Plan</a>
+    <a href="#core-java">☕ Core Java Deep Dive</a>
+    <a href="#hashmap">🗝️ HashMap Internal Mechanics</a>
+    <a href="#java8">⚡ Java 8 Features & Lambdas</a>
+    <a href="#streams">🌊 Stream API & 20 Coding Qs</a>
+    <a href="#optional">📦 Optional Class Masterclass</a>
+    <a href="#spring-framework">🌱 Spring Framework Core</a>
+    <a href="#spring-annotations">🏷️ Annotation Master Reference</a>
+    <a href="#spring-boot">🚀 Spring Boot Internals</a>
+    <a href="#spring-mvc">🌐 Spring MVC & REST APIs</a>
+    <a href="#exception-handling">🛡️ Global Exception Handling</a>
+    <a href="#jpa-hibernate">💾 JPA & Hibernate (N+1, Cache)</a>
+    <a href="#db-relations">🔗 Entity Relationships</a>
+    <a href="#transactions">🔄 Transaction Management</a>
+    <a href="#sql">📊 SQL for Intermediation/Weakness</a>
+    <a href="#security">🔒 Spring Security Flow</a>
+    <a href="#jwt-oauth">🔑 JWT vs OAuth 2.0</a>
+    <a href="#microservices">🧩 Microservices & Distributed</a>
+    <a href="#kafka">📬 Apache Kafka Interview Essentials</a>
+    <a href="#redis">⚡ Redis Caching & Patterns</a>
+    <a href="#junit-mockito">🧪 JUnit 5 & Mockito Unit Tests</a>
+    <a href="#coding-round">💻 Top 20 Algorithm Programs</a>
+    <a href="#scenarios">🚨 10 Production Scenarios</a>
+    <a href="#project-exp">🗣️ 2-Min Project Pitch & Followups</a>
+    <a href="#limited-exp">🤝 Limited Exp: Honest Strategy</a>
+    <a href="#rapid-fire">🔥 100 Rapid Fire Questions</a>
+    <a href="#top50">🏆 TOP 50 Must-Know Questions</a>
+    <a href="#final30">⚡ Final 30-Minute Cheatsheet</a>
+    <a href="#comm-traps">⚠️ Trap Answers to Avoid</a>
+  </nav>
+</aside>
+
+<main>
+  <header>
+    <div class="banner">
+      <span class="banner-badge">Infosys Java Developer Interview</span>
+      <h1>12-Hour Comprehensive Preparation Guide</h1>
+      <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">
+        <strong>Target Window:</strong> Saturday, August 29, 2026 | 10:30 AM – 11:15 AM (45 Minutes) &bull; <strong>Target Level:</strong> 2+ Years Experience
+      </p>
+      <div class="warning-box">
+        DO NOT TRY TO LEARN EVERYTHING. MASTER THE HIGH-VALUE TOPICS FIRST.
+      </div>
+    </div>
+
+    <div class="controls-bar">
+      <div>
+        <span style="font-size: 0.85rem; color: var(--text-secondary);">Prep Readiness:</span>
+        <span id="progress-text" style="font-weight: bold; color: var(--accent-green); margin-left: 0.25rem;">0%</span>
+        <div class="progress-container" style="margin-top: 4px;">
+          <div class="progress-bar" id="progress-bar"></div>
+        </div>
+      </div>
+      <input type="text" id="searchInput" class="search-input" placeholder="Search keywords (e.g., Stream, N+1, JWT, HashMap)..." onkeyup="filterContent()">
+      <div style="display: flex; gap: 0.5rem;">
+        <button class="btn" onclick="toggleTheme()">🌓 Theme</button>
+        <button class="btn btn-primary" onclick="window.print()">🖨️ Print / Save PDF</button>
+      </div>
+    </div>
+  </header>
+
+  <section id="infosys-focus">
+    <h2 class="section-title">🎯 PART 1 — What Infosys Focuses On (2+ Years Experience)</h2>
+    <div class="card">
+      <p>Based on Infosys technical interview patterns for 2–3 year Java Developers, 45-minute interviews follow a predictable distribution:</p>
+      <table>
+        <tr><th>Focus Area</th><th>Weight</th><th>Recurring Discussion Topics</th></tr>
+        <tr><td><strong>Core Java & Java 8</strong></td><td>35%</td><td>HashMap internals, String pool/immutability, Stream API grouping/partitioning, Lambda/Functional Interfaces.</td></tr>
+        <tr><td><strong>Spring Boot & REST</strong></td><td>25%</td><td><code>@SpringBootApplication</code> mechanics, Bean lifecycle & DI, Exception handling with <code>@RestControllerAdvice</code>, 401 vs 403, PUT vs PATCH.</td></tr>
+        <tr><td><strong>SQL & JPA</strong></td><td>20%</td><td>2nd highest salary, <code>GROUP BY</code> vs <code>HAVING</code>, N+1 problem, <code>@Transactional</code> propagation, Lazy vs Eager.</td></tr>
+        <tr><td><strong>Security, Microservices & Cache</strong></td><td>10%</td><td>JWT authentication lifecycle, Microservice communication/Circuit Breaker, Redis Cache-Aside, Kafka basic components.</td></tr>
+        <tr><td><strong>Live Coding / Problem Solving</strong></td><td>10%</td><td>String manipulation (first non-repeating, reverse, anagram), Character frequency with Streams, Array duplicates.</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section id="study-plan">
+    <h2 class="section-title">⏱️ PART 2 — The 12-Hour Exact Preparation Schedule</h2>
+    <div class="card">
+      <div class="checklist-item"><input type="checkbox" onchange="trackProgress(this)"><label><strong>Hour 1.0 – 2.5 (1.5h): Core Java Essentials</strong> — OOP, Hash collisions, String Immotability, Exception Hierarchy [Priority: High]</label></div>
+      <div class="checklist-item"><input type="checkbox" onchange="trackProgress(this)"><label><strong>Hour 2.5 – 4.0 (1.5h): Java 8 Streams & Functional Interfaces</strong> — Memorize 20 Stream tricks, map vs flatMap [Priority: Critical]</label></div>
+      <div class="checklist-item"><input type="checkbox" onchange="trackProgress(this)"><label><strong>Hour 4.0 – 6.0 (2.0h): Spring & Spring Boot</strong> — Auto-config, IoC, Bean Scopes, REST architecture, Exceptions [Priority: Critical]</label></div>
+      <div class="checklist-item"><input type="checkbox" onchange="trackProgress(this)"><label><strong>Hour 6.0 – 7.5 (1.5h): SQL Mastery (Focus on Weak Area)</strong> — GROUP BY, HAVING, Joins, Aggregation, Subqueries [Priority: High]</label></div>
+      <div class="checklist-item"><input type="checkbox" onchange="trackProgress(this)"><label><strong>Hour 7.5 – 8.5 (1.0h): JPA & Hibernate</strong> — Entity states, Lazy Loading, N+1 problem & fix, Transactions [Priority: High]</label></div>
+      <div class="checklist-item"><input type="checkbox" onchange="trackProgress(this)"><label><strong>Hour 8.5 – 9.5 (1.0h): Spring Security + JWT</strong> — Filter chain, Token lifecycle, 401 vs 403, OAuth2 basics [Priority: Medium]</label></div>
+      <div class="checklist-item"><input type="checkbox" onchange="trackProgress(this)"><label><strong>Hour 9.5 – 10.75 (1.25h): Microservices + Kafka + Redis</strong> — Architecture, Eureka/Gateway, Cache-Aside, Topic/Partition [Priority: Medium]</label></div>
+      <div class="checklist-item"><input type="checkbox" onchange="trackProgress(this)"><label><strong>Hour 10.75 – 11.25 (0.5h): JUnit 5 & Mockito</strong> — Mock vs InjectMocks, when().thenReturn(), verify() [Priority: Medium]</label></div>
+      <div class="checklist-item"><input type="checkbox" onchange="trackProgress(this)"><label><strong>Hour 11.25 – 12.0 (0.75h): Final 30-Min Rapid Polish & Project Pitch</strong> — 2-min project intro & Top 50 revise [Priority: Critical]</label></div>
+    </div>
+  </section>
+
+  <section id="core-java">
+    <h2 class="section-title">☕ PART 3 — Core Java In-Depth</h2>
+    
+    <div class="card">
+      <div class="card-header"><h3 class="topic-title">1. Object-Oriented Programming (OOP) Deep Dive</h3><span class="badge badge-must">Must Know</span></div>
+      <p>Infosys interviewers look for practical intuition rather than dictionary definitions:</p>
+      <ul>
+        <li><strong>Encapsulation:</strong> Wrapping data (fields) and code (methods) together into a single unit and restricting direct access (data hiding) using <code>private</code> access modifiers and getters/setters. <em>Example:</em> BankAccount with private balance accessed through validated deposit() method.</li>
+        <li><strong>Abstraction:</strong> Hiding internal implementation complexity and showing only essential functionality to the user. Achieved via Abstract Classes and Interfaces. <em>Example:</em> JDBC <code>Connection</code> interface; users execute queries without knowing the underlying vendor driver byte-handling.</li>
+        <li><strong>Inheritance:</strong> Mechanism where a child class acquires properties and behaviors of a parent class (<code>extends</code>), promoting code reuse. <em>Example:</em> <code>class SavingsAccount extends Account</code>.</li>
+        <li><strong>Polymorphism:</strong> The ability of an object to take many forms.
+          <ul>
+            <li><em>Compile-time (Static / Method Overloading):</em> Same method name, different parameter signature in the same class.</li>
+            <li><em>Runtime (Dynamic / Method Overriding):</em> Subclass overrides parent method with exact same signature and <code>@Override</code> annotation. Resolved at runtime using dynamic method dispatch.</li>
+          </ul>
+        </li>
+      </ul>
+      <div class="qa-box">
+        <div class="qa-q"><span>Q:</span> Can we override a private or static method in Java?</div>
+        <div class="qa-a"><strong>No.</strong> Private methods are not visible outside the class (no dynamic dispatch). Static methods belong to the class, not instances; declaring the same static method in a subclass is called <strong>Method Hiding</strong>, not method overriding.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3 class="topic-title">2. Interface vs Abstract Class (Java 8+ Perspective)</h3><span class="badge badge-high">High Priority</span></div>
+      <table>
+        <tr><th>Feature</th><th>Abstract Class</th><th>Interface (Java 8/9+)</th></tr>
+        <tr><td>Multiple Inheritance</td><td>No (Single class inheritance via <code>extends</code>)</td><td>Yes (Can implement multiple interfaces)</td></tr>
+        <tr><td>State & Fields</td><td>Can have instance variables, final/non-final fields</td><td>Only <code>public static final</code> constants</td></tr>
+        <tr><td>Constructors</td><td>Yes (Used during subclass instantiation)</td><td>No constructors permitted</td></tr>
+        <tr><td>Method Implementations</td><td>Abstract + Concrete instance methods</td><td><code>default</code> & <code>static</code> methods (Java 8), <code>private</code> methods (Java 9)</td></tr>
+        <tr><td>Primary Use Case</td><td>Shared identity & state across related classes (e.g., <code>BaseEntity</code>)</td><td>Contract/capability across unrelated classes (e.g., <code>Comparable</code>, <code>Serializable</code>)</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3 class="topic-title">3. String Immutability, String Pool & Mutability</h3><span class="badge badge-must">Must Know</span></div>
+      <p>Strings are immutable in Java (once created, their internal <code>char[]</code>/<code>byte[]</code> cannot change). String literals reside in the <strong>String Constant Pool (SCP)</strong> located in the heap.</p>
+      <pre><code>String s1 = "Infosys";               // Allocated in String Constant Pool
+String s2 = "Infosys";               // Reuses instance from SCP -> s1 == s2 (TRUE)
+String s3 = new String("Infosys");   // Forces new object in Heap -> s1 == s3 (FALSE)
+s3 = s3.intern();                   // Returns SCP reference -> s1 == s3 (TRUE)</code></pre>
+      <p><strong>Why String is Immutable:</strong> Security (storing DB credentials/URLs safely), Thread Safety (inherently thread-safe without synchronization), Caching (hashCode can be cached at creation), String Pool efficiency.</p>
+      <table>
+        <tr><th>Feature</th><th>String</th><th>StringBuilder</th><th>StringBuffer</th></tr>
+        <tr><td>Mutability</td><td>Immutable</td><td>Mutable</td><td>Mutable</td></tr>
+        <tr><td>Thread Safety</td><td>Safe (Immutable)</td><td>Not Safe (Fastest)</td><td>Safe (Methods are <code>synchronized</code>)</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3 class="topic-title">4. <code>equals()</code> and <code>hashCode()</code> Contract</h3><span class="badge badge-must">Must Know</span></div>
+      <p>The contract defined in <code>java.lang.Object</code> states:</p>
+      <ol>
+        <li>If <code>o1.equals(o2) == true</code>, then <code>o1.hashCode() == o2.hashCode()</code> MUST be true.</li>
+        <li>If <code>o1.hashCode() == o2.hashCode()</code>, <code>o1.equals(o2)</code> may or may not be true (Hash Collision).</li>
+        <li>If you override <code>equals()</code>, you <strong>MUST</strong> override <code>hashCode()</code>. Failing to do so breaks hash-based collections (<code>HashMap</code>, <code>HashSet</code>).</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3 class="topic-title">5. Java Exception Hierarchy</h3><span class="badge badge-high">High Priority</span></div>
+      <div class="step-flow">
+        <span class="step">Throwable</span><span class="arrow">&rarr;</span>
+        <span class="step">Error (OutOfMemoryError, StackOverflowError - Non-recoverable)</span>
+      </div>
+      <div class="step-flow">
+        <span class="step">Throwable</span><span class="arrow">&rarr;</span>
+        <span class="step">Exception</span><span class="arrow">&rarr;</span>
+        <span class="step">Checked (IOException, SQLException - Verified at compile time)</span>
+      </div>
+      <div class="step-flow">
+        <span class="step">Throwable</span><span class="arrow">&rarr;</span>
+        <span class="step">Exception</span><span class="arrow">&rarr;</span>
+        <span class="step">RuntimeException (Unchecked: NullPointerException, ArithmeticException)</span>
+      </div>
+      <p style="margin-top: 0.5rem;"><strong>final vs finally vs finalize:</strong></p>
+      <ul>
+        <li><code>final</code>: Keyword to make variable constant, method non-overridable, class non-inheritable.</li>
+        <li><code>finally</code>: Block following try-catch executed guaranteed (except system crash/<code>System.exit(0)</code>). Used for resource cleanup (better replaced by try-with-resources).</li>
+        <li><code>finalize()</code>: Deprecated method called by Garbage Collector before reclaiming memory.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="hashmap">
+    <h2 class="section-title">🗝️ PART 4 — HashMap Internal Working (MUST KNOW)</h2>
+    <div class="card">
+      <p style="font-weight: 600; color: var(--accent-yellow); margin-bottom: 0.5rem;">The Exact Put/Get Pipeline:</p>
+      <div class="step-flow">
+        <span class="step">Key Object</span><span class="arrow">&rarr;</span>
+        <span class="step">key.hashCode()</span><span class="arrow">&rarr;</span>
+        <span class="step">hash() spread</span><span class="arrow">&rarr;</span>
+        <span class="step">Index = (n-1) & hash</span><span class="arrow">&rarr;</span>
+        <span class="step">Bucket Array (Node&lt;K,V&gt;[])</span><span class="arrow">&rarr;</span>
+        <span class="step">equals() check</span>
+      </div>
+
+      <div class="qa-box">
+        <div class="qa-q"><span>Q:</span> Walk me through what happens when <code>map.put("key", value)</code> is called.</div>
+        <div class="qa-a">
+          1. HashMap calculates <code>hashCode()</code> of the key and applies bitwise spreading: <code>hash = (h = key.hashCode()) ^ (h >>> 16)</code>.<br>
+          2. Calculates array index: <code>index = (n - 1) & hash</code> (where n is current array capacity, default 16).<br>
+          3. <strong>If bucket is empty:</strong> A new <code>Node&lt;K,V&gt;</code> is stored directly in that bucket.<br>
+          4. <strong>If collision occurs (bucket occupied):</strong> It iterates the linked list or red-black tree in that bucket:<br>
+          &nbsp;&nbsp;&bull; If an existing node has matching hash and <code>(node.key == key || key.equals(node.key))</code>, the existing value is replaced.<br>
+          &nbsp;&nbsp;&bull; If no match is found, the new node is appended to the tail.<br>
+          5. <strong>Java 8 Treeification:</strong> When linked list length in a bucket exceeds <strong>8</strong> AND overall capacity &ge; <strong>64</strong>, the list converts into a <strong>Red-Black Tree</strong> (improves search from O(n) to O(log n)).<br>
+          6. If size exceeds threshold (<code>capacity * loadFactor</code> = <code>16 * 0.75 = 12</code>), the array doubles in capacity (Resizing/Rehashing).
+        </div>
+      </div>
+
+      <table>
+        <tr><th>Aspect</th><th>HashMap</th><th>Hashtable</th><th>ConcurrentHashMap</th></tr>
+        <tr><td>Thread Safety</td><td>No (Fast)</td><td>Yes (Synchronized methods - slow)</td><td>Yes (Segment/Bucket level lock with CAS)</td></tr>
+        <tr><td>Null Keys/Values</td><td>1 null key allowed, multiple null values</td><td>No null keys or values</td><td>No null keys or values</td></tr>
+        <tr><td>Performance</td><td>High (Single thread)</td><td>Poor (Lock bottleneck)</td><td>High (Concurrent reads, partitioned writes)</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section id="java8">
+    <h2 class="section-title">⚡ PART 5 & 6 — Java 8, Functional Interfaces & Stream API</h2>
+    
+    <div class="card">
+      <div class="card-header"><h3 class="topic-title">Core Functional Interfaces (java.util.function)</h3><span class="badge badge-must">Must Know</span></div>
+      <table>
+        <tr><th>Interface</th><th>Method Signature</th><th>Type</th><th>Example Use Case</th></tr>
+        <tr><td><code>Predicate&lt;T&gt;</code></td><td><code>boolean test(T t)</code></td><td>Condition check</td><td><code>p -> p.getSalary() > 50000</code></td></tr>
+        <tr><td><code>Function&lt;T, R&gt;</code></td><td><code>R apply(T t)</code></td><td>Transformation</td><td><code>Employee::getName</code> (maps Emp to String)</td></tr>
+        <tr><td><code>Consumer&lt;T&gt;</code></td><td><code>void accept(T t)</code></td><td>Consume/Side-effect</td><td><code>System.out::println</code></td></tr>
+        <tr><td><code>Supplier&lt;T&gt;</code></td><td><code>T get()</code></td><td>Factory/Produce</td><td><code>() -> new RuntimeException("Not Found")</code></td></tr>
+      </table>
+    </div>
+
+    <div class="card" id="streams">
+      <div class="card-header"><h3 class="topic-title">Intermediate vs Terminal Operations & map vs flatMap</h3><span class="badge badge-high">High Priority</span></div>
+      <p><strong>Intermediate Operations</strong> (e.g., <code>filter()</code>, <code>map()</code>, <code>sorted()</code>) return a new Stream and are <em>lazily evaluated</em> (they do not execute until a terminal operation is called). <strong>Terminal Operations</strong> (e.g., <code>collect()</code>, <code>forEach()</code>, <code>count()</code>, <code>reduce()</code>) initiate stream processing and produce a non-stream result.</p>
+      <p><strong><code>map()</code> vs <code>flatMap()</code>:</strong></p>
+      <ul>
+        <li><code>map()</code>: 1-to-1 transformation. Input <code>Stream&lt;T&gt;</code> &rarr; Output <code>Stream&lt;R&gt;</code>.</li>
+        <li><code>flatMap()</code>: 1-to-Many flattening. Input <code>Stream&lt;List&lt;String&gt;&gt;</code> &rarr; Flattens into <code>Stream&lt;String&gt;</code>.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3 class="topic-title">Top 10 Java 8 Stream Coding Interview Solutions (Ready-to-Use)</h3>
+
+      <div class="qa-box">
+        <div class="qa-q">1. Find 2nd Highest Salary / Number</div>
+        <pre><code>List&lt;Integer&gt; nums = Arrays.asList(10, 45, 90, 90, 72, 85);
+Integer secondHighest = nums.stream()
+    .distinct()
+    .sorted(Comparator.reverseOrder())
+    .skip(1)
+    .findFirst()
+    .orElseThrow(() -> new NoSuchElementException("Array too small"));
+// Output: 85</code></pre>
+      </div>
+
+      <div class="qa-box">
+        <div class="qa-q">2. Character Frequency in a String</div>
+        <pre><code>String str = "infosysinterview";
+Map&lt;Character, Long&gt; freq = str.chars()
+    .mapToObj(c -> (char) c)
+    .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+// Output: {r=2, s=2, e=2, v=1, w=1, f=1, i=3, y=1, n=1, o=1, t=1}</code></pre>
+      </div>
+
+      <div class="qa-box">
+        <div class="qa-q">3. Find First Non-Repeated Character</div>
+        <pre><code>String input = "swiss";
+Character firstNonRepeat = input.chars()
+    .mapToObj(c -> (char) c)
+    .collect(Collectors.groupingBy(Function.identity(), LinkedHashMap::new, Collectors.counting()))
+    .entrySet().stream()
+    .filter(entry -> entry.getValue() == 1L)
+    .map(Map.Entry::getKey)
+    .findFirst()
+    .orElse(null);
+// Output: 'w' (LinkedHashMap preserves insertion order!)</code></pre>
+      </div>
+
+      <div class="qa-box">
+        <div class="qa-q">4. Group Employees by Department and Find Count</div>
+        <pre><code>Map&lt;String, Long&gt; empCountByDept = employees.stream()
+    .collect(Collectors.groupingBy(Employee::getDepartment, Collectors.counting()));</code></pre>
+      </div>
+
+      <div class="qa-box">
+        <div class="qa-q">5. Find Highest Paid Employee in Each Department</div>
+        <pre><code>Map&lt;String, Optional&lt;Employee&gt;&gt; topEmpByDept = employees.stream()
+    .collect(Collectors.groupingBy(
+        Employee::getDepartment,
+        Collectors.maxBy(Comparator.comparingDouble(Employee::getSalary))
+    ));</code></pre>
+      </div>
+
+      <div class="qa-box">
+        <div class="qa-q">6. Partition Employees by Salary Threshold (&gt; 50,000)</div>
+        <pre><code>Map&lt;Boolean, List&lt;Employee&gt;&gt; partitioned = employees.stream()
+    .collect(Collectors.partitioningBy(e -> e.getSalary() > 50000));</code></pre>
+      </div>
+
+      <div class="qa-box">
+        <div class="qa-q">7. Find Duplicate Elements in a List</div>
+        <pre><code>List&lt;Integer&gt; list = Arrays.asList(1, 2, 3, 2, 4, 3, 5);
+Set&lt;Integer&gt; duplicates = list.stream()
+    .filter(n -> Collections.frequency(list, n) > 1)
+    .collect(Collectors.toSet());
+// Output: [2, 3]</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <section id="optional">
+    <h2 class="section-title">📦 PART 7 — Optional Class Interview Concepts</h2>
+    <div class="card">
+      <table>
+        <tr><th>Method</th><th>Behavior</th></tr>
+        <tr><td><code>Optional.of(val)</code></td><td>Throws <code>NullPointerException</code> immediately if val is null. Use ONLY when non-null guaranteed.</td></tr>
+        <tr><td><code>Optional.ofNullable(val)</code></td><td>Returns empty Optional if val is null, otherwise wrapped Optional.</td></tr>
+        <tr><td><code>orElse(defaultVal)</code></td><td>Evaluates <code>defaultVal</code> <strong>always</strong> (eager execution), even if optional has a value.</td></tr>
+        <tr><td><code>orElseGet(() -> supplier)</code></td><td>Evaluates supplier <strong>only if Optional is empty</strong> (lazy evaluation). Recommended for expensive operations.</td></tr>
+        <tr><td><code>orElseThrow(...)</code></td><td>Throws specified exception if optional is empty. Standard pattern in Spring services.</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section id="spring-boot">
+    <h2 class="section-title">🚀 PART 8 - 12 — Spring Framework & Spring Boot Ecosystem</h2>
+
+    <div class="card" id="spring-framework">
+      <div class="card-header"><h3 class="topic-title">IoC, Dependency Injection & Constructor Injection</h3><span class="badge badge-must">Must Know</span></div>
+      <p><strong>Inversion of Control (IoC):</strong> Inverting the control of object creation and lifecycle from the developer to the Spring Container (<code>ApplicationContext</code>).</p>
+      <p><strong>Dependency Injection (DI):</strong> The pattern where the IoC container injects dependent objects into a class.</p>
+      <div class="qa-box">
+        <div class="qa-q"><span>Q:</span> Why is Constructor Injection preferred over Field Injection (<code>@Autowired</code> on field)?</div>
+        <div class="qa-a">
+          1. <strong>Immutability:</strong> Allows declaring dependencies as <code>final</code>.<br>
+          2. <strong>Testability:</strong> Makes Unit Testing trivial (you can instantiate the class and pass mock dependencies with plain Java <code>new</code> without needing Spring test reflection).<br>
+          3. <strong>Avoids NullPointerExceptions:</strong> Ensures the object is never created in an uninitialized, invalid state at runtime.
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="spring-annotations">
+      <div class="card-header"><h3 class="topic-title">Essential Annotations Reference Sheet</h3><span class="badge badge-high">High Priority</span></div>
+      <table>
+        <tr><th>Annotation</th><th>Usage & Purpose</th></tr>
+        <tr><td><code>@SpringBootApplication</code></td><td>Combines <code>@Configuration</code>, <code>@EnableAutoConfiguration</code>, and <code>@ComponentScan</code>.</td></tr>
+        <tr><td><code>@Component</code> vs <code>@Service</code> vs <code>@Repository</code></td><td><code>@Component</code> is generic. <code>@Service</code> marks business layer. <code>@Repository</code> marks DAO/data access and translates vendor SQLExceptions to Spring <code>DataAccessException</code>.</td></tr>
+        <tr><td><code>@Bean</code> vs <code>@Component</code></td><td><code>@Component</code> is class-level auto-detection. <code>@Bean</code> is method-level inside <code>@Configuration</code> classes, used to configure 3rd-party library classes.</td></tr>
+        <tr><td><code>@Primary</code> vs <code>@Qualifier</code></td><td><code>@Primary</code> specifies the default bean when multiple beans match. <code>@Qualifier("beanName")</code> resolves ambiguity by explicitly naming the target bean at injection point.</td></tr>
+        <tr><td><code>@PathVariable</code> vs <code>@RequestParam</code></td><td><code>@PathVariable</code> extracts URI template values (<code>/users/{id}</code> &rarr; <code>/users/10</code>). <code>@RequestParam</code> extracts query parameters (<code>/users?id=10</code>).</td></tr>
+      </table>
+    </div>
+
+    <div class="card" id="spring-mvc">
+      <div class="card-header"><h3 class="topic-title">Spring Boot Startup & REST Request Flow</h3><span class="badge badge-must">Must Know</span></div>
+      <p><strong>Spring Boot Startup Lifecycle:</strong></p>
+      <div class="step-flow">
+        <span class="step">main()</span><span class="arrow">&rarr;</span>
+        <span class="step">SpringApplication.run()</span><span class="arrow">&rarr;</span>
+        <span class="step">Create ApplicationContext</span><span class="arrow">&rarr;</span>
+        <span class="step">Component Scan & Bean Definition</span><span class="arrow">&rarr;</span>
+        <span class="step">Auto-Configuration (via META-INF/spring.factories)</span><span class="arrow">&rarr;</span>
+        <span class="step">Start Embedded Tomcat (Port 8080)</span><span class="arrow">&rarr;</span>
+        <span class="step">App Ready</span>
+      </div>
+      
+      <p style="margin-top: 1rem;"><strong>Complete Request Handling Pipeline:</strong></p>
+      <div class="step-flow">
+        <span class="step">Client HTTP</span><span class="arrow">&rarr;</span>
+        <span class="step">Servlet Filters</span><span class="arrow">&rarr;</span>
+        <span class="step">DispatcherServlet</span><span class="arrow">&rarr;</span>
+        <span class="step">HandlerMapping</span><span class="arrow">&rarr;</span>
+        <span class="step">Controller</span><span class="arrow">&rarr;</span>
+        <span class="step">Service Layer</span><span class="arrow">&rarr;</span>
+        <span class="step">Repository (JPA)</span><span class="arrow">&rarr;</span>
+        <span class="step">Database</span>
+      </div>
+
+      <div class="qa-box" style="margin-top: 1rem;">
+        <div class="qa-q"><span>Q:</span> PUT vs PATCH and 401 vs 403 status codes</div>
+        <div class="qa-a">
+          &bull; <strong>PUT:</strong> Idempotent full replacement of the entire resource.<br>
+          &bull; <strong>PATCH:</strong> Partial update (modifies only specific fields).<br>
+          &bull; <strong>401 Unauthorized:</strong> User is <em>unauthenticated</em> (Missing or invalid token/credentials).<br>
+          &bull; <strong>403 Forbidden:</strong> User is authenticated, but lacks sufficient permissions/roles to access the resource.
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="exception-handling">
+      <div class="card-header"><h3 class="topic-title">Global Exception Handling Pattern</h3><span class="badge badge-must">Must Know</span></div>
+      <pre><code>@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity&lt;ErrorResponse&gt; handleNotFound(ResourceNotFoundException ex) {
+        ErrorResponse err = new ErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage(), System.currentTimeMillis());
+        return new ResponseEntity&lt;&gt;(err, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleValidationErrors(MethodArgumentNotValidException ex) {
+        Map&lt;String, String&gt; errors = new HashMap&lt;&gt;();
+        ex.getBindingResult().getFieldErrors().forEach(error -> 
+            errors.put(error.getField(), error.getDefaultMessage()));
+        return new ResponseEntity&lt;&gt;(errors, HttpStatus.BAD_REQUEST);
+    }
+}</code></pre>
+    </div>
+  </section>
+
+  <section id="jpa-hibernate">
+    <h2 class="section-title">💾 PART 13 - 15 — JPA, Hibernate & Transactions</h2>
+
+    <div class="card">
+      <div class="card-header"><h3 class="topic-title">Entity Lifecycle States & N+1 Problem</h3><span class="badge badge-must">Must Know</span></div>
+      <p><strong>Core distinction:</strong> <em>JPA is the specification (interfaces); Hibernate is the actual ORM implementation.</em></p>
+      
+      <p style="margin-top: 0.5rem;"><strong>Entity Lifecycle:</strong></p>
+      <div class="step-flow">
+        <span class="step">Transient (new Object())</span><span class="arrow">&rarr;</span>
+        <span class="step">Persistent (em.persist() / In Session)</span><span class="arrow">&rarr;</span>
+        <span class="step">Detached (Session closed / clear())</span><span class="arrow">&rarr;</span>
+        <span class="step">Removed (em.remove())</span>
+      </div>
+
+      <div class="qa-box" style="margin-top: 1rem;">
+        <div class="qa-q"><span>Q:</span> What is the Hibernate N+1 Problem and how do you solve it?</div>
+        <div class="qa-a">
+          <strong>The Problem:</strong> When loading 1 parent entity with N child entities under <code>FetchType.LAZY</code> (or eager iteration), Hibernate executes 1 query to fetch the parent list, and then N separate SQL queries to fetch the associated children for each parent row.<br>
+          <strong>The Solution:</strong> Use <strong>JOIN FETCH</strong> in JPQL or <strong><code>@EntityGraph</code></strong>:
+          <pre><code>// Solution via JPQL Join Fetch:
+@Query("SELECT d FROM Department d JOIN FETCH d.employees")
+List&lt;Department&gt; findAllWithEmployees();</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="transactions">
+      <div class="card-header"><h3 class="topic-title"><code>@Transactional</code> Propagation Levels</h3><span class="badge badge-high">High Priority</span></div>
+      <table>
+        <tr><th>Propagation</th><th>Behavior</th></tr>
+        <tr><td><strong>REQUIRED (Default)</strong></td><td>Joins existing transaction if one exists; creates a new one if none exists.</td></tr>
+        <tr><td><strong>REQUIRES_NEW</strong></td><td>Always suspends any existing transaction and starts a completely independent new transaction.</td></tr>
+        <tr><td><strong>SUPPORTS</strong></td><td>Executes within a transaction if one exists; runs non-transactionally if none exists.</td></tr>
+        <tr><td><strong>MANDATORY</strong></td><td>Requires an active transaction; throws <code>TransactionRequiredException</code> if none exists.</td></tr>
+        <tr><td><strong>NOT_SUPPORTED</strong></td><td>Always executes non-transactionally, suspending any active transaction.</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section id="sql">
+    <h2 class="section-title">📊 PART 16 — SQL Mastery (Designed for Weak Area Recovery)</h2>
+
+    <div class="card">
+      <div class="card-header"><h3 class="topic-title">Logical SQL Query Execution Order</h3><span class="badge badge-must">Crucial Mental Model</span></div>
+      <p>SQL is not executed top-to-bottom as written. SQL engines process clauses in this exact sequence:</p>
+      <div class="step-flow">
+        <span class="step">1. FROM & JOIN</span><span class="arrow">&rarr;</span>
+        <span class="step">2. WHERE (Row filter)</span><span class="arrow">&rarr;</span>
+        <span class="step">3. GROUP BY</span><span class="arrow">&rarr;</span>
+        <span class="step">4. HAVING (Group filter)</span><span class="arrow">&rarr;</span>
+        <span class="step">5. SELECT</span><span class="arrow">&rarr;</span>
+        <span class="step">6. DISTINCT</span><span class="arrow">&rarr;</span>
+        <span class="step">7. ORDER BY</span><span class="arrow">&rarr;</span>
+        <span class="step">8. LIMIT / OFFSET</span>
+      </div>
+
+      <div class="qa-box" style="margin-top: 1rem;">
+        <div class="qa-q"><span>Q:</span> Difference between <code>WHERE</code> and <code>HAVING</code> clause?</div>
+        <div class="qa-a">
+          &bull; <code>WHERE</code> filters <strong>individual rows</strong> BEFORE aggregation/grouping occurs. Cannot use aggregate functions (<code>WHERE COUNT(*) > 5</code> is INVALID).<br>
+          &bull; <code>HAVING</code> filters <strong>aggregated groups</strong> AFTER <code>GROUP BY</code> is performed (<code>HAVING COUNT(*) > 5</code> is VALID).
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 class="topic-title">Must-Memorize Infosys SQL Queries & Solutions</h3>
+
+      <div class="qa-box">
+        <div class="qa-q">1. Second Highest Salary (2 Classic Approaches)</div>
+        <pre><code>-- Approach A (Subquery - Safe against duplicates):
+SELECT MAX(salary) FROM Employee 
+WHERE salary < (SELECT MAX(salary) FROM Employee);
+
+-- Approach B (LIMIT / OFFSET):
+SELECT DISTINCT salary FROM Employee 
+ORDER BY salary DESC 
+LIMIT 1 OFFSET 1;
+
+-- Approach C (Generic Nth Highest Salary using DENSE_RANK):
+SELECT salary FROM (
+    SELECT salary, DENSE_RANK() OVER (ORDER BY salary DESC) as rnk 
+    FROM Employee
+) ranked WHERE rnk = 2;</code></pre>
+      </div>
+
+      <div class="qa-box">
+        <div class="qa-q">2. Find and Delete Duplicate Records (Keep lowest ID)</div>
+        <pre><code>-- Find duplicate emails:
+SELECT email, COUNT(*) FROM Employee 
+GROUP BY email 
+HAVING COUNT(*) > 1;
+
+-- Delete duplicates keeping the minimum id:
+DELETE FROM Employee 
+WHERE id NOT IN (
+    SELECT MIN(id) FROM Employee GROUP BY email
+);</code></pre>
+      </div>
+
+      <div class="qa-box">
+        <div class="qa-q">3. Find Departments with More Than 5 Employees</div>
+        <pre><code>SELECT d.dept_name, COUNT(e.id) AS emp_count
+FROM Department d
+JOIN Employee e ON d.id = e.department_id
+GROUP BY d.dept_name
+HAVING COUNT(e.id) > 5;</code></pre>
+      </div>
+
+      <div class="qa-box">
+        <div class="qa-q">4. Employees Earning More Than Department Average</div>
+        <pre><code>SELECT e.name, e.salary, e.department_id
+FROM Employee e
+WHERE e.salary > (
+    SELECT AVG(salary) 
+    FROM Employee 
+    WHERE department_id = e.department_id
+);</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <section id="security">
+    <h2 class="section-title">🔒 PART 17 - 19 — Spring Security, JWT & OAuth 2.0</h2>
+
+    <div class="card" id="jwt-oauth">
+      <div class="card-header"><h3 class="topic-title">Security Filter Chain & JWT Lifecycle</h3><span class="badge badge-must">Must Know</span></div>
+      <p><strong>JWT (JSON Web Token) Structure:</strong> <code>Header.Payload.Signature</code></p>
+      <ul>
+        <li><strong>Header:</strong> Alg type (HS256) & Token type (JWT).</li>
+        <li><strong>Payload:</strong> Claims (Subject, Expiration, Roles). Base64Url encoded (NOT encrypted, never store passwords here!).</li>
+        <li><strong>Signature:</strong> <code>HMACSHA256(base64Url(header) + "." + base64Url(payload), secretKey)</code>. Guarantees token integrity.</li>
+      </ul>
+
+      <p style="margin-top: 0.75rem;"><strong>Security Request Filter Pipeline:</strong></p>
+      <div class="step-flow">
+        <span class="step">HTTP Request (Header: "Bearer &lt;token&gt;")</span><span class="arrow">&rarr;</span>
+        <span class="step">JwtAuthenticationFilter (OncePerRequestFilter)</span><span class="arrow">&rarr;</span>
+        <span class="step">Validate Signature & Expiry</span><span class="arrow">&rarr;</span>
+        <span class="step">Load UserDetails</span><span class="arrow">&rarr;</span>
+        <span class="step">Set SecurityContextHolder</span><span class="arrow">&rarr;</span>
+        <span class="step">Controller</span>
+      </div>
+
+      <div class="grid-2" style="margin-top: 1rem;">
+        <div class="qa-box">
+          <div class="qa-q">JWT vs Session</div>
+          <div class="qa-a"><strong>Session:</strong> Stateful, stored on server memory/Redis, doesn't scale horizontally easily.<br><strong>JWT:</strong> Stateless, self-contained, validated on every microservice via signature verification without DB roundtrip.</div>
+        </div>
+        <div class="qa-box">
+          <div class="qa-q">JWT vs OAuth 2.0</div>
+          <div class="qa-a"><strong>JWT:</strong> A token format.<br><strong>OAuth 2.0:</strong> An authorization framework/protocol specifying how third-party apps acquire tokens (e.g., "Login with Google").</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="microservices">
+    <h2 class="section-title">🧩 PART 20 - 22 — Microservices, Kafka & Redis</h2>
+
+    <div class="card">
+      <div class="card-header"><h3 class="topic-title">Microservices Core Components</h3><span class="badge badge-high">High Priority</span></div>
+      <ul>
+        <li><strong>Service Discovery (Netflix Eureka):</strong> Dynamic registry where microservices register their IP/port and discover downstream instances.</li>
+        <li><strong>API Gateway (Spring Cloud Gateway):</strong> Single entry point for routing, rate limiting, authentication filtering, and CORS.</li>
+        <li><strong>Circuit Breaker (Resilience4j):</strong> Prevents cascading failures when downstream services are dead (States: Closed &rarr; Open &rarr; Half-Open).</li>
+        <li><strong>Distributed Transactions (Saga Pattern):</strong> Manages data consistency across independent microservice databases using a series of local transactions and compensating transactions for rollbacks.</li>
+      </ul>
+    </div>
+
+    <div class="card" id="kafka">
+      <div class="card-header"><h3 class="topic-title">Apache Kafka Essentials</h3><span class="badge badge-priority">Interview Focus</span></div>
+      <p>Kafka is an append-only distributed event commit log.</p>
+      <ul>
+        <li><strong>Topic & Partitions:</strong> Topics are split into partitions for parallelism. Partitions are the unit of scalability and order guarantee.</li>
+        <li><strong>Offset:</strong> Unique sequential ID given to each message within a partition.</li>
+        <li><strong>Consumer Group:</strong> Set of consumers cooperating to read a topic. <em>Rule:</em> Each partition in a topic is consumed by only ONE consumer within a consumer group at any time.</li>
+      </ul>
+      <pre><code>// Simple Spring Boot Producer:
+@Service
+public class OrderProducer {
+    @Autowired private KafkaTemplate&lt;String, OrderEvent&gt; kafkaTemplate;
+    public void sendOrder(OrderEvent event) {
+        kafkaTemplate.send("order-topic", event.getOrderId(), event);
+    }
+}
+
+// Simple Spring Boot Consumer:
+@Service
+public class OrderConsumer {
+    @KafkaListener(topics = "order-topic", groupId = "order-notification-group")
+    public void consume(OrderEvent event) {
+        System.out.println("Processing order: " + event.getOrderId());
+    }
+}</code></pre>
+    </div>
+
+    <div class="card" id="redis">
+      <div class="card-header"><h3 class="topic-title">Redis & Cache-Aside Pattern</h3><span class="badge badge-priority">Interview Focus</span></div>
+      <p><strong>Cache-Aside Pattern Flow:</strong></p>
+      <div class="step-flow">
+        <span class="step">App checks Redis</span><span class="arrow">&rarr;</span>
+        <span class="step">Hit: Return Cached Data</span>
+      </div>
+      <div class="step-flow">
+        <span class="step">Miss: Query DB</span><span class="arrow">&rarr;</span>
+        <span class="step">Store result in Redis with TTL</span><span class="arrow">&rarr;</span>
+        <span class="step">Return Response</span>
+      </div>
+      <pre><code>@Service
+public class UserService {
+    @Cacheable(value = "users", key = "#id") // Caches result automatically
+    public User getUserById(Long id) {
+        return userRepository.findById(id).orElseThrow();
+    }
+
+    @CacheEvict(value = "users", key = "#user.id") // Evicts cached entry on update
+    public User updateUser(User user) {
+        return userRepository.save(user);
+    }
+}</code></pre>
+    </div>
+  </section>
+
+  <section id="junit-mockito">
+    <h2 class="section-title">🧪 PART 23 & 24 — Unit Testing: JUnit 5 & Mockito</h2>
+    <div class="card">
+      <p><strong>Golden Rule:</strong> <em>JUnit 5 is the test execution runner and assertion framework; Mockito is the mocking library to isolate dependencies.</em></p>
+      <pre><code>@ExtendWith(MockitoExtension.class)
+public class UserServiceTest {
+
+    @Mock
+    private UserRepository userRepository; // Mocked dependency
+
+    @InjectMocks
+    private UserServiceImpl userService;  // Injects mock into actual service
+
+    @Test
+    void testGetUserById_Success() {
+        // Given (Stubbing)
+        User mockUser = new User(1L, "Alice");
+        Mockito.when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
+
+        // When (Execution)
+        User result = userService.getUserById(1L);
+
+        // Then (Assertions & Verifications)
+        Assertions.assertEquals("Alice", result.getName());
+        Mockito.verify(userRepository, Mockito.times(1)).findById(1L);
+    }
+}</code></pre>
+    </div>
+  </section>
+
+  <section id="coding-round">
+    <h2 class="section-title">💻 PART 25 — Top Algorithm Coding Questions</h2>
+
+    <div class="card">
+      <div class="qa-box">
+        <div class="qa-q">1. Two Sum Problem (O(n) Time Complexity)</div>
+        <pre><code>public int[] twoSum(int[] nums, int target) {
+    Map&lt;Integer, Integer&gt; map = new HashMap&lt;&gt;();
+    for (int i = 0; i < nums.length; i++) {
+        int complement = target - nums[i];
+        if (map.containsKey(complement)) {
+            return new int[]{map.get(complement), i};
+        }
+        map.put(nums[i], i);
+    }
+    throw new IllegalArgumentException("No match");
+}</code></pre>
+      </div>
+
+      <div class="qa-box">
+        <div class="qa-q">2. Check If String is Palindrome</div>
+        <pre><code>public boolean isPalindrome(String s) {
+    int left = 0, right = s.length() - 1;
+    while (left < right) {
+        if (s.charAt(left++) != s.charAt(right--)) return false;
+    }
+    return true;
+}</code></pre>
+      </div>
+
+      <div class="qa-box">
+        <div class="qa-q">3. Find Missing Number in Array [1 to N]</div>
+        <pre><code>public int findMissing(int[] arr, int n) {
+    int expectedSum = n * (n + 1) / 2;
+    int actualSum = Arrays.stream(arr).sum();
+    return expectedSum - actualSum;
+}</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <section id="scenarios">
+    <h2 class="section-title">🚨 PART 26 — 10 Practical Production Scenarios</h2>
+
+    <div class="card">
+      <div class="qa-box">
+        <div class="qa-q">Scenario 1: An API is taking 5 seconds. How would you debug it?</div>
+        <div class="qa-a">1. Check API Gateway logs and distributed tracing (Zipkin/Sleuth) to isolate which service or DB call is the bottleneck.<br>2. Enable Hibernate SQL logging (<code>spring.jpa.show-sql</code>) and verify if N+1 queries or unindexed table scans are occurring.<br>3. Check DB thread pool/connection pool exhaustion (HikariCP).<br>4. Implement Redis caching for read-heavy static data.</div>
+      </div>
+
+      <div class="qa-box">
+        <div class="qa-q">Scenario 2: Downstream Microservice is Down/Failing</div>
+        <div class="qa-a">Apply Circuit Breaker (Resilience4j) to short-circuit requests and provide fallback graceful degradation (cached response or user friendly error) instead of exhausting system threads.</div>
+      </div>
+
+      <div class="qa-box">
+        <div class="qa-q">Scenario 3: Kafka Consumer is Processing Duplicate Messages</div>
+        <div class="qa-a">Kafka guarantees <strong>at-least-once</strong> delivery by default. Consumers MUST be <strong>idempotent</strong>: store processed message IDs in a DB table or Redis cache. Before processing, check if <code>messageId</code> exists; if yes, acknowledge and skip.</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="project-exp">
+    <h2 class="section-title">🗣️ PART 27 & 28 — Project Pitch & Limited Experience Handling</h2>
+
+    <div class="card">
+      <div class="card-header"><h3 class="topic-title">The 2-Minute Project Pitch Formula</h3><span class="badge badge-must">Must Memorize</span></div>
+      <p>Use this crisp template to explain your experience without fumbling:</p>
+      <div class="info-box">
+        "Over the last 2+ years, I worked as a Java Backend Developer on <strong>[Domain, e.g., Enterprise Order Management / FinTech Portal]</strong>. Our backend is built on a microservices architecture using <strong>Java 17, Spring Boot, Spring Data JPA, and PostgreSQL</strong>.<br><br>
+        My core responsibilities included designing and developing RESTful microservices for <strong>[Feature, e.g., Order Processing and Customer Invoicing]</strong>, implementing validation, handling global exceptions, and optimizing SQL database queries. I actively wrote secure endpoints using JWT authorization and handled transaction rollbacks using Spring’s <code>@Transactional</code>."
+      </div>
+    </div>
+
+    <div class="card" id="limited-exp">
+      <div class="card-header"><h3 class="topic-title">How to Answer on Kafka, Redis, Mockito with Limited Production Exp</h3><span class="badge badge-high">High Value Strategy</span></div>
+      <p><strong>Do NOT lie or bluff.</strong> Interviewers can immediately tell. Use this exact professional framing:</p>
+      <div class="success-box">
+        "In our current production setup, our primary focus has been REST APIs and relational databases. However, I have thoroughly studied Kafka’s architecture—specifically how partitions, offset management, and consumer groups ensure scalable asynchronous processing. I have implemented proof-of-concept producer-consumer applications using Spring Kafka and understand the patterns well."
+      </div>
+    </div>
+  </section>
+
+  <section id="rapid-fire">
+    <h2 class="section-title">🔥 PART 29 & 30 — TOP 50 Rapid Revision & Must-Know Qs</h2>
+
+    <div class="card" id="top50">
+      <div class="grid-2">
+        <div class="qa-box"><div class="qa-q">1. Is HashMap thread-safe?</div><div class="qa-a">No. Use <code>ConcurrentHashMap</code> for thread safety.</div></div>
+        <div class="qa-box"><div class="qa-q">2. Can HashMap store null key?</div><div class="qa-a">Yes, exactly one null key (stored at index 0).</div></div>
+        <div class="qa-box"><div class="qa-q">3. What is functional interface?</div><div class="qa-a">An interface containing exactly one abstract method (can have multiple default/static methods).</div></div>
+        <div class="qa-box"><div class="qa-q">4. What is default method?</div><div class="qa-a">Method in interface with default implementation using <code>default</code> keyword, preserving backward compatibility.</div></div>
+        <div class="qa-box"><div class="qa-q">5. <code>@SpringBootApplication</code> consists of?</div><div class="qa-a"><code>@Configuration</code>, <code>@EnableAutoConfiguration</code>, <code>@ComponentScan</code>.</div></div>
+        <div class="qa-box"><div class="qa-q">6. How does Hibernate 1st level cache work?</div><div class="qa-a">Session-scoped by default. Queries for same entity ID in same transaction hit memory cache instead of DB.</div></div>
+        <div class="qa-box"><div class="qa-q">7. What is JWT signature used for?</div><div class="qa-a">Verifying that the token payload has not been tampered with in transit.</div></div>
+        <div class="qa-box"><div class="qa-q">8. What is LazyInitializationException?</div><div class="qa-a">Occurs when accessing a lazy-loaded collection after the Hibernate Session has already closed.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="final30">
+    <h2 class="section-title">⚡ PART 31 — Final 30-Minute Cheatsheet (Read Right Before Call)</h2>
+    <div class="card" style="border: 2px solid var(--accent-green); background: rgba(74, 222, 128, 0.05);">
+      <ul style="list-style: none; font-size: 1rem; line-height: 2;">
+        <li>🔹 <strong>JPA</strong> = Specification | <strong>Hibernate</strong> = Implementation</li>
+        <li>🔹 <strong>JWT</strong> = Token format | <strong>OAuth 2.0</strong> = Authorization framework</li>
+        <li>🔹 <strong>401</strong> = Unauthenticated (Who are you?) | <strong>403</strong> = Forbidden (You can't enter)</li>
+        <li>🔹 <strong>WHERE</strong> = Filters rows before group | <strong>HAVING</strong> = Filters aggregated groups</li>
+        <li>🔹 <strong>HashMap Pipeline</strong> = <code>hashCode()</code> &rarr; array index &rarr; <code>equals()</code> check</li>
+        <li>🔹 <strong>DI</strong> = Dependencies injected by container via Constructor Injection</li>
+        <li>🔹 <strong>Kafka</strong> = Producer &rarr; Topic (Partitions) &rarr; Consumer Group (Offsets)</li>
+        <li>🔹 <strong>Redis</strong> = In-memory Key-Value store used as Cache-Aside with TTL</li>
+        <li>🔹 <strong>JUnit 5</strong> = Runs test & Assertions | <strong>Mockito</strong> = Stubs external dependencies</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="comm-traps">
+    <h2 class="section-title">⚠️ PART 33 — Common Trap Answers to Avoid</h2>
+    <div class="card">
+      <table>
+        <tr><th>Don't Say (❌ Wrong)</th><th>Say This Instead (✅ Correct)</th></tr>
+        <tr><td>"JWT is an authentication protocol."</td><td>"JWT is a compact, URL-safe <strong>token format</strong> used to transmit claims statelessly."</td></tr>
+        <tr><td>"HAVING is just another way to write WHERE."</td><td>"<code>WHERE</code> filters rows before aggregation; <code>HAVING</code> filters grouped results after aggregation."</td></tr>
+        <tr><td>"HashMap is synchronized and thread-safe."</td><td>"HashMap is unsynchronized. For concurrency, we use <code>ConcurrentHashMap</code>."</td></tr>
+        <tr><td>"PUT and PATCH are identical in REST."</td><td>"<code>PUT</code> replaces the full resource; <code>PATCH</code> applies partial modifications."</td></tr>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<script>
+function toggleTheme() {
+  document.body.classList.toggle('light-theme');
+  localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
+}
+
+// Load saved theme
+if (localStorage.getItem('theme') === 'light') {
+  document.body.classList.add('light-theme');
+}
+
+// Search Filter
+function filterContent() {
+  const filter = document.getElementById('searchInput').value.toLowerCase();
+  const cards = document.querySelectorAll('.card, .qa-box');
+  
+  cards.forEach(card => {
+    const text = card.textContent.toLowerCase();
+    if (text.includes(filter)) {
+      card.style.display = '';
+    } else {
+      card.style.display = 'none';
+    }
+  });
+}
+
+// Progress Tracker with LocalStorage
+function trackProgress() {
+  const checkboxes = document.querySelectorAll('#study-plan input[type="checkbox"]');
+  let checked = 0;
+  checkboxes.forEach((cb, index) => {
+    if (cb.checked) {
+      checked++;
+      localStorage.setItem('step_' + index, 'true');
+      cb.parentElement.classList.add('completed-text');
+    } else {
+      localStorage.removeItem('step_' + index);
+      cb.parentElement.classList.remove('completed-text');
+    }
+  });
+  const percent = Math.round((checked / checkboxes.length) * 100);
+  document.getElementById('progress-bar').style.width = percent + '%';
+  document.getElementById('progress-text').innerText = percent + '%';
+}
+
+// Initialize saved progress on load
+window.addEventListener('DOMContentLoaded', () => {
+  const checkboxes = document.querySelectorAll('#study-plan input[type="checkbox"]');
+  checkboxes.forEach((cb, index) => {
+    if (localStorage.getItem('step_' + index) === 'true') {
+      cb.checked = true;
+      cb.parentElement.classList.add('completed-text');
+    }
+  });
+  trackProgress();
+});
+</script>
+</body>
+</html>
