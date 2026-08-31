@@ -51,6 +51,27 @@ function renderHome(lib) {
     lib.site.subtitle || `${totalNotes} notes across ${lib.categories.length} categories.`;
 
   const grid = document.getElementById('homeGrid');
+  const todayRevision = document.getElementById('todayRevisionPanel');
+
+  if (window.NotebookRevision && typeof window.NotebookRevision.renderTodayRevision === 'function') {
+    todayRevision.innerHTML = window.NotebookRevision.renderTodayRevision(lib);
+  }
+
+  if (window.NotebookInterview && typeof window.NotebookInterview.renderInterviewMode === 'function') {
+    window.NotebookInterview.renderInterviewMode();
+  }
+
+  if (window.NotebookInterview && typeof window.NotebookInterview.renderMistakeBank === 'function') {
+    window.NotebookInterview.renderMistakeBank();
+  }
+
+  if (window.NotebookInterview && typeof window.NotebookInterview.renderWeakAreas === 'function') {
+    window.NotebookInterview.renderWeakAreas();
+  }
+
+  if (window.NotebookDSA && typeof window.NotebookDSA.renderDashboardModules === 'function') {
+    window.NotebookDSA.renderDashboardModules();
+  }
 
   if (!lib.categories.length) {
     grid.innerHTML = emptyStateHtml('No categories yet', 'Add one in data/notes.json to get started.');
@@ -157,11 +178,13 @@ function renderViewer(lib, categoryId, noteId) {
   const pathEl = document.getElementById('viewerPath');
   const openTabLink = document.getElementById('viewerOpenTab');
   const backLink = document.getElementById('viewerBack');
+  const revisionPanel = document.getElementById('revisionPanel');
 
   if (!note) {
     frame.removeAttribute('src');
     pathEl.textContent = 'Note not found';
     openTabLink.setAttribute('aria-disabled', 'true');
+    if (revisionPanel) revisionPanel.innerHTML = '';
     return;
   }
 
@@ -169,6 +192,11 @@ function renderViewer(lib, categoryId, noteId) {
   pathEl.textContent = note.file;
   openTabLink.href = note.file;
   backLink.href = `#/category/${encodeURIComponent(categoryId)}`;
+
+  if (revisionPanel && window.NotebookRevision && typeof window.NotebookRevision.renderRevisionSummary === 'function') {
+    revisionPanel.innerHTML = window.NotebookRevision.renderRevisionSummary(note, categoryId, noteId);
+    window.NotebookRevision.bindRevisionChoices(revisionPanel, categoryId, noteId);
+  }
 }
 
 /* ---------------- Topbar breadcrumb path (desktop) ---------------- */

@@ -10,6 +10,10 @@
   box-shadow: 0 12px 28px rgba(20, 24, 33, 0.08);
 }
 
+[data-theme='light'] .topbar {
+  background: rgba(255, 255, 255, 0.8);
+}
+
 /* Light mode: the mono "path" text can look too heavy at full contrast */
 [data-theme='light'] .topbar__path,
 [data-theme='light'] .category-card__path {

@@ -15,8 +15,14 @@
   --fs-base: 1rem;
   --fs-md: 1.125rem;
   --fs-lg: 1.375rem;
-  --fs-xl: 1.85rem;
+  --fs-xl: 1.75rem;
   --fs-2xl: 2.5rem;
+  --fs-3xl: 3rem;
+
+  /* ---- Mobile Typography ---- */
+  --fs-base-mobile: 16px;
+  --fs-md-mobile: 1rem;
+  --fs-lg-mobile: 1.25rem;
 
   /* ---- Spacing scale ---- */
   --space-1: 4px;
@@ -41,15 +47,29 @@
   --dur-slow: 400ms;
 
   /* ---- Layout ---- */
-  --sidebar-w: 272px;
-  --topbar-h: 64px;
-  --content-max: 1180px;
+  --sidebar-w: 280px;
+  --sidebar-w-mobile: 100vw;
+  --topbar-h: 68px;
+  --topbar-h-mobile: 56px;
+  --content-max: 1200px;
+  --content-max-md: 900px;
+  --content-max-sm: 600px;
+  
+  /* ---- Touch targets (mobile) ---- */
+  --touch-target: 48px;
+  --touch-target-compact: 44px;
 
   /* ---- Z ---- */
   --z-topbar: 50;
   --z-sidebar: 40;
   --z-overlay: 100;
   --z-palette: 200;
+
+  /* ---- Dashboard accents ---- */
+  --surface-panel: rgba(19, 24, 36, 0.72);
+  --bg-gradient: radial-gradient(circle at top left, rgba(94, 234, 212, 0.18), transparent 22%),
+    radial-gradient(circle at top right, rgba(96, 165, 250, 0.14), transparent 28%),
+    var(--bg);
 }
 
 /* ============ Dark theme (default) ============ */
@@ -75,23 +95,34 @@
 
   --danger: #f2777a;
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
-  --shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.45);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 8px 16px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 20px 48px rgba(0, 0, 0, 0.45);
+  
+  /* ---- Light mode shadows ---- */
+  --shadow-sm-light: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md-light: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-lg-light: 0 10px 24px rgba(0, 0, 0, 0.12);
 
   --glass-bg: rgba(19, 24, 36, 0.72);
+  
+  /* ---- Transitions ---- */
+  --transition-fast: all var(--dur-fast) var(--ease);
+  --transition-med: all var(--dur-med) var(--ease);
+  --transition-slow: all var(--dur-slow) var(--ease);
 }
 
 /* ============ Light theme (optional, toggled) ============ */
 [data-theme='light'] {
-  --bg: #f6f7f9;
+  --bg: #f8f9fa;
   --bg-elevated: #ffffff;
   --surface: #ffffff;
-  --surface-hover: #f0f2f5;
-  --border: #e4e7ec;
-  --border-strong: #d3d8e0;
+  --surface-hover: #f3f4f6;
+  --border: #e5e7eb;
+  --border-strong: #d1d5db;
 
-  --text-primary: #171b23;
+  --text-primary: #111827;
   --text-secondary: #4d5666;
   --text-muted: #7c8494;
 

@@ -63,6 +63,29 @@
         <h1 class="page-head__title">Notebook</h1>
         <p class="page-head__subtitle" id="homeSubtitle">Loading&hellip;</p>
       </div>
+      <div class="revision-panel-wrap" id="todayRevisionPanel"><!-- injected --></div>
+      <div class="dashboard-grid">
+        <div class="dashboard-panel" id="interviewModePanel"><!-- injected --></div>
+        <div class="dashboard-panel" id="mistakeBankPanel"><!-- injected --></div>
+      </div>
+      <div class="dashboard-grid dashboard-grid--single">
+        <div class="dashboard-panel" id="mistakeFormWrap"><!-- injected --></div>
+      </div>
+      <div class="dashboard-grid dashboard-grid--single">
+        <div class="dashboard-panel" id="weakAreasPanel"><!-- injected --></div>
+      </div>
+      <div class="dashboard-grid">
+        <div class="dashboard-panel" id="dsaDashboardPanel"><!-- injected --></div>
+        <div class="dashboard-panel" id="ninetyDayPanel"><!-- injected --></div>
+      </div>
+      <div class="dashboard-grid">
+        <div class="dashboard-panel" id="dailyGoalsPanel"><!-- injected --></div>
+        <div class="dashboard-panel" id="weekendGoalsPanel"><!-- injected --></div>
+      </div>
+      <div class="dashboard-grid dashboard-grid--single">
+        <div class="dashboard-panel" id="weeklySummaryPanel"><!-- injected --></div>
+      </div>
+      <div class="dashboard-grid dashboard-grid--single" id="settingsPanelWrap"><!-- injected --></div>
       <div class="card-grid" id="homeGrid"><!-- injected --></div>
     </section>
 
@@ -84,6 +107,7 @@
       </a>
     </div>
   </div>
+  <div class="viewer__revision" id="revisionPanel"></div>
   <iframe class="viewer__frame" id="viewerFrame" title="Note content" loading="eager"></iframe>
 </div>
 
@@ -103,6 +127,12 @@
 <script src="assets/js/search.js"></script>
 <script src="assets/js/theme.js"></script>
 <script src="assets/js/render.js"></script>
+<script src="assets/js/dateUtils.js"></script>
+<script src="assets/js/revisionStorage.js"></script>
+<script src="assets/js/revision.js"></script>
+<script src="assets/js/interview.js"></script>
+<script src="assets/js/dsa.js"></script>
+<script src="assets/js/settings.js"></script>
 <script src="assets/js/router.js"></script>
 <script src="assets/js/app.js"></script>
 </body>

@@ -15,13 +15,25 @@ html {
 
 body {
   margin: 0;
-  background: var(--bg);
+  background: var(--bg-gradient);
   color: var(--text-primary);
   font-family: var(--font-body);
   font-size: var(--fs-base);
-  line-height: 1.55;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+}
+
+/* Mobile body text optimization */
+@media (max-width: 900px) {
+  body {
+    font-size: 16px;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 h1, h2, h3, h4 {

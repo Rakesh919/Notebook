@@ -3,7 +3,7 @@
 @keyframes fadeSlideIn {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -11,10 +11,21 @@
   }
 }
 
+@keyframes fadeSlideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 @keyframes paletteIn {
   from {
     opacity: 0;
-    transform: translateY(-8px) scale(0.98);
+    transform: translateY(-12px) scale(0.95);
   }
   to {
     opacity: 1;
@@ -28,8 +39,36 @@
   100% { opacity: 1; }
 }
 
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
 /* Staggered entrance for grid children, applied via inline --i custom property */
 .card-grid > * {
   animation: fadeSlideIn var(--dur-slow) var(--ease) both;
   animation-delay: calc(var(--i, 0) * 35ms);
+}
+
+/* Smooth sidebar transition on mobile */
+.sidebar {
+  animation: fadeSlideInLeft var(--dur-med) var(--ease);
+}
+
+/* Smooth page transitions */
+.view {
+  animation: fadeSlideIn var(--dur-slow) var(--ease);
 }

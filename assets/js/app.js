@@ -128,6 +128,18 @@
 
     paletteNotes = await window.NotebookData.allNotes();
 
+    if (window.NotebookInterview && typeof window.NotebookInterview.initInterviewDashboard === 'function') {
+      window.NotebookInterview.initInterviewDashboard();
+    }
+
+    if (window.NotebookDSA && typeof window.NotebookDSA.renderDashboardModules === 'function') {
+      window.NotebookDSA.renderDashboardModules();
+    }
+
+    if (window.NotebookSettings && typeof window.NotebookSettings.renderSettingsPanel === 'function') {
+      window.NotebookSettings.renderSettingsPanel();
+    }
+
     window.addEventListener('hashchange', window.NotebookRouter.route);
     window.NotebookRouter.route();
   }
