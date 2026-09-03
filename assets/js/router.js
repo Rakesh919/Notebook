@@ -37,6 +37,7 @@ async function route() {
   }
 
   viewer.classList.remove('is-active');
+  viewer.classList.remove('is-focus-mode');
   const frame = document.getElementById('viewerFrame');
   if (frame) frame.removeAttribute('src'); // stop any playing/heavy note content
 

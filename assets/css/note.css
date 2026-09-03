@@ -1,0 +1,370 @@
+/* note.css — shared responsive styling & top-left brand navbar for all note pages */
+
+:root {
+  --bg: #07090e;
+  --bg-elevated: #0d121c;
+  --surface: rgba(15, 21, 32, 0.78);
+  --surface-hover: rgba(26, 36, 54, 0.85);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --text: #f1f5f9;
+  --muted: #94a3b8;
+  --accent: #38bdf8;
+  --accent-soft: rgba(56, 189, 248, 0.12);
+  --amber: #fbbf24;
+  --teal: #2dd4bf;
+  --rose: #fb7185;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 9999px;
+  --font-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* ---------- Note Topbar Navbar ---------- */
+.note-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 20px;
+  height: 56px;
+  background: rgba(10, 14, 23, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+.note-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  transition: all 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.note-brand:hover {
+  background: var(--surface-hover);
+  transform: translateY(-1px);
+}
+.note-brand__mark {
+  width: 24px;
+  height: 24px;
+  display: block;
+}
+.note-brand__text {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #f1f5f9, var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.note-navbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.note-navbar__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-family: var(--font-mono);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  transition: all 150ms ease;
+}
+.note-navbar__back:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+  transform: translateX(-2px);
+}
+
+@media (max-width: 600px) {
+  .note-navbar {
+    padding: 0 12px;
+    height: 52px;
+  }
+  .note-navbar__back span {
+    display: none;
+  }
+}
+
+/* ---------- Container wraps ---------- */
+.wrap {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 36px 24px 64px;
+}
+
+@media (max-width: 768px) {
+  .wrap {
+    padding: 24px 16px 48px;
+  }
+}
+
+/* ---------- Layout with internal sidebar ---------- */
+.layout {
+  display: flex;
+  max-width: 1440px;
+  margin: 0 auto;
+  min-height: calc(100vh - 56px);
+}
+
+nav.sidebar {
+  width: 280px;
+  height: calc(100vh - 56px);
+  position: sticky;
+  top: 56px;
+  background: var(--bg-elevated);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 20px 14px;
+  flex-shrink: 0;
+}
+
+.main-content {
+  flex: 1;
+  min-width: 0;
+  padding: 36px 32px 64px;
+  max-width: 920px;
+}
+
+@media (max-width: 960px) {
+  .layout {
+    display: block;
+  }
+  nav.sidebar {
+    width: 100%;
+    height: auto;
+    max-height: 240px;
+    position: relative;
+    top: 0;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 16px;
+  }
+  .main-content {
+    padding: 24px 16px 48px;
+    max-width: 100%;
+  }
+}
+
+/* ---------- Typography & Headings ---------- */
+h1 {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  letter-spacing: -0.03em;
+  line-height: 1.25;
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+@media (max-width: 600px) {
+  h1 {
+    font-size: 1.6rem;
+  }
+}
+
+h2 {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+  margin-top: 36px;
+  margin-bottom: 12px;
+}
+
+h3 {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  letter-spacing: -0.01em;
+  margin-top: 24px;
+  margin-bottom: 8px;
+}
+
+p {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.eyebrow {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+/* ---------- Responsive Grids ---------- */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 18px 0;
+}
+
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+}
+
+/* ---------- Cards and Callouts ---------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  transition: all 180ms ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+.card:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+.note,
+.callout {
+  border-left: 3px solid var(--accent);
+  background: rgba(56, 189, 248, 0.05);
+  padding: 14px 18px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  color: var(--muted);
+  margin: 18px 0;
+  font-size: 0.94rem;
+}
+
+/* ---------- Responsive Tables ---------- */
+table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-collapse: collapse;
+  margin: 20px 0;
+}
+
+.table-wrap,
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 18px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+th, td {
+  text-align: left;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.92rem;
+}
+
+th {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+td {
+  color: var(--muted);
+}
+
+/* ---------- Code & Syntax Blocks ---------- */
+pre {
+  background: #080c14 !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 16px !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  margin: 18px 0 !important;
+}
+
+code {
+  font-family: var(--font-mono) !important;
+  font-size: 0.88em !important;
+}
+
+:not(pre) > code {
+  background: rgba(56, 189, 248, 0.08) !important;
+  border: 1px solid rgba(56, 189, 248, 0.2) !important;
+  border-radius: 6px !important;
+  padding: 2px 7px !important;
+  color: var(--accent) !important;
+}
+
+pre code {
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  color: #e2e8f0 !important;
+  line-height: 1.55 !important;
+}
+
+/* ---------- FAQ Accordion ---------- */
+.faq-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-bottom: 12px;
+  padding: 16px;
+  transition: border-color 150ms ease;
+}
+.faq-item:hover {
+  border-color: var(--border-strong);
+}
+.faq-q {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+.faq-a {
+  color: var(--muted);
+  font-size: 0.94rem;
+}

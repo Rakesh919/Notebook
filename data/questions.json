@@ -1,3 +1,60 @@
 {
-  "questions": []
+  "questions": [
+    {
+      "id": "java-hashmap-internal",
+      "question": "How does HashMap work internally in Java 8+, and when does a bucket transition to a Red-Black Tree?",
+      "answer": "HashMap uses an array of Node<K,V> buckets. When putting a key, hash(key) calculates index = (n - 1) & hash. In Java 8+, if collisions exceed TREEIFY_THRESHOLD (8) and total table capacity is at least MIN_TREEIFY_CAPACITY (64), the linked list converts to a Red-Black Tree (TreeNode) improving search from O(n) to O(log n). If table capacity < 64, it resizes instead.",
+      "category": "Java",
+      "difficulty": "medium"
+    },
+    {
+      "id": "spring-bean-lifecycle-phases",
+      "question": "What are the primary phases of the Spring Bean Lifecycle from instantiation to destruction?",
+      "answer": "1. Instantiation (constructor)\n2. Populate Properties (dependency injection)\n3. Aware Interfaces (BeanNameAware, BeanFactoryAware, ApplicationContextAware)\n4. BeanPostProcessor: postProcessBeforeInitialization\n5. Initialization (@PostConstruct, InitializingBean.afterPropertiesSet, custom init-method)\n6. BeanPostProcessor: postProcessAfterInitialization (AOP proxies created here)\n7. Ready for use\n8. Destruction (@PreDestroy, DisposableBean.destroy, custom destroy-method).",
+      "category": "Spring Boot",
+      "difficulty": "medium"
+    },
+    {
+      "id": "spring-component-vs-bean",
+      "question": "What is the difference between @Component and @Bean in Spring?",
+      "answer": "@Component is a class-level annotation detected via component-scanning for your own classes. @Bean is a method-level annotation inside @Configuration classes, typically used when instantiating third-party classes, configuring custom setup logic, or when source code cannot be directly annotated.",
+      "category": "Spring Boot",
+      "difficulty": "easy"
+    },
+    {
+      "id": "java-string-immutability",
+      "question": "Why is String immutable in Java, and what role does the String Pool play?",
+      "answer": "String is immutable for security (network connections, file paths, DB credentials), caching (hashCode is calculated once and cached), thread-safety without synchronization, and memory efficiency via the String Constant Pool (shared string literals).",
+      "category": "Java",
+      "difficulty": "easy"
+    },
+    {
+      "id": "spring-aop-proxies",
+      "question": "How does Spring AOP implement proxies, and what is the difference between JDK Dynamic Proxies and CGLIB?",
+      "answer": "Spring AOP uses JDK Dynamic Proxies when the target class implements at least one interface (creating an implementation of the interface). If the target class does not implement interfaces (or in Spring Boot 2+ by default), CGLIB creates a dynamic subclass (bytecode generation). Final methods and classes cannot be proxied with CGLIB.",
+      "category": "Spring Boot",
+      "difficulty": "hard"
+    },
+    {
+      "id": "redis-data-structures",
+      "question": "What are the core data structures supported by Redis, and when would you use a Sorted Set (ZSET)?",
+      "answer": "Redis supports Strings, Lists, Sets, Sorted Sets (ZSET), Hashes, Bitmaps, HyperLogLogs, and Streams. ZSET is used when elements must be unique but ordered by an associated numerical score (e.g., real-time leaderboards, rate-limiting sliding windows, priority delay queues).",
+      "category": "Redis",
+      "difficulty": "medium"
+    },
+    {
+      "id": "dsa-two-sum-strategy",
+      "question": "What is the optimal time and space complexity for the Two Sum problem, and how is it implemented?",
+      "answer": "Optimal time is O(n) using a single pass with a Hash Table (Map<Integer, Integer>). While iterating with index i and value num, calculate complement = target - num. If map.containsKey(complement), return new int[]{map.get(complement), i}. Otherwise, map.put(num, i). Space complexity is O(n).",
+      "category": "DSA",
+      "difficulty": "easy"
+    },
+    {
+      "id": "architecture-solid-single-responsibility",
+      "question": "What is the Single Responsibility Principle (SRP) in SOLID, and how do you avoid violating it in microservices?",
+      "answer": "SRP states that a class/module should have only one reason to change, meaning it should encapsulate a single business actor or concern. In microservices, violation occurs when a service tries to manage unrelated domains (e.g., Order Processing mixed with User Profile management). Separate them by bounded contexts.",
+      "category": "SOLID",
+      "difficulty": "medium"
+    }
+  ]
 }
