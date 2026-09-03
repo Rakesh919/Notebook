@@ -127,9 +127,22 @@
     const due = getDueToday();
     if (!due.length) {
       return `
-        <div class="revision-panel__empty">
-          <div class="revision-panel__title">🔥 Today's Revision</div>
-          <div class="revision-panel__message">🎉 No revision due today</div>
+        <div class="revision-summary-card">
+          <div class="revision-summary-header">
+            <div class="revision-summary-title">
+              <span class="flame-glow">🔥</span> Today's Spaced Repetition
+            </div>
+            <span class="badge badge--difficulty-beginner">All Caught Up</span>
+          </div>
+          <div class="revision-summary-content">
+            <div class="revision-summary-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div class="revision-summary-text">
+              <div class="revision-summary-headline">Memory Bank Clear</div>
+              <p>No technical notes are due for spaced repetition review today. Keep your momentum going by exploring a new topic or testing yourself in Interview Mode!</p>
+            </div>
+          </div>
         </div>
       `;
     }
@@ -150,16 +163,16 @@
             <div>
               <div class="revision-item__title">${escapeHtml(note.title)}</div>
               <div class="revision-item__meta">
-                <span>${escapeHtml(category)}</span>
+                <span class="badge badge--tag">${escapeHtml(category)}</span>
                 ${difficulty}
               </div>
             </div>
-            <a class="revision-item__button" href="#/note/${encodeURIComponent(note.categoryId)}/${encodeURIComponent(note.id)}">Open</a>
+            <a class="revision-item__button" href="#/note/${encodeURIComponent(item.categoryId)}/${encodeURIComponent(item.noteId)}">Review Note →</a>
           </div>
           <div class="revision-item__stats">
-            <span>Last reviewed: ${escapeHtml(item.lastReviewed === 'Never' ? 'Never' : item.lastReviewed)}</span>
-            <span>Next review: ${escapeHtml(item.nextReview)}</span>
-            <span>Status: ${escapeHtml(getStatusLabel(item.status))}</span>
+            <span>Last reviewed: <strong>${escapeHtml(item.lastReviewed === 'Never' ? 'Never' : item.lastReviewed)}</strong></span>
+            <span>Next: <strong>${escapeHtml(item.nextReview)}</strong></span>
+            <span>Status: <span class="status-chip ${item.status ? item.status.toLowerCase() : ''}">${escapeHtml(getStatusLabel(item.status))}</span></span>
             <span>Confidence: ${escapeHtml(item.confidence ? getConfidenceLabel(item.confidence) : 'Not reviewed')}</span>
           </div>
         </div>
@@ -167,10 +180,15 @@
     }).join('');
 
     return `
-      <div class="revision-panel__header">
-        <div class="revision-panel__title">🔥 Today's Revision</div>
+      <div class="revision-panel-wrap">
+        <div class="revision-summary-header">
+          <div class="revision-summary-title">
+            <span class="flame-glow">🔥</span> Notes Due for Review
+          </div>
+          <span class="badge badge--difficulty-advanced">${due.length} Due Today</span>
+        </div>
+        <div class="revision-panel__list">${noteItems}</div>
       </div>
-      <div class="revision-panel__list">${noteItems}</div>
     `;
   }
 
@@ -192,6 +210,8 @@
     return '';
   }
 
+  let revisionExpanded = false;
+
   function renderRevisionSummary(note, categoryId, noteId) {
     const progress = getProgressForNote(categoryId, noteId);
     const statusText = getStatusLabel(progress.status || 'Learning');
@@ -200,39 +220,80 @@
     const lastReviewed = progress.lastReviewed || 'Never';
 
     const options = REVIEW_CHOICES.map((choice) => `
-      <button class="revision-choice" data-response="${choice.key}" data-category-id="${escapeHtml(categoryId)}" data-note-id="${escapeHtml(noteId)}">
+      <button class="revision-choice choice--${choice.key}" data-response="${choice.key}" data-category-id="${escapeHtml(categoryId)}" data-note-id="${escapeHtml(noteId)}">
         ${choice.label}
       </button>
     `).join('');
 
     return `
-      <div class="revision-panel">
-        <div class="revision-panel__title">Revision</div>
-        <div class="revision-panel__details">
-          <span>Last reviewed: ${escapeHtml(lastReviewed)}</span>
-          <span>Next review: ${escapeHtml(nextReview)}</span>
-          <span>Status: ${escapeHtml(statusText)}</span>
-          <span>Confidence: ${escapeHtml(confidenceText)}</span>
+      <div class="viewer-rev ${revisionExpanded ? 'is-expanded' : 'is-collapsed'}" id="viewerRev">
+        <div class="viewer-rev__header" id="viewerRevToggle">
+          <div class="viewer-rev__summary">
+            <span class="viewer-rev__icon">🔥</span>
+            <span class="viewer-rev__title">Revision</span>
+            <span class="viewer-rev__badge status--${statusText.toLowerCase()}">${escapeHtml(statusText)}</span>
+            <span class="viewer-rev__next">Next: <strong>${escapeHtml(nextReview)}</strong></span>
+          </div>
+          <button class="viewer-rev__toggle-btn" id="viewerRevToggleBtn" aria-label="Toggle rating panel" type="button">
+            <span class="toggle-text">${revisionExpanded ? 'Hide' : 'Rate Recall'}</span>
+            <span class="toggle-icon">${revisionExpanded ? '▲' : '▼'}</span>
+          </button>
         </div>
-        <div class="revision-panel__prompt">How well did you remember this?</div>
-        <div class="revision-panel__choices">${options}</div>
+
+        <div class="viewer-rev__drawer">
+          <div class="viewer-rev__prompt">How well did you remember this note?</div>
+          <div class="viewer-rev__choices">${options}</div>
+          <div class="viewer-rev__meta">
+            <span>Last reviewed: ${escapeHtml(lastReviewed)}</span>
+            <span>Confidence: ${escapeHtml(confidenceText)}</span>
+            <span>Total reviews: ${progress.reviewCount || 0}</span>
+          </div>
+        </div>
       </div>
     `;
   }
 
   function bindRevisionChoices(container, categoryId, noteId) {
+    const toggleBtn = container.querySelector('#viewerRevToggleBtn');
+    const header = container.querySelector('#viewerRevToggle');
+    const toggleHandler = () => {
+      revisionExpanded = !revisionExpanded;
+      const rev = container.querySelector('#viewerRev');
+      if (rev) {
+        rev.classList.toggle('is-expanded', revisionExpanded);
+        rev.classList.toggle('is-collapsed', !revisionExpanded);
+        const label = rev.querySelector('.toggle-text');
+        const icon = rev.querySelector('.toggle-icon');
+        if (label) label.textContent = revisionExpanded ? 'Hide' : 'Rate Recall';
+        if (icon) icon.textContent = revisionExpanded ? '▲' : '▼';
+      }
+    };
+
+    if (toggleBtn) toggleBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleHandler(); });
+    if (header) header.addEventListener('click', toggleHandler);
+
     const choices = container.querySelectorAll('.revision-choice');
     choices.forEach((button) => {
-      button.addEventListener('click', async () => {
+      button.addEventListener('click', async (e) => {
+        e.stopPropagation();
         const responseKey = button.dataset.response;
         if (!responseKey) return;
 
-        submitRevision(categoryId, noteId, responseKey);
+        const nextEntry = submitRevision(categoryId, noteId, responseKey);
+
+        // Auto collapse after rating
+        revisionExpanded = false;
 
         const panel = document.getElementById('revisionPanel');
         if (panel) {
           panel.innerHTML = renderRevisionSummary(null, categoryId, noteId);
           bindRevisionChoices(panel, categoryId, noteId);
+
+          // Brief toast feedback
+          const summaryEl = panel.querySelector('.viewer-rev__summary');
+          if (summaryEl) {
+            summaryEl.innerHTML = `<span class="viewer-rev__icon" style="color:var(--success);">✓</span> <span style="color:var(--success); font-weight:600;">Saved! Next: ${escapeHtml(nextEntry.nextReview)}</span>`;
+          }
         }
 
         const homeView = document.getElementById('view-home');

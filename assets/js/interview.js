@@ -109,9 +109,11 @@
 
     container.innerHTML = `
       <div class="interview-mode">
-        <div class="interview-mode__header">
-          <div class="interview-mode__title">🎤 Interview Mode</div>
-          <div class="interview-mode__meta">Question ${state.questions.length ? state.index + 1 : 0} / ${state.questions.length || 0}</div>
+        <div class="dashboard-panel-header">
+          <div class="dashboard-panel-title">
+            <span class="panel-icon">🎤</span> Interview Mode
+          </div>
+          <span class="badge badge--tag">Question ${state.questions.length ? state.index + 1 : 0} of ${state.questions.length || 0}</span>
         </div>
 
         <div class="interview-mode__filters">
@@ -134,8 +136,8 @@
             <div class="interview-mode__question">${escapeHtml(question.question || 'Question unavailable')}</div>
             ${answerText}
             <div class="interview-mode__actions">
-              <button class="interview-mode__button secondary" id="interviewRandomBtn">Random Question</button>
-              <button class="interview-mode__button" id="interviewShowAnswerBtn">Show Answer</button>
+              <button class="interview-mode__button secondary" id="interviewRandomBtn">🎲 Next Question</button>
+              <button class="interview-mode__button" id="interviewShowAnswerBtn">${state.answerVisible ? 'Hide Answer' : '💡 Show Answer'}</button>
             </div>
             <div class="interview-mode__choices">
               <button class="interview-mode__choice failed" data-result="failed">❌ Forgot</button>
@@ -144,17 +146,16 @@
             </div>
           </div>
           <div class="interview-mode__stats">
-            <span>Attempts: ${stats ? stats.attempts : 0}</span>
-            <span>Correct: ${stats ? stats.correct : 0}</span>
-            <span>Partial: ${stats ? stats.partial : 0}</span>
-            <span>Failed: ${stats ? stats.failed : 0}</span>
+            <span>Attempts: <strong>${stats ? stats.attempts : 0}</strong></span>
+            <span>Correct: <strong style="color:var(--success);">${stats ? stats.correct : 0}</strong></span>
+            <span>Partial: <strong style="color:var(--amber);">${stats ? stats.partial : 0}</strong></span>
+            <span>Failed: <strong style="color:var(--rose);">${stats ? stats.failed : 0}</strong></span>
             <span>Last attempted: ${escapeHtml(stats ? stats.lastAttempted : 'Never')}</span>
-            <span>Next review: ${escapeHtml(stats ? stats.nextReview : 'Not scheduled')}</span>
           </div>
         ` : `
           <div class="empty-state">
-            <div class="empty-state__title">No questions available</div>
-            <p>Add a question to data/questions.json to start interview mode.</p>
+            <div class="empty-state__title">All Questions Reviewed</div>
+            <p>Select another category or difficulty filter above to continue practice.</p>
           </div>
         `}
       </div>
@@ -265,8 +266,11 @@
 
     container.innerHTML = `
       <div class="mistake-bank">
-        <div class="mistake-bank__header">
-          <div class="mistake-bank__title">❌ Mistake Bank</div>
+        <div class="dashboard-panel-header">
+          <div class="dashboard-panel-title">
+            <span class="panel-icon">❌</span> Mistake Bank
+          </div>
+          <span class="badge badge--difficulty-advanced">${items.length} Tracked Mistake${items.length === 1 ? '' : 's'}</span>
         </div>
         <div class="mistake-bank__list">${rows}</div>
       </div>
@@ -301,19 +305,55 @@
 
     if (!weakAreas.length) {
       container.innerHTML = `
-        <div class="weak-areas empty-state">
-          <div class="empty-state__title">⚠️ Weak Areas</div>
-          <p>No weak areas yet. Answer a few interview questions to build your signal.</p>
+        <div class="weak-areas-card">
+          <div class="dashboard-panel-header">
+            <div class="dashboard-panel-title">
+              <span class="panel-icon">🎯</span> Focus & Weak Areas
+            </div>
+            <span class="badge badge--difficulty-beginner">Signal: Strong</span>
+          </div>
+          <div class="weak-areas-empty">
+            <div class="weak-areas-empty-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
+              </svg>
+            </div>
+            <div class="weak-areas-empty-info">
+              <div class="weak-areas-empty-heading">No Weak Areas Detected Yet</div>
+              <p>Your practice signal is clear. Test your depth with questions in Interview Mode to identify specific topics for targeted revision.</p>
+            </div>
+            <button class="interview-mode__button" id="startWeakAreaPracticeBtn" type="button">
+              🎤 Practice Interview Questions
+            </button>
+          </div>
         </div>
       `;
+
+      const btn = container.querySelector('#startWeakAreaPracticeBtn');
+      if (btn) {
+        btn.addEventListener('click', () => {
+          const target = document.getElementById('interviewModePanel');
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            target.style.transition = 'box-shadow 0.3s ease';
+            target.style.boxShadow = '0 0 0 2px var(--accent), 0 0 28px rgba(56,189,248,0.3)';
+            setTimeout(() => { target.style.boxShadow = ''; }, 1500);
+          }
+        });
+      }
       return;
     }
 
     const unique = [...new Set(weakAreas)];
     container.innerHTML = `
-      <div class="weak-areas">
-        <div class="weak-areas__title">⚠️ Weak Areas</div>
-        <div class="weak-areas__list">${unique.map((item) => `<span class="badge badge--tag">${escapeHtml(item)}</span>`).join('')}</div>
+      <div class="weak-areas-card">
+        <div class="dashboard-panel-header">
+          <div class="dashboard-panel-title">
+            <span class="panel-icon">⚠️</span> Focus & Weak Areas
+          </div>
+          <span class="badge badge--difficulty-advanced">${unique.length} Topics to Review</span>
+        </div>
+        <div class="weak-areas__list">${unique.map((item) => `<span class="badge badge--difficulty-advanced">${escapeHtml(item)}</span>`).join('')}</div>
       </div>
     `;
   }

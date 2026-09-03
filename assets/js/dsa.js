@@ -118,7 +118,7 @@
     loadDsaProblems().then((data) => {
       const problems = data.problems || [];
       const progress = readDsaProgress();
-      const total = problems.length;
+      const total = problems.length || 150;
       const solved = problems.filter((problem) => progress[problem.id] && progress[problem.id].solved).length;
       const easy = problems.filter((p) => String(p.difficulty || '').toLowerCase() === 'easy').length;
       const medium = problems.filter((p) => String(p.difficulty || '').toLowerCase() === 'medium').length;
@@ -127,22 +127,52 @@
         const entry = progress[problem.id] || {};
         return entry.nextReview && entry.nextReview <= isoToday();
       }).length;
+      const percent = total > 0 ? Math.round((solved / total) * 100) : 0;
 
       container.innerHTML = `
-        <div class="dsa-dashboard">
-          <div class="dashboard-title">💻 DSA Progress</div>
-          <div class="dsa-dashboard__row">
-            <div class="dsa-dashboard__stat">
-              <div class="dsa-dashboard__label">NeetCode 150</div>
-              <div class="dsa-dashboard__value">${solved} / ${total}</div>
+        <div class="dsa-card">
+          <div class="dashboard-panel-header">
+            <div class="dashboard-panel-title">
+              <span class="panel-icon">💻</span> DSA Progress
+            </div>
+            <span class="badge badge--tag">NeetCode 150</span>
+          </div>
+
+          <div class="dsa-main-stat">
+            <div class="dsa-stat-numbers">
+              <span class="dsa-stat-big">${solved}</span>
+              <span class="dsa-stat-total">/ ${total} Solved</span>
+            </div>
+            <span class="dsa-stat-percent">${percent}%</span>
+          </div>
+
+          <div class="dsa-progress-track">
+            <div class="dsa-progress-fill" style="width: ${percent}%;"></div>
+          </div>
+
+          <div class="dsa-metrics-grid">
+            <div class="dsa-metric-chip easy">
+              <span class="metric-dot">🟢</span>
+              <span class="metric-name">Easy</span>
+              <span class="metric-val">${easy}</span>
+            </div>
+            <div class="dsa-metric-chip medium">
+              <span class="metric-dot">🟡</span>
+              <span class="metric-name">Medium</span>
+              <span class="metric-val">${medium}</span>
+            </div>
+            <div class="dsa-metric-chip hard">
+              <span class="metric-dot">🔴</span>
+              <span class="metric-name">Hard</span>
+              <span class="metric-val">${hard}</span>
             </div>
           </div>
-          <div class="dsa-dashboard__breakdown">
-            <span class="badge badge--difficulty-beginner">Easy: ${easy}</span>
-            <span class="badge badge--difficulty-intermediate">Medium: ${medium}</span>
-            <span class="badge badge--difficulty-advanced">Hard: ${hard}</span>
+
+          <div class="dsa-card-footer">
+            <span class="dsa-revision-indicator ${due > 0 ? 'is-due' : ''}">
+              <span class="pulse-dot"></span> Due for review: <strong>${due}</strong>
+            </span>
           </div>
-          <div class="dsa-dashboard__due">Due for revision: ${due}</div>
         </div>
       `;
     });
@@ -163,21 +193,48 @@
     if (startDate && !Number.isNaN(startDate.getTime())) {
       endDate.setDate(endDate.getDate() + 89);
     }
+    const dayPercent = Math.round((currentDay / totalDays) * 100);
 
     const controls = `
       <div class="plan-controls">
-        ${isActive ? '<button class="interview-mode__button" data-plan-action="pause">Pause 90-day plan</button>' : '<button class="interview-mode__button" data-plan-action="start">Start 90-day plan</button>'}
-        ${isActive ? '<button class="interview-mode__button secondary" data-plan-action="reset">Reset plan</button>' : ''}
+        ${isActive ? '<button class="interview-mode__button secondary" data-plan-action="pause">Pause 90-Day Plan</button>' : '<button class="interview-mode__button" data-plan-action="start">🚀 Start 90-Day Roadmap</button>'}
+        ${isActive ? '<button class="interview-mode__button secondary" data-plan-action="reset">Reset</button>' : ''}
       </div>
     `;
 
     container.innerHTML = `
-      <div class="plan-panel">
-        <div class="dashboard-title">🎯 90-Day Interview Preparation</div>
-        <div class="plan-panel__meta">Start Date: ${plan.startedAt || 'Not started yet'}</div>
-        <div class="plan-panel__meta">Current Day: ${currentDay} / ${totalDays}</div>
-        <div class="plan-panel__meta">Days Remaining: ${remaining}</div>
-        <div class="plan-panel__meta">End Date: ${plan.startedAt ? endDate.toISOString().slice(0, 10) : '—'}</div>
+      <div class="plan-card">
+        <div class="dashboard-panel-header">
+          <div class="dashboard-panel-title">
+            <span class="panel-icon">🎯</span> 90-Day Interview Preparation
+          </div>
+          <span class="badge ${isActive ? 'badge--difficulty-beginner' : 'badge--tag'}">
+            ${isActive ? '🔥 Active Sprint' : 'Not Started'}
+          </span>
+        </div>
+
+        <div class="plan-main-stat">
+          <div class="plan-stat-day">
+            Day <span class="highlight">${currentDay}</span> <span class="total">/ ${totalDays}</span>
+          </div>
+          <span class="plan-stat-badge">${remaining} Days Left</span>
+        </div>
+
+        <div class="plan-progress-track">
+          <div class="plan-progress-fill" style="width: ${dayPercent}%;"></div>
+        </div>
+
+        <div class="plan-meta-grid">
+          <div class="plan-meta-item">
+            <span class="meta-label">Start Date</span>
+            <span class="meta-val">${plan.startedAt || 'Not started'}</span>
+          </div>
+          <div class="plan-meta-item">
+            <span class="meta-label">Target Date</span>
+            <span class="meta-val">${plan.startedAt ? endDate.toISOString().slice(0, 10) : '—'}</span>
+          </div>
+        </div>
+
         ${controls}
       </div>
     `;
@@ -225,19 +282,37 @@
     ];
 
     const saved = readStorage('notebook:daily-goals', {});
+    const completedCount = goals.filter((g) => !!saved[g]).length;
+    const goalPercent = Math.round((completedCount / goals.length) * 100);
+
     const items = goals.map((goal) => {
-      const selected = saved[goal] ? 'checked' : '';
+      const isDone = !!saved[goal];
       return `
-        <label class="goal-item">
-          <input type="checkbox" data-goal="${escapeHtml(goal)}" ${selected} />
-          <span>${escapeHtml(goal)}</span>
+        <label class="goal-item ${isDone ? 'is-completed' : ''}">
+          <input type="checkbox" data-goal="${escapeHtml(goal)}" ${isDone ? 'checked' : ''} />
+          <span class="goal-checkbox-custom">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
+          <span class="goal-text">${escapeHtml(goal)}</span>
         </label>
       `;
     }).join('');
 
     container.innerHTML = `
-      <div class="goal-panel">
-        <div class="dashboard-title">📅 Today's Goals</div>
+      <div class="goal-card">
+        <div class="dashboard-panel-header">
+          <div class="dashboard-panel-title">
+            <span class="panel-icon">📅</span> Today's Goals
+          </div>
+          <span class="badge ${completedCount === goals.length ? 'badge--difficulty-beginner' : 'badge--tag'} goal-counter-badge">
+            ${completedCount}/${goals.length} Done
+          </span>
+        </div>
+
+        <div class="goal-progress-track">
+          <div class="goal-progress-fill" style="width: ${goalPercent}%;"></div>
+        </div>
+
         <div class="goal-list">${items}</div>
       </div>
     `;
@@ -248,6 +323,7 @@
         const values = readStorage('notebook:daily-goals', {});
         values[key] = event.target.checked;
         writeStorage('notebook:daily-goals', values);
+        renderDailyGoals();
       });
     });
   }
@@ -264,19 +340,37 @@
     ];
 
     const saved = readStorage('notebook:weekend-goals', {});
+    const completedCount = goals.filter((g) => !!saved[g]).length;
+    const goalPercent = Math.round((completedCount / goals.length) * 100);
+
     const items = goals.map((goal) => {
-      const selected = saved[goal] ? 'checked' : '';
+      const isDone = !!saved[goal];
       return `
-        <label class="goal-item">
-          <input type="checkbox" data-weekend-goal="${escapeHtml(goal)}" ${selected} />
-          <span>${escapeHtml(goal)}</span>
+        <label class="goal-item ${isDone ? 'is-completed' : ''}">
+          <input type="checkbox" data-weekend-goal="${escapeHtml(goal)}" ${isDone ? 'checked' : ''} />
+          <span class="goal-checkbox-custom">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
+          <span class="goal-text">${escapeHtml(goal)}</span>
         </label>
       `;
     }).join('');
 
     container.innerHTML = `
-      <div class="goal-panel">
-        <div class="dashboard-title">📅 Weekend Goals</div>
+      <div class="goal-card">
+        <div class="dashboard-panel-header">
+          <div class="dashboard-panel-title">
+            <span class="panel-icon">📅</span> Weekend Goals
+          </div>
+          <span class="badge ${completedCount === goals.length ? 'badge--difficulty-beginner' : 'badge--tag'} goal-counter-badge">
+            ${completedCount}/${goals.length} Done
+          </span>
+        </div>
+
+        <div class="goal-progress-track">
+          <div class="goal-progress-fill" style="width: ${goalPercent}%;"></div>
+        </div>
+
         <div class="goal-list">${items}</div>
       </div>
     `;
@@ -287,6 +381,7 @@
         const values = readStorage('notebook:weekend-goals', {});
         values[key] = event.target.checked;
         writeStorage('notebook:weekend-goals', values);
+        renderWeekendGoals();
       });
     });
   }
@@ -300,20 +395,37 @@
     const mistakes = window.NotebookStorage.getMistakes().length;
     const dsaProgress = readDsaProgress();
     const dsaSolved = Object.values(dsaProgress).filter((item) => item && item.solved).length;
+    const revisedGoals = Object.values(readStorage('notebook:daily-goals', {})).filter(Boolean).length;
 
-    const summary = `
-      <div class="goal-panel">
-        <div class="dashboard-title">📊 Weekly Review</div>
-        <div class="weekly-summary__list">
-          <span>Topics learned: 0</span>
-          <span>Topics revised: ${Object.values(readStorage('notebook:daily-goals', {})).filter(Boolean).length}</span>
-          <span>Mistakes fixed: ${mistakes}</span>
-          <span>DSA solved: ${dsaSolved}</span>
-          <span>Interview questions: ${totalInterviewQuestions}</span>
+    container.innerHTML = `
+      <div class="weekly-card">
+        <div class="dashboard-panel-header">
+          <div class="dashboard-panel-title">
+            <span class="panel-icon">📊</span> Weekly Review & Signal
+          </div>
+          <span class="badge badge--difficulty-beginner">Active Week</span>
+        </div>
+
+        <div class="weekly-metrics-grid">
+          <div class="weekly-metric-box">
+            <span class="weekly-metric-num">${revisedGoals}</span>
+            <span class="weekly-metric-label">Goals Completed</span>
+          </div>
+          <div class="weekly-metric-box">
+            <span class="weekly-metric-num">${dsaSolved}</span>
+            <span class="weekly-metric-label">DSA Solved</span>
+          </div>
+          <div class="weekly-metric-box">
+            <span class="weekly-metric-num">${totalInterviewQuestions}</span>
+            <span class="weekly-metric-label">Interview Qs</span>
+          </div>
+          <div class="weekly-metric-box">
+            <span class="weekly-metric-num">${mistakes}</span>
+            <span class="weekly-metric-label">Mistakes Tracked</span>
+          </div>
         </div>
       </div>
     `;
-    container.innerHTML = summary;
   }
 
   function renderDashboardModules() {
