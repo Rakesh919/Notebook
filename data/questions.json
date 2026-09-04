@@ -55,6 +55,202 @@
       "answer": "SRP states that a class/module should have only one reason to change, meaning it should encapsulate a single business actor or concern. In microservices, violation occurs when a service tries to manage unrelated domains (e.g., Order Processing mixed with User Profile management). Separate them by bounded contexts.",
       "category": "SOLID",
       "difficulty": "medium"
+    },
+    {
+      "id": "java-concurrent-hashmap-internal",
+      "question": "How does ConcurrentHashMap achieve thread safety in Java 8+ without locking the entire map?",
+      "answer": "Java 8+ ConcurrentHashMap dropped segment locking (used in Java 7) in favor of CAS (Compare-And-Swap) operations for empty bucket insertions and fine-grained `synchronized` blocks locking only the head node of a specific bucket during collision chaining or treeification. Reads (`get`) are lock-free because node values and next pointers are marked `volatile`.",
+      "category": "Java",
+      "difficulty": "hard"
+    },
+    {
+      "id": "java-completable-future-async",
+      "question": "What is the difference between thenApply(), thenAccept(), and thenCompose() in CompletableFuture?",
+      "answer": "`thenApply(Function<T, R>)` transforms the result synchronously and returns `CompletableFuture<R>`. `thenAccept(Consumer<T>)` consumes the result, returns `CompletableFuture<Void>`, and yields no value. `thenCompose(Function<T, CompletableFuture<R>>)` flattens nested futures (monadic flatMap) to prevent returning a nested `CompletableFuture<CompletableFuture<R>>`.",
+      "category": "Java",
+      "difficulty": "medium"
+    },
+    {
+      "id": "spring-boot-auto-configuration",
+      "question": "How does @EnableAutoConfiguration work internally during Spring Boot startup?",
+      "answer": "It registers `AutoConfigurationImportSelector`, which scans classpath descriptor files (`META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` in Boot 3+ or `META-INF/spring.factories` previously). It filters candidate configuration classes using condition evaluations like `@ConditionalOnClass`, `@ConditionalOnMissingBean`, and `@ConditionalOnProperty` before registering missing beans into the ApplicationContext.",
+      "category": "Spring Boot",
+      "difficulty": "hard"
+    },
+    {
+      "id": "spring-boot-actuator-metrics",
+      "question": "What is Spring Boot Actuator and how does it integrate with Prometheus and Micrometer?",
+      "answer": "Actuator exposes production-ready operational endpoints (health, info, env, metrics). By pairing it with the Micrometer library and `micrometer-registry-prometheus`, Actuator collects application metrics (JVM memory, HTTP request latencies, thread usage) and exposes them on the `/actuator/prometheus` endpoint in a format ready for Prometheus scraping.",
+      "category": "Spring Boot",
+      "difficulty": "medium"
+    },
+    {
+      "id": "jpa-n-plus-one-problem",
+      "question": "What is the N+1 select problem in JPA/Hibernate, and what are the standard ways to resolve it?",
+      "answer": "N+1 happens when loading 1 parent entity with N children causes Hibernate to run 1 query for the parent, followed by N separate queries for each child's associations (common with `FetchType.LAZY` or `EAGER`). Resolutions include: using JPQL `JOIN FETCH`, applying `@EntityGraph` / `@NamedEntityGraph`, setting `hibernate.default_batch_fetch_size`, or mapping using DTO projections.",
+      "category": "JPA/Hibernate",
+      "difficulty": "medium"
+    },
+    {
+      "id": "jpa-first-vs-second-level-cache",
+      "question": "What is the difference between Hibernate First-Level and Second-Level Cache?",
+      "answer": "First-Level Cache is mandatory, enabled by default, and bound to the current `EntityManager` / `Session` scope; it caches entities only within the active transaction. Second-Level Cache is optional, disabled by default, shared across all sessions at the `SessionFactory` level (using providers like Redis, Ehcache, or Hazelcast), and requires explicit entity annotations like `@Cacheable` and `@Cache`.",
+      "category": "JPA/Hibernate",
+      "difficulty": "medium"
+    },
+    {
+      "id": "jpa-entity-lifecycle-states",
+      "question": "What are the four states of an entity lifecycle in JPA/Hibernate?",
+      "answer": "1. Transient (New): Instantiated via `new`, not associated with a Session, no database identity.\n2. Managed (Persistent): Associated with an active Session and database identity; changes are tracked and dirty-checked during flush.\n3. Detached: Possesses a DB identity, but its Session was closed or entity was explicitly evicted (`detach()`).\n4. Removed: Marked for deletion via `remove()`, pending physical SQL DELETE upon transaction commit.",
+      "category": "JPA/Hibernate",
+      "difficulty": "easy"
+    },
+    {
+      "id": "sql-acid-properties",
+      "question": "What are the ACID properties in relational database management systems?",
+      "answer": "Atomicity (all operations complete or whole transaction rolls back), Consistency (transactions preserve defined schema constraints and invariants), Isolation (concurrent transactions execute without interfering with one another based on isolation level), and Durability (committed changes persist permanently to non-volatile storage via write-ahead logging even after crashes).",
+      "category": "SQL",
+      "difficulty": "easy"
+    },
+    {
+      "id": "sql-indexes-b-tree-vs-hash",
+      "question": "How do B-Tree and Hash indexes work in SQL databases, and why are B-Trees preferred for standard columns?",
+      "answer": "Hash indexes offer O(1) lookups but only support exact equality checks (`=`), failing on range queries (`>`, `<`, `BETWEEN`) or sorting (`ORDER BY`). B-Trees (and B+ Trees) keep keys in sorted multi-level balanced node structures, enabling O(log n) lookups for equality, prefix matching (`LIKE 'abc%'`), sorting, and fast range scans via linked leaf nodes.",
+      "category": "SQL",
+      "difficulty": "medium"
+    },
+    {
+      "id": "sql-transaction-isolation-levels",
+      "question": "What are the four ANSI SQL transaction isolation levels and the read phenomena they prevent?",
+      "answer": "1. Read Uncommitted: Allows dirty reads, non-repeatable reads, phantom reads.\n2. Read Committed: Prevents dirty reads; allows non-repeatable reads and phantom reads.\n3. Repeatable Read: Prevents dirty and non-repeatable reads; can allow phantom reads (MySQL InnoDB prevents phantoms via Next-Key locks).\n4. Serializable: Prevents all anomalies via strict locking or serial execution.",
+      "category": "SQL",
+      "difficulty": "hard"
+    },
+    {
+      "id": "spring-security-filter-chain",
+      "question": "How does the Spring Security Filter Chain process an incoming HTTP request?",
+      "answer": "A servlet filter called `DelegatingFilterProxy` intercepts requests and delegates processing to `FilterChainProxy`, which evaluates a ordered list of `SecurityFilterChain` beans. Requests pass sequentially through security filters (e.g., `CorsFilter`, `CsrfFilter`, `JwtAuthenticationFilter`, `UsernamePasswordAuthenticationFilter`, `ExceptionTranslationFilter`, `AuthorizationFilter`). Each filter inspects or decorates the request or modifies the `SecurityContextHolder`.",
+      "category": "Spring Security",
+      "difficulty": "hard"
+    },
+    {
+      "id": "spring-security-jwt-stateless",
+      "question": "How do you configure Spring Security for stateless JWT authentication?",
+      "answer": "Configure `SecurityFilterChain` with `sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))`, disable CSRF protection (since requests are stateless and don't rely on browser session cookies), and register a custom `OncePerRequestFilter` before `UsernamePasswordAuthenticationFilter`. The filter parses the `Authorization: Bearer <token>` header, validates the JWT signature, and populates `SecurityContextHolder.getContext().setAuthentication(...)`.",
+      "category": "Spring Security",
+      "difficulty": "medium"
+    },
+    {
+      "id": "redis-cache-eviction-policies",
+      "question": "What cache eviction policies does Redis support when memory limits are reached (maxmemory)?",
+      "answer": "When `maxmemory` is hit, Redis applies policies configured via `maxmemory-policy`: `noeviction` (returns errors on write commands), `allkeys-lru` / `volatile-lru` (least recently used keys across all or expiring keys), `allkeys-lfu` / `volatile-lfu` (least frequently used), `allkeys-random` / `volatile-random` (random keys), and `volatile-ttl` (keys with shortest remaining time-to-live).",
+      "category": "Redis",
+      "difficulty": "medium"
+    },
+    {
+      "id": "redis-cache-patterns",
+      "question": "What are Cache-Aside, Write-Through, and Write-Behind caching strategies?",
+      "answer": "Cache-Aside: Application reads from cache; on miss, it loads from DB, writes to cache, and returns. Writes update DB and invalidate/update cache.\nWrite-Through: Application writes directly to the cache; cache synchronously writes to the backing DB before completing.\nWrite-Behind (Write-Back): Application writes to cache, which acknowledges immediately and writes to DB asynchronously in batches (high throughput, risk of data loss on cache crash).",
+      "category": "Redis",
+      "difficulty": "medium"
+    },
+    {
+      "id": "kafka-consumer-groups-partitions",
+      "question": "How do Kafka consumer groups achieve load balancing and parallel processing across topic partitions?",
+      "answer": "Partitions are the unit of parallelism. Kafka assigns each partition within a topic to exactly one consumer within a given consumer group. If a topic has 6 partitions and a consumer group has 3 consumers, each consumer processes 2 partitions. If consumers exceed partition count, surplus consumers remain idle. If one fails, a group rebalance reassigns its partitions to surviving consumers.",
+      "category": "Kafka",
+      "difficulty": "medium"
+    },
+    {
+      "id": "kafka-delivery-semantics",
+      "question": "How do you achieve at-least-once, at-most-once, and exactly-once delivery semantics in Kafka?",
+      "answer": "At-most-once: Commit offsets before processing records (if processing fails, record is lost).\nAt-least-once: Commit offsets synchronously only after successfully processing records (failure causes duplicate processing on retry).\nExactly-once (EOS): Producers enable idempotence (`enable.idempotence=true`) and use transactional APIs (`initTransactions()`, `sendOffsetsToTransaction()`), combined with consumer isolation level `read_committed` across Kafka read-process-write loops.",
+      "category": "Kafka",
+      "difficulty": "hard"
+    },
+    {
+      "id": "microservices-saga-pattern",
+      "question": "What is the Saga Pattern in microservices, and what is the difference between Choreography and Orchestration?",
+      "answer": "A Saga manages distributed transactions across multiple services as a sequence of local transactions, triggering compensating transactions if any step fails.\nChoreography: Services publish and listen to domain events via message brokers without a central coordinator (decentralized, risk of cyclic dependencies).\nOrchestration: A dedicated orchestrator service instructs participant services which local transactions to execute via command-reply channels (centralized, easier to monitor and audit).",
+      "category": "Microservices",
+      "difficulty": "hard"
+    },
+    {
+      "id": "microservices-circuit-breaker",
+      "question": "How does the Circuit Breaker pattern work, and what states does Resilience4j transition through?",
+      "answer": "It prevents cascading failures by short-circuiting calls to struggling downstream dependencies.\n1. CLOSED: Normal operation; requests pass through. Failures are tracked.\n2. OPEN: If failure rate exceeds threshold over a sliding window, circuit opens; requests immediately fail fast (invoking fallback methods) without hitting the downstream service.\n3. HALF-OPEN: After a configured wait duration, limited trial requests are permitted. If they succeed, circuit resets to CLOSED; if they fail, it transitions back to OPEN.",
+      "category": "Microservices",
+      "difficulty": "medium"
+    },
+    {
+      "id": "system-design-cap-theorem",
+      "question": "What is the CAP Theorem, and why can a distributed system only choose between CP and AP during a network partition?",
+      "answer": "CAP theorem states a distributed data store can guarantee at most two of: Consistency (all nodes see the same data simultaneously), Availability (every non-failing node returns a response), and Partition Tolerance (system continues operating despite arbitrary dropped/delayed network messages). Since network partitions (P) are unavoidable in physical networks, systems must decide whether to cancel operations to ensure consistency (CP) or accept writes/reads risking stale data to preserve availability (AP).",
+      "category": "System Design",
+      "difficulty": "medium"
+    },
+    {
+      "id": "system-design-rate-limiting-algorithms",
+      "question": "What are the common rate-limiting algorithms used in API Gateways?",
+      "answer": "1. Token Bucket: Tokens added at constant rate up to bucket capacity; requests consume tokens. Allows bursts.\n2. Leaky Bucket: Requests enter FIFO queue and leak out at a constant outflow rate. Smooths out traffic spikes.\n3. Fixed Window Counter: Counts requests per fixed time block. Vulnerable to 2x traffic bursts at window boundaries.\n4. Sliding Window Log: Stores timestamps of requests; calculates exact count in rolling window. Highly accurate, high memory cost.\n5. Sliding Window Counter: Combines fixed window counters using a weighted estimate of the previous window.",
+      "category": "System Design",
+      "difficulty": "hard"
+    },
+    {
+      "id": "testing-mock-vs-spy",
+      "question": "What is the difference between @Mock and @Spy in Mockito?",
+      "answer": "`@Mock` creates a complete dummy/proxy object with default empty answers (null, 0, false); none of the real class methods are executed unless explicitly stubbed using `when().thenReturn()`. `@Spy` creates a partial mock wrapping an actual object instance; real methods are executed by default unless explicitly stubbed using `doReturn().when()`, allowing verification of real executions.",
+      "category": "Testing",
+      "difficulty": "easy"
+    },
+    {
+      "id": "testing-slice-annotations",
+      "question": "What is the difference between @SpringBootTest, @WebMvcTest, and @DataJpaTest?",
+      "answer": "`@SpringBootTest` bootstraps the complete ApplicationContext with all registered beans, web servers, and configurations (best for end-to-end integration tests).\n`@WebMvcTest` is a test slice that loads only web-layer components (Controllers, ControllerAdvice, Filters, Security) and mocks business services via `@MockBean`.\n`@DataJpaTest` is a test slice that configures only JPA repositories, entity managers, and test in-memory databases, running each test in a rolled-back transaction by default.",
+      "category": "Testing",
+      "difficulty": "medium"
+    },
+    {
+      "id": "design-patterns-factory-vs-abstract-factory",
+      "question": "What is the difference between Factory Method and Abstract Factory design patterns?",
+      "answer": "Factory Method is a creational pattern that uses inheritance: a base class or interface defines a single creation method (`createProduct()`), letting subclasses decide which concrete class to instantiate. Abstract Factory uses composition: an object provides an interface to create families of related or dependent objects (e.g., `createButton()`, `createCheckbox()`) without specifying their concrete classes.",
+      "category": "Design Patterns",
+      "difficulty": "medium"
+    },
+    {
+      "id": "design-patterns-singleton-double-checked-locking",
+      "question": "How do you implement a thread-safe Singleton in Java using Double-Checked Locking, and why is the volatile keyword mandatory?",
+      "answer": "Check `instance == null` outside synchronized block; if null, synchronize on the class, and check `instance == null` a second time before calling `instance = new Singleton()`. The field must be `volatile` to prevent CPU instruction reordering. Without `volatile`, thread B could observe a non-null reference before the object's constructor finishes writing memory fields, leading to partially constructed object exposure.",
+      "category": "Design Patterns",
+      "difficulty": "hard"
+    },
+    {
+      "id": "solid-open-closed-principle",
+      "question": "What is the Open/Closed Principle (OCP) in SOLID, and how is it implemented in Spring applications?",
+      "answer": "Software entities (classes, modules, functions) should be open for extension but closed for modification. In Spring, OCP is implemented using interfaces and polymorphism (Strategy Pattern). For instance, an `OrderProcessor` depends on a `PaymentStrategy` interface. Adding crypto payment involves writing `CryptoPaymentStrategy implements PaymentStrategy` without editing existing `OrderProcessor` or credit card processor code.",
+      "category": "SOLID",
+      "difficulty": "easy"
+    },
+    {
+      "id": "solid-liskov-substitution-principle",
+      "question": "What is the Liskov Substitution Principle (LSP) and how does the classic Rectangle-Square problem violate it?",
+      "answer": "LSP states that objects of a superclass should be replaceable with objects of its subclasses without breaking application correctness. In the Rectangle-Square problem, `Square` extends `Rectangle`. Overriding `setWidth(w)` to also set height (maintaining square equality) breaks the client assumption that altering width on a `Rectangle` leaves height unchanged, violating LSP contract expectations.",
+      "category": "SOLID",
+      "difficulty": "medium"
+    },
+    {
+      "id": "solid-interface-segregation-principle",
+      "question": "What is the Interface Segregation Principle (ISP) and what are its symptoms in an enterprise codebase?",
+      "answer": "ISP states that clients should not be forced to depend on interfaces they do not use. Instead of one fat, general-purpose interface, create smaller, cohesive, role-specific interfaces. Symptoms of violation include classes implementing methods with empty bodies, throwing `UnsupportedOperationException`, or classes being forced to recompile/redeploy when unused interface signatures change.",
+      "category": "SOLID",
+      "difficulty": "easy"
+    },
+    {
+      "id": "solid-dependency-inversion-principle",
+      "question": "What is the Dependency Inversion Principle (DIP) and how does it relate to Dependency Injection (DI)?",
+      "answer": "DIP is a high-level architectural principle stating that high-level modules should not depend on low-level modules; both should depend on abstractions (interfaces). Also, abstractions should not depend on details; details should depend on abstractions. Dependency Injection (DI) is a concrete design pattern/technique used to fulfill DIP by passing dependencies from an external assembler (like Spring's IoC container) into classes.",
+      "category": "SOLID",
+      "difficulty": "medium"
     }
   ]
 }
