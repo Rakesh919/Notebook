@@ -212,6 +212,19 @@
           ],
           "difficulty": "Intermediate",
           "lastUpdated": "2026-06-02"
+        },
+        {
+          "id": "jdk-jre-jvm-architecture",
+          "title": "JDK vs JRE vs JVM & Compilation",
+          "file": "notes/java/jvm-jre-jdk.html",
+          "tags": [
+            "java",
+            "jvm",
+            "core-java",
+            "architecture"
+          ],
+          "difficulty": "Beginner",
+          "lastUpdated": "2026-09-04"
         }
       ]
     },
