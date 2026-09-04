@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Java Internals — JDK, JRE, JVM & Compilation</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  :root {
+    --bg: #0b0e14;
+    --surface: #131824;
+    --border: #232a38;
+    --text: #e7eaf1;
+    --muted: #9aa4b7;
+    --accent: #5eead4;
+    --warn: #f87171;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+  }
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 48px 24px;
+  }
+  h1 { font-size: 2rem; margin-bottom: 4px; }
+  .eyebrow {
+    color: var(--accent);
+    font-family: monospace;
+    font-size: .85rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  h2 {
+    margin-top: 40px;
+    font-size: 1.25rem;
+    border-left: 3px solid var(--accent);
+    padding-left: 12px;
+  }
+  h3 { margin-top: 24px; font-size: 1rem; color: var(--text); }
+  p { color: var(--muted); }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+  }
+  .card b { color: var(--text); display: block; margin-bottom: 4px; }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 16px 0;
+  }
+  code {
+    background: #0f131c;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 6px;
+    font-size: .9em;
+    color: var(--accent);
+  }
+  pre {
+    background: #0f131c;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    overflow-x: auto;
+  }
+  pre code {
+    border: none;
+    padding: 0;
+    background: none;
+    color: var(--text);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+  }
+  th, td {
+    text-align: left;
+    padding: 10px;
+    border-bottom: 1px solid var(--border);
+    font-size: .92rem;
+  }
+  th {
+    color: var(--accent);
+    font-family: monospace;
+    font-weight: 500;
+  }
+  td { color: var(--muted); }
+  ul, ol { color: var(--muted); padding-left: 20px; }
+  li { margin-bottom: 6px; }
+  .note {
+    border-left: 3px solid var(--accent);
+    background: var(--surface);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    color: var(--muted);
+    margin: 16px 0;
+    font-size: .92rem;
+  }
+  .note.warn {
+    border-left-color: var(--warn);
+  }
+  @media (max-width: 600px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Java Core &middot; Runtime Architecture</div>
+  <h1>JDK vs JRE vs JVM & Compilation</h1>
+  <p>How Java translates your readable source code into platform-independent bytecode and executes it efficiently on any machine.</p>
+
+  <h2>1. The Big Picture: Nesting Hierarchy</h2>
+  <p>The easiest way to understand the difference is concentric containment: <b>JDK</b> includes <b>JRE</b>, which includes <b>JVM</b>.</p>
+
+  <div class="card">
+    <b>Concentric Architecture Diagram</b>
+    <pre><code>┌──────────────────────────────────────────────────────────────┐
+│ JDK (Java Development Kit)                                   │
+│  Development Tools: javac, jdb, jar, jshell, jstack...       │
+│                                                              │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │ JRE (Java Runtime Environment)                         │  │
+│  │  Class Libraries (java.lang, java.util, java.io...)    │  │
+│  │                                                        │  │
+│  │  ┌──────────────────────────────────────────────────┐  │  │
+│  │  │ JVM (Java Virtual Machine)                       │  │  │
+│  │  │  • ClassLoader Subsystem                         │  │  │
+│  │  │  • Runtime Data Areas (Heap, Stack, Metaspace)   │  │  │
+│  │  │  • Execution Engine (Interpreter + JIT + GC)     │  │  │
+│  │  └──────────────────────────────────────────────────┘  │  │
+│  └────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────┘</code></pre>
+  </div>
+
+  <h2>2. Quick Role Comparison</h2>
+  <div class="grid">
+    <div class="card">
+      <b>JVM (Virtual Machine)</b>
+      <p>The abstract machine that executes bytecode. <b>Platform-dependent</b> (there are separate JVMs for Windows, macOS, Linux).</p>
+    </div>
+    <div class="card">
+      <b>JRE (Runtime Environment)</b>
+      <p>JVM + core standard libraries. It is everything needed to <b>run</b> an already-compiled Java application.</p>
+    </div>
+  </div>
+  <div class="card">
+    <b>JDK (Development Kit)</b>
+    <p>JRE + developer tooling (compiler <code>javac</code>, archiver <code>jar</code>, debuggers). Required by developers to write and build code.</p>
+  </div>
+
+  <div class="note">
+    <b>Modern Java Note (Java 9+):</b> Standalone JRE installers were deprecated starting with Java 11. Today, developers download the JDK, and tools like <code>jlink</code> create custom, minimal runtimes packaged directly with modern containers or apps.
+  </div>
+
+  <h2>3. The Java Compilation & Execution Pipeline</h2>
+  <p>Java is both <b>compiled</b> and <b>interpreted</b>. This two-step process powers Java's famous promise: <i>"Write Once, Run Anywhere" (WORA)</i>.</p>
+
+  <div class="card">
+    <b>End-to-End Build & Run Flow</b>
+    <pre><code> [Developer Machine]
+        │
+        ▼ writes code
+   ┌──────────────┐
+   │  Main.java   │ (Human-readable source code)
+   └──────┬───────┘
+          │
+          │ javac Main.java (Java Compiler)
+          ▼
+   ┌──────────────┐
+   │  Main.class  │ (Platform-independent Java Bytecode)
+   └──────┬───────┘
+          │
+          │ Distributed to any OS with a JVM installed
+          ▼
+ ───────────────────────────────────────────────────────────────
+ [Target Environment: JVM Layer]
+          │
+          ▼
+   ┌──────────────┐
+   │ ClassLoader  │ Loads .class files into memory & verifies format
+   └──────┬───────┘
+          │
+          ▼
+   ┌──────────────────────────────────────────────────────────┐
+   │ Execution Engine                                         │
+   │                                                          │
+   │  ┌───────────────┐     hot methods     ┌──────────────┐  │
+   │  │  Interpreter  │ ──────────────────> │ JIT Compiler │  │
+   │  │ (line by line)│                     │ (native code)│  │
+   │  └───────┬───────┘                     └──────┬───────┘  │
+   └──────────┼────────────────────────────────────┼──────────┘
+              │                                    │
+              ▼                                    ▼
+       [ Native Machine Code: x86 / ARM CPU instructions ]</code></pre>
+  </div>
+
+  <h2>4. What is Java Bytecode?</h2>
+  <p>Bytecode is an intermediate, binary instruction set designed specifically for the JVM rather than any physical hardware chip. It shields your application from OS-specific instruction sets.</p>
+
+  <div class="grid">
+    <div class="card">
+      <b>Java Source (App.java)</b>
+      <pre><code>public int add(int a, int b) {
+    return a + b;
+}</code></pre>
+    </div>
+    <div class="card">
+      <b>Compiled Bytecode (javap -c)</b>
+      <pre><code>0: iload_1     // load arg a
+1: iload_2     // load arg b
+2: iadd        // execute sum
+3: ireturn     // return result</code></pre>
+    </div>
+  </div>
+
+  <h2>5. How the JVM Executes Code: Interpreter vs JIT</h2>
+  <p>To avoid the classic slowdown of interpreted languages, modern JVMs (HotSpot) combine an <b>Interpreter</b> with a <b>Just-In-Time (JIT) Compiler</b>:</p>
+
+  <ul>
+    <li><b style="color:var(--text)">Interpreter:</b> Starts executing bytecode immediately line-by-line. Fast startup time, but slower sustained throughput.</li>
+    <li><b style="color:var(--text)">Hotspot Profiler:</b> Monitors which methods or loops run frequently ("hot spots").</li>
+    <li><b style="color:var(--text)">JIT Compiler (C1 / C2):</b> Compiles those frequently executed bytecode blocks directly into native CPU machine instructions and caches them in memory. Next time that method is called, it runs at native C/C++ speeds.</li>
+    <li><b style="color:var(--text)">Garbage Collector (GC):</b> Runs in the background to automatically free heap memory by removing unreachable objects.</li>
+  </ul>
+
+  <h2>6. Summary Comparison Table</h2>
+  <table>
+    <tr><th>Component</th><th>Full Name</th><th>Contains</th><th>Target User</th></tr>
+    <tr><td><code>JVM</code></td><td>Java Virtual Machine</td><td>ClassLoader + Memory + Execution Engine</td><td>Under the hood runtime</td></tr>
+    <tr><td><code>JRE</code></td><td>Java Runtime Environment</td><td>JVM + Standard Core Libraries</td><td>End users running apps</td></tr>
+    <tr><td><code>JDK</code></td><td>Java Development Kit</td><td>JRE + Tools (<code>javac</code>, <code>jar</code>, debuggers)</td><td>Developers building apps</td></tr>
+  </table>
+
+  <h2>7. Quick Interview Takeaways</h2>
+  <ul>
+    <li><b>Is Java compiled or interpreted?</b> Both. It compiles <code>.java</code> to bytecode via <code>javac</code>, then the JVM interprets and JIT-compiles that bytecode into native machine instructions.</li>
+    <li><b>Is the JVM platform-independent?</b> <b style="color:var(--warn)">No.</b> Bytecode is platform-independent, but the JVM itself is platform-specific. Windows, macOS, and Linux each require their own JVM binary.</li>
+    <li><b>Why not compile directly to native machine code?</b> Bytecode enables WORA portability and allows dynamic runtime optimizations (like JIT inlining and adaptive profiling) tailored to the actual running workload.</li>
+  </ul>
+</div>
+</body>
+</html>

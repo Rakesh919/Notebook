@@ -2,845 +2,302 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Spring Stereotype Annotations & @Bean — Complete Deep Dive</title>
+<title>Spring Stereotypes & @Bean — Practical Guide</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <style>
   :root {
     --bg: #0b0e14;
     --surface: #131824;
-    --panel2: #0f131c;
     --border: #232a38;
     --text: #e7eaf1;
     --muted: #9aa4b7;
-    --accent: #f0b429;
-    --amber: #f0b429;
-    --teal: #38bdf8;
-    --rose: #f87171;
-    --green: #4ade80;
-    --purple: #c084fc;
+    --accent: #5eead4;
+    --warn: #f87171;
   }
   * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
   body {
     margin: 0;
     background: var(--bg);
     color: var(--text);
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
     line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
   }
-  .layout {
-    display: flex;
-    max-width: 1440px;
+  .wrap {
+    max-width: 760px;
     margin: 0 auto;
+    padding: 48px 24px;
   }
-  
-  /* STICKY SIDEBAR NAV */
-  nav.sidebar {
-    width: 300px;
-    height: 100vh;
-    position: sticky;
-    top: 0;
-    background: var(--surface);
-    border-right: 1px solid var(--border);
-    overflow-y: auto;
-    padding: 24px 16px;
-    flex-shrink: 0;
-  }
-  nav.sidebar h3 {
-    font-size: 0.85rem;
-    color: var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 16px;
-    padding-left: 8px;
-  }
-  nav.sidebar a {
-    display: block;
-    color: var(--muted);
-    text-decoration: none;
-    font-size: 0.82rem;
-    padding: 6px 10px;
-    border-radius: 6px;
-    margin-bottom: 2px;
-    transition: all 0.15s ease;
-  }
-  nav.sidebar a:hover {
-    color: var(--accent);
-    background: rgba(240, 180, 41, 0.08);
-  }
-
-  /* MAIN CONTENT WRAPPER */
-  .main-content {
-    flex: 1;
-    max-width: 1080px;
-    padding: 48px 40px 120px;
-    overflow-x: hidden;
-  }
-
+  h1 { font-size: 2rem; margin-bottom: 4px; }
   .eyebrow {
     color: var(--accent);
     font-family: monospace;
-    font-size: 0.85rem;
-    letter-spacing: 0.06em;
+    font-size: .85rem;
+    letter-spacing: .06em;
     text-transform: uppercase;
     margin-bottom: 12px;
   }
-  h1 { font-size: 2.2rem; margin-top: 0; margin-bottom: 8px; font-weight: 800; line-height: 1.25; }
-  h1 span { color: var(--accent); }
-  .sub { color: var(--muted); font-size: 1rem; margin-bottom: 32px; }
-  
   h2 {
-    margin-top: 56px;
-    font-size: 1.4rem;
-    border-left: 4px solid var(--accent);
-    padding-left: 14px;
-    color: var(--text);
+    margin-top: 40px;
+    font-size: 1.25rem;
+    border-left: 3px solid var(--accent);
+    padding-left: 12px;
   }
-  h3 { font-size: 1.1rem; color: var(--teal); margin-top: 28px; }
-  h4 { font-size: 0.95rem; color: var(--purple); margin-top: 20px; }
-  p, li { color: var(--muted); font-size: 0.95rem; }
-  li { margin-bottom: 6px; }
-  b, strong { color: var(--text); }
-  
-  /* CARDS & PANELS */
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 20px 0; }
+  h3 { margin-top: 24px; font-size: 1rem; color: var(--text); }
+  p { color: var(--muted); }
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 20px;
+    margin: 16px 0;
   }
-  .card b { color: var(--accent); display: block; margin-bottom: 6px; font-size: 1rem; }
-  
-  /* CALLOUT BOXES */
-  .callout {
-    margin: 20px 0;
-    border-left: 4px solid var(--accent);
-    padding: 16px 20px;
-    background: rgba(240, 180, 41, 0.05);
-    border-radius: 0 8px 8px 0;
-    font-size: 0.92rem;
-  }
-  .callout.warn { border-left-color: var(--rose); background: rgba(248, 113, 113, 0.06); }
-  .callout.info { border-left-color: var(--teal); background: rgba(56, 189, 248, 0.06); }
-  .callout.success { border-left-color: var(--green); background: rgba(74, 222, 128, 0.06); }
-  
-  /* CODE BLOCKS WITH PURE CSS SYNTAX HIGHLIGHTING */
-  pre {
-    background: var(--panel2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 16px;
-    overflow-x: auto;
-    font-family: 'Consolas', 'Courier New', monospace;
-    font-size: 0.88rem;
-    line-height: 1.5;
-    color: #e7eaf1;
+  .card b { color: var(--text); display: block; margin-bottom: 4px; }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 16px 0;
   }
   code {
     background: #0f131c;
     border: 1px solid var(--border);
-    border-radius: 4px;
+    border-radius: 6px;
     padding: 2px 6px;
-    font-size: 0.88em;
+    font-size: .9em;
     color: var(--accent);
-    font-family: 'Consolas', 'Courier New', monospace;
   }
-  pre code { border: none; padding: 0; background: transparent; color: inherit; }
-  
-  .kw { color: #f43f5e; font-weight: bold; } /* Keywords (public, class, return) */
-  .anno { color: var(--accent); font-weight: bold; } /* Annotations (@Component) */
-  .type { color: var(--teal); } /* Types (String, User, BeanDefinition) */
-  .str { color: var(--green); } /* Strings */
-  .cmnt { color: #64748b; font-style: italic; } /* Comments */
-  .fn { color: #c084fc; } /* Functions */
-
-  /* TABLES */
-  table.matrix {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 24px 0;
-    font-size: 0.85rem;
-    background: var(--surface);
-    border-radius: 8px;
-    overflow: hidden;
-    border: 1px solid var(--border);
-  }
-  table.matrix th, table.matrix td {
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--border);
-    border-right: 1px solid var(--border);
-    text-align: left;
-  }
-  table.matrix th {
-    background: var(--panel2);
-    color: var(--accent);
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 0.05em;
-  }
-  table.matrix tr:last-child td { border-bottom: none; }
-
-  /* FLOWCHARTS & DIAGRAMS */
-  .diagram {
-    background: var(--panel2);
+  pre {
+    background: #0f131c;
     border: 1px solid var(--border);
     border-radius: 10px;
-    padding: 24px;
-    margin: 24px 0;
-  }
-  .flow-step {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 12px 16px;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .flow-step .num {
-    background: var(--accent);
-    color: var(--bg);
-    font-weight: bold;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.8rem;
-    flex-shrink: 0;
-  }
-  .flow-arrow {
-    text-align: center;
-    color: var(--accent);
-    font-size: 1.2rem;
-    margin: -4px 0 4px;
-  }
-
-  /* FAQ ACCORDION STYLE */
-  .faq-item {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    margin-bottom: 12px;
     padding: 16px;
+    overflow-x: auto;
   }
-  .faq-q { color: var(--accent); font-weight: 600; font-size: 1rem; margin-bottom: 8px; }
-  .faq-a { color: var(--muted); font-size: 0.92rem; }
-
-  @media (max-width: 900px) {
-    .layout { flex-direction: column; }
-    nav.sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border); }
-    .main-content { padding: 24px 16px; }
+  pre code {
+    border: none;
+    padding: 0;
+    background: none;
+    color: var(--text);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+  }
+  th, td {
+    text-align: left;
+    padding: 10px;
+    border-bottom: 1px solid var(--border);
+    font-size: .92rem;
+  }
+  th {
+    color: var(--accent);
+    font-family: monospace;
+    font-weight: 500;
+  }
+  td { color: var(--muted); }
+  ul, ol { color: var(--muted); padding-left: 20px; }
+  li { margin-bottom: 6px; }
+  .note {
+    border-left: 3px solid var(--accent);
+    background: var(--surface);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    color: var(--muted);
+    margin: 16px 0;
+    font-size: .92rem;
+  }
+  .note.warn {
+    border-left-color: var(--warn);
+  }
+  @media (max-width: 600px) {
+    .grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
 <body>
+<div class="wrap">
+  <div class="eyebrow">Spring Framework &middot; Core Architecture</div>
+  <h1>Stereotypes & @Bean</h1>
+  <p>How Spring discovers your classes, organizes them into layered enterprise architectures, and wires both internal components and third-party tools into the IoC container.</p>
 
-<div class="layout">
-  <!-- SIDEBAR NAVIGATION -->
-  <nav class="sidebar">
-    <h3>Spring Deep Dive</h3>
-    <a href="#sec1">1. Introduction & History</a>
-    <a href="#sec2">2. Stereotype Annotations Overview</a>
-    <a href="#sec3">3. Why So Many Annotations?</a>
-    <a href="#sec4">4. Internal Working & Startup Flow</a>
-    <a href="#sec5">5. @Component Deep Dive</a>
-    <a href="#sec6">6. @Service Deep Dive</a>
-    <a href="#sec7">7. @Repository Deep Dive</a>
-    <a href="#sec8">8. @Controller Deep Dive</a>
-    <a href="#sec9">9. @RestController Deep Dive</a>
-    <a href="#sec10">10. @Configuration Deep Dive</a>
-    <a href="#sec11">11. @Bean Complete Deep Dive</a>
-    <a href="#sec12">12. @Component vs @Bean</a>
-    <a href="#sec13">13. Complete Comparison Matrix</a>
-    <a href="#sec14">14. Production Walkthrough</a>
-    <a href="#sec15">15. Common Production Mistakes</a>
-    <a href="#sec16">16. Top 50 Interview QA</a>
-    <a href="#sec17">17. Production Best Practices</a>
-    <a href="#sec18">18. Quick Revision Cheat Sheet</a>
-    <a href="#sec19">19. Visual Architectural Infographic</a>
-  </nav>
+  <h2>1. What are Stereotype Annotations?</h2>
+  <p>Stereotypes are marker annotations placed on top of classes. When Spring starts up, its component scanner locates these annotations, instantiates the classes, and manages them as beans inside the container.</p>
+  
+  <div class="note">
+    <b>The Core Rule:</b> Under the hood, <code>@Service</code>, <code>@Repository</code>, and <code>@Controller</code> are all meta-annotated with <code>@Component</code>. Any of them will register a bean, but their specialized names communicate clear architectural intent to developers and provide specific runtime behaviors to Spring.
+  </div>
 
-  <!-- MAIN CONTENT -->
-  <main class="main-content">
-    <div class="eyebrow">Enterprise Java &middot; Spring Framework Internals</div>
-    <h1>Spring Stereotype Annotations & <span>@Bean</span></h1>
-    <div class="sub">The definitive production and interview guide to Spring's component model, CGLIB proxying, ASM bytecode scanning, and bean lifecycle architecture.</div>
+  <h2>2. Visual: The 3-Tier Layered Architecture</h2>
+  <p>Spring stereotypes match standard enterprise application layers. Each layer has a single responsibility and only talks to the layer directly below it:</p>
 
-    <!-- SECTION 1 -->
-    <section id="sec1">
-      <h2>1. Introduction & History</h2>
-      <p>In early Spring Framework (Spring 1.x), every managed component required explicit XML configuration in a central <code>applicationContext.xml</code> file. As enterprise applications expanded to thousands of classes, XML files became unmaintainable "XML hell."</p>
-      
-      <div class="callout info">
-        <b>What are Stereotype Annotations?</b><br>
-        Stereotypes are specialized marker annotations applied to classes to denote their role within the architectural hierarchy (e.g., Web, Service, Persistence). They allow Spring’s classpath scanner to automatically discover and instantiate managed objects without manual XML or Java configuration.
-      </div>
+  <div class="card">
+    <b>Request Flow Across Stereotype Boundaries</b>
+    <pre><code> [ Client / Browser / Mobile App ]
+                 │
+                 ▼  HTTP Request (JSON / Params)
+   ┌───────────────────────────┐
+   │      @RestController      │  <-- Web Layer: Routes, validates inputs,
+   └─────────────┬─────────────┘      serializes/deserializes JSON
+                 │
+                 ▼  Calls Service Method (DTOs / Domain Models)
+   ┌───────────────────────────┐
+   │         @Service          │  <-- Business Layer: Business validation,
+   └─────────────┬─────────────┘      orchestration, @Transactional boundaries
+                 │
+                 ▼  Calls Repository Method (Entities / Queries)
+   ┌───────────────────────────┐
+   │        @Repository        │  <-- Data Layer: Database queries, translates
+   └─────────────┬─────────────┘      raw SQL errors to DataAccessException
+                 │
+                 ▼  SQL / JDBC / Network
+          [ Database Engine ]</code></pre>
+  </div>
 
-      <h3>Why Were They Introduced?</h3>
-      <p>Spring 2.5 introduced component scanning and stereotype annotations (<code>@Component</code>, <code>@Repository</code>, <code>@Service</code>, <code>@Controller</code>) to achieve three objectives:</p>
-      <ul>
-        <li><b>Declarative Bean Registration:</b> Eliminate boilerplate XML <code>&lt;bean&gt;</code> declarations.</li>
-        <li><b>Domain-Driven Layering:</b> Express the exact architectural role of a class directly in source code.</li>
-        <li><b>Targeted Cross-Cutting Behavior:</b> Allow Aspect-Oriented Programming (AOP) aspects, exception translators, and controllers to target specific layers automatically.</li>
-      </ul>
+  <h2>3. The Core Stereotype Family</h2>
 
-      <h3>Why Can't We Simply Use @Component Everywhere?</h3>
-      <p>Technically, marking every class with <code>@Component</code> works because all stereotypes meta-inherit from <code>@Component</code>. However, doing so strips away specialized framework behaviors. For instance, <code>@Repository</code> triggers automatic database exception translation, <code>@Controller</code> enables Web MVC request mapping, and <code>@Configuration</code> activates CGLIB proxying for singleton guarantees.</p>
-    </section>
+  <div class="grid">
+    <div class="card">
+      <b>@Component</b>
+      <p>Generic stereotype for utility beans, background listeners, or any Spring-managed class that doesn't fit a specific layer.</p>
+    </div>
+    <div class="card">
+      <b>@Service</b>
+      <p>Business logic layer. The primary target for <code>@Transactional</code> boundaries and domain workflows.</p>
+    </div>
+    <div class="card">
+      <b>@Repository</b>
+      <p>Data access (DAO) layer. Automatically catches driver-specific exceptions (like SQL/Hibernate) and translates them into Spring's <code>DataAccessException</code>.</p>
+    </div>
+    <div class="card">
+      <b>@RestController</b>
+      <p>Web layer. Combines <code>@Controller</code> and <code>@ResponseBody</code> to return raw data (usually JSON) instead of HTML templates.</p>
+    </div>
+  </div>
 
-    <!-- SECTION 2 -->
-    <section id="sec2">
-      <h2>2. All Spring Stereotype Annotations</h2>
-      <p>Spring provides six core stereotype annotations. Below is an architectural breakdown of each:</p>
+  <h2>4. What is @Bean and Why Do We Need It?</h2>
+  <p>If <code>@Component</code> automatically detects classes, why does <code>@Bean</code> exist? The answer comes down to <b>source code ownership</b> and <b>configuration complexity</b>.</p>
 
-      <div class="grid">
-        <div class="card">
-          <b>@Component</b>
-          <p>The generic stereotype for any Spring-managed component or utility bean.</p>
-        </div>
-        <div class="card">
-          <b>@Service</b>
-          <p>Specialization for the business logic layer. Acts as a pointcut for transaction demarcation.</p>
-        </div>
-        <div class="card">
-          <b>@Repository</b>
-          <p>Specialization for the Data Access Object (DAO) layer. Enables SQL exception translation.</p>
-        </div>
-        <div class="card">
-          <b>@Controller</b>
-          <p>Specialization for Spring MVC web controllers returning view names or templates.</p>
-        </div>
-        <div class="card">
-          <b>@RestController</b>
-          <p>Composition of <code>@Controller</code> + <code>@ResponseBody</code> for RESTful JSON/XML endpoints.</p>
-        </div>
-        <div class="card">
-          <b>@Configuration</b>
-          <p>Specialization for bean factory classes containing <code>@Bean</code> factory methods.</p>
-        </div>
-      </div>
-    </section>
+  <div class="card">
+    <b>Visual Comparison: Registration Mechanisms</b>
+    <pre><code> 1. @Component (Automatic Scanning)
+    ┌───────────────────────────┐
+    │ @Service                  │ ──> Spring automatically finds your file
+    │ public class OrderService │     and calls its constructor.
+    └───────────────────────────┘     (Requires editable source code)
 
-    <!-- SECTION 3 -->
-    <section id="sec3">
-      <h2>3. Why So Many Stereotype Annotations?</h2>
-      <p>If all stereotypes instantiate beans inside the <code>ApplicationContext</code>, why didn't the Spring team stop at <code>@Component</code>?</p>
-      
-      <h3>1. Semantic Meaning & Domain-Driven Design (DDD)</h3>
-      <p>Software architecture relies on expressiveness. When a developer inspects a class annotated with <code>@Service</code>, its role (business workflows, orchestration, validation) is instantly distinct from a data access class marked with <code>@Repository</code>.</p>
+ 2. @Bean (Explicit Factory Registration)
+    ┌───────────────────────────┐
+    │ @Configuration            │
+    │ public class AppConfig {  │
+    │   @Bean                   │ ──> You write the exact creation logic.
+    │   public RestTemplate rt(){     Essential for 3rd-party JARs where
+    │     return new ...;       │     you cannot add @Component!
+    │   }                       │
+    │ }                         │
+    └───────────────────────────┘</code></pre>
+  </div>
 
-      <h3>2. Real-World Architectural Analogies</h3>
-      <div class="grid">
-        <div class="card">
-          <b>The Hospital Analogy</b>
-          <p>In a hospital, every worker is an "Employee" (<code>@Component</code>). But we assign specific roles: Doctor (<code>@Service</code>), Pharmacist (<code>@Repository</code>), Receptionist (<code>@Controller</code>). Treating everyone as a generic Employee breaks specialized operations (e.g., only Doctors perform surgery).</p>
-        </div>
-        <div class="card">
-          <b>The Restaurant Analogy</b>
-          <p>A restaurant employs Staff. The Waiter (<code>@Controller</code>) receives customer orders. The Chef (<code>@Service</code>) prepares the meal using business rules. The Pantry Manager (<code>@Repository</code>) fetches ingredients from storage.</p>
-        </div>
-      </div>
+  <h3>When to Use What</h3>
+  <table>
+    <tr><th>Dimension</th><th>@Component</th><th>@Bean</th></tr>
+    <tr><td>Target</td><td>Class level</td><td>Method level inside <code>@Configuration</code></td></tr>
+    <tr><td>Source Code</td><td>You must own the source code</td><td>Works for external JARs (e.g. AWS SDK, Kafka)</td></tr>
+    <tr><td>Discovery</td><td>Automatic via package scanning</td><td>Explicitly declared by your method</td></tr>
+    <tr><td>Custom Logic</td><td>Limited to constructor wiring</td><td>Full Java code, builder patterns, conditional setup</td></tr>
+  </table>
 
-      <h3>3. Layer-Specific Framework Interception</h3>
-      <ul>
-        <li><b>AOP Pointcuts:</b> Aspects can easily target whole layers: <code>execution(* com.app.service..*.*(..))</code> targeting classes annotated with <code>@Service</code>.</li>
-        <li><b>Exception Translation:</b> <code>@Repository</code> triggers Spring's <code>PersistenceExceptionTranslationPostProcessor</code>, translating native <code>SQLException</code> or <code>HibernateException</code> instances into Spring's uniform <code>DataAccessException</code> hierarchy.</li>
-        <li><b>MVC Handler Mapping:</b> <code>DispatcherServlet</code> scans only for <code>@Controller</code> and <code>@RestController</code> to register endpoint mappings during startup.</li>
-      </ul>
-    </section>
+  <h2>5. @Configuration: Full vs Lite Mode</h2>
+  <p>Methods annotated with <code>@Bean</code> live inside classes. How you annotate the parent class changes how Spring handles singleton guarantees:</p>
 
-    <!-- SECTION 4 -->
-    <section id="sec4">
-      <h2>4. Internal Working & Startup Flow</h2>
-      <p>How does Spring process these annotations on startup? It uses ASM bytecode scanning without loading classes into the JVM ClassLoader initially.</p>
+  <div class="grid">
+    <div class="card">
+      <b>@Configuration (Full Mode)</b>
+      <p>Spring wraps the class in a CGLIB proxy. If one <code>@Bean</code> method calls another <code>@Bean</code> method internally, the proxy intercepts it to return the <b>cached singleton</b> rather than creating a duplicate object.</p>
+    </div>
+    <div class="card">
+      <b>@Component (Lite Mode)</b>
+      <p>No CGLIB proxy is generated. Calling an inter-bean method directly executes standard Java code, instantiating a <b>new unmanaged object</b> every time.</p>
+    </div>
+  </div>
 
-      <div class="diagram">
-        <div class="flow-step">
-          <div class="num">1</div>
-          <div><b>Application Startup:</b> <code>SpringApplication.run()</code> initializes the <code>AnnotationConfigApplicationContext</code>.</div>
-        </div>
-        <div class="flow-arrow">&darr;</div>
-        <div class="flow-step">
-          <div class="num">2</div>
-          <div><b>Classpath Scanning:</b> <code>ClassPathBeanDefinitionScanner</code> parses package directives defined by <code>@ComponentScan</code>.</div>
-        </div>
-        <div class="flow-arrow">&darr;</div>
-        <div class="flow-step">
-          <div class="num">3</div>
-          <div><b>ASM Bytecode Inspection:</b> <code>SimpleMetadataReaderFactory</code> uses Apache Commons BCEL/ASM to read <code>.class</code> files as raw streams. It evaluates annotations without executing static class initializers.</div>
-        </div>
-        <div class="flow-arrow">&darr;</div>
-        <div class="flow-step">
-          <div class="num">4</div>
-          <div><b>Candidate Filtering:</b> <code>AnnotationTypeFilter</code> matches classes containing <code>@Component</code> or meta-annotated stereotypes.</div>
-        </div>
-        <div class="flow-arrow">&darr;</div>
-        <div class="flow-step">
-          <div class="num">5</div>
-          <div><b>BeanDefinition Creation:</b> Spring constructs a <code>ScannedGenericBeanDefinition</code> holding scope, lazy status, and autowiring metadata.</div>
-        </div>
-        <div class="flow-arrow">&darr;</div>
-        <div class="flow-step">
-          <div class="num">6</div>
-          <div><b>BeanFactory Registration:</b> The <code>BeanDefinition</code> is registered in the <code>DefaultListableBeanFactory</code> map under its generated bean name.</div>
-        </div>
-        <div class="flow-arrow">&darr;</div>
-        <div class="flow-step">
-          <div class="num">7</div>
-          <div><b>Instantiation & Dependency Injection:</b> Non-lazy singletons are instantiated, injected with dependencies, processed by <code>BeanPostProcessors</code>, and initialized.</div>
-        </div>
-      </div>
-    </section>
+  <pre><code>@Configuration
+public class SecurityConfig {
 
-    <!-- SECTION 5 -->
-    <section id="sec5">
-      <h2>5. @Component Deep Dive</h2>
-      <p><code>@Component</code> is the foundational stereotype annotation defined in package <code>org.springframework.stereotype</code>.</p>
-      
-      <pre><code><span class="kw">package</span> com.devvault.utils;
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
-<span class="kw">import</span> org.springframework.stereotype.Component;
-
-<span class="anno">@Component</span>
-<span class="kw">public class</span> <span class="type">DataHashingUtility</span> {
-    <span class="kw">public</span> <span class="type">String</span> <span class="fn">hash</span>(<span class="type">String</span> input) {
-        <span class="kw">return</span> <span class="type">Integer</span>.toHexString(input.hashCode());
+    @Bean
+    public UserService userService() {
+        // CGLIB intercepts this call: returns the singleton PasswordEncoder bean!
+        return new UserService(passwordEncoder()); 
     }
 }</code></pre>
 
-      <h3>Generated Bean Name Conventions</h3>
-      <p>By default, Spring uses <code>AnnotationBeanNameGenerator</code>. If no name is specified in <code>@Component("customName")</code>, Spring converts the simple class name to decapitalized camelCase (e.g., <code>DataHashingUtility</code> &rarr; <code>dataHashingUtility</code>). <i>Exception:</i> If the first two letters are uppercase, the original casing is preserved (e.g., <code>URLParser</code> &rarr; <code>URLParser</code>).</p>
-    </section>
+  <h2>6. Clean Production Code Example</h2>
+  <p>How the entire flow wires together cleanly without messy configuration:</p>
 
-    <!-- SECTION 6 -->
-    <section id="sec6">
-      <h2>6. @Service Deep Dive</h2>
-      <p><code>@Service</code> decorates classes in the business layer that execute domain transactions and business workflows.</p>
+  <pre><code>// 1. Controller receives HTTP request
+@RestController
+@RequestMapping("/api/orders")
+public class OrderController {
+    private final OrderService orderService;
 
-      <pre><code><span class="kw">package</span> com.devvault.service;
-
-<span class="kw">import</span> org.springframework.stereotype.Service;
-<span class="kw">import</span> org.springframework.transaction.annotation.Transactional;
-
-<span class="anno">@Service</span>
-<span class="kw">public class</span> <span class="type">OrderProcessingService</span> {
-    
-    <span class="anno">@Transactional</span>
-    <span class="kw">public void</span> <span class="fn">processOrder</span>(<span class="type">String</span> orderId) {
-        <span class="cmnt">// Business rules, payment gateways, and inventory allocation</span>
+    public OrderController(OrderService orderService) {
+        this.orderService = orderService;
     }
-}</code></pre>
 
-      <div class="callout success">
-        <b>Production Best Practice:</b> Do not place database persistence logic or HTTP handling inside <code>@Service</code> classes. Keep services framework-agnostic where possible, taking in DTOs/Domain Models and returning clean entities or responses.
-      </div>
-    </section>
-
-    <!-- SECTION 7 -->
-    <section id="sec7">
-      <h2>7. @Repository Deep Dive</h2>
-      <p><code>@Repository</code> marks Data Access Objects (DAOs) and persistence implementations. Beyond registering a bean, it enables automated database exception translation.</p>
-
-      <div class="diagram">
-        <h4>Exception Translation Flow</h4>
-        <p>Native Driver Exception (e.g., <code>SQLException</code>, <code>PersistenceException</code>)</p>
-        <div class="flow-arrow">&darr;</div>
-        <p>Intercepted by <code>PersistenceExceptionTranslationPostProcessor</code></p>
-        <div class="flow-arrow">&darr;</div>
-        <p>Converted to Spring's <code>DataAccessException</code> (e.g., <code>DataIntegrityViolationException</code>)</p>
-      </div>
-
-      <pre><code><span class="kw">package</span> com.devvault.repository;
-
-<span class="kw">import</span> org.springframework.stereotype.Repository;
-
-<span class="anno">@Repository</span>
-<span class="kw">public class</span> <span class="type">CustomUserRepositoryImpl</span> {
-    <span class="cmnt">// Native JPA/EntityManager operations throwing persistence exceptions</span>
-}</code></pre>
-    </section>
-
-    <!-- SECTION 8 -->
-    <section id="sec8">
-      <h2>8. @Controller Deep Dive</h2>
-      <p><code>@Controller</code> serves as the presentation component in traditional Spring MVC applications. It returns view template names resolved by a <code>ViewResolver</code> (e.g., Thymeleaf, HTML).</p>
-
-      <pre><code><span class="anno">@Controller</span>
-<span class="kw">public class</span> <span class="type">WebPageController</span> {
-
-    <span class="anno">@GetMapping</span>(<span class="str">"/dashboard"</span>)
-    <span class="kw">public</span> <span class="type">String</span> <span class="fn">getDashboard</span>(<span class="type">Model</span> model) {
-        model.addAttribute(<span class="str">"user"</span>, <span class="str">"Admin"</span>);
-        <span class="kw">return</span> <span class="str">"dashboard"</span>; <span class="cmnt">// Resolves to templates/dashboard.html</span>
-    }
-}</code></pre>
-    </section>
-
-    <!-- SECTION 9 -->
-    <section id="sec9">
-      <h2>9. @RestController Deep Dive</h2>
-      <p><code>@RestController</code> is a meta-annotation composed of <code>@Controller</code> and <code>@ResponseBody</code>. Instead of returning rendered HTML views, handler methods serialize return objects directly into HTTP response bodies (JSON or XML) via <code>HttpMessageConverter</code> (typically Jackson).</p>
-
-      <pre><code><span class="anno">@Target</span>(ElementType.TYPE)
-<span class="anno">@Retention</span>(RetentionPolicy.RUNTIME)
-<span class="anno">@Controller</span>
-<span class="anno">@ResponseBody</span>
-<span class="kw">public @interface</span> <span class="type">RestController</span> {
-    <span class="type">String</span> <span class="fn">value</span>() <span class="kw">default</span> <span class="str">""</span>;
-}</code></pre>
-    </section>
-
-    <!-- SECTION 10 -->
-    <section id="sec10">
-      <h2>10. @Configuration Deep Dive</h2>
-      <p><code>@Configuration</code> classes define Spring factory methods annotated with <code>@Bean</code>. Spring uses CGLIB byte-code generation to proxy <code>@Configuration</code> classes in <b>Full Mode</b>.</p>
-
-      <div class="callout warn">
-        <b>CGLIB Enhancement & Method Interception:</b><br>
-        When a class is marked with <code>@Configuration</code> (or <code>proxyBeanMethods = true</code>), Spring generates a runtime CGLIB subclass. When one <code>@Bean</code> method calls another <code>@Bean</code> method internally, the CGLIB proxy intercepts the call, checking the <code>BeanFactory</code> first to guarantee singleton instances instead of re-executing raw Java methods.
-      </div>
-    </section>
-
-    <!-- SECTION 11 -->
-    <section id="sec11">
-      <h2>11. @Bean Annotation Complete Deep Dive</h2>
-      <p>While stereotypes are applied at class level for automatic scanning, <code>@Bean</code> is applied at method level to explicitly instantiate and return objects.</p>
-
-      <h3>Why Does @Bean Exist if We Have @Component?</h3>
-      <ul>
-        <li><b>Third-Party Libraries:</b> You cannot add <code>@Component</code> to a class inside an external compiled <code>.jar</code> file (e.g., RedisTemplate, RestTemplate, DataSource).</li>
-        <li><b>Complex Custom Instantiation:</b> When creating an object requires intricate builder pattern configurations, reading environment properties, or executing complex initialization code.</li>
-        <li><b>Conditional Creation:</b> Toggle bean creation dynamically based on runtime conditions using <code>@ConditionalOnProperty</code>, <code>@ConditionalOnClass</code>, or profiles.</li>
-      </ul>
-
-      <pre><code><span class="anno">@Configuration</span>
-<span class="kw">public class</span> <span class="type">AppInfrastructureConfig</span> {
-
-    <span class="anno">@Bean</span>(initMethod = <span class="str">"start"</span>, destroyMethod = <span class="str">"stop"</span>)
-    <span class="anno">@Scope</span>(<span class="str">"singleton"</span>)
-    <span class="anno">@Lazy</span>
-    <span class="kw">public</span> <span class="type">ExternalQueueClient</span> <span class="fn">queueClient</span>() {
-        <span class="kw">return new</span> <span class="type">ExternalQueueClient</span>(<span class="str">"tcp://localhost:61616"</span>);
-    }
-}</code></pre>
-    </section>
-
-    <!-- SECTION 12 -->
-    <section id="sec12">
-      <h2>12. @Component vs @Bean</h2>
-      <p>Understanding when to choose class-level stereotypes versus explicit method-level factory beans:</p>
-
-      <table class="matrix">
-        <thead>
-          <tr>
-            <th>Dimension</th>
-            <th>@Component (And Stereotypes)</th>
-            <th>@Bean</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Target Level</td>
-            <td>Class Level</td>
-            <td>Method Level</td>
-          </tr>
-          <tr>
-            <td>Source Code Access</td>
-            <td>Requires editable source code</td>
-            <td>Works with compiled 3rd-party JARs</td>
-          </tr>
-          <tr>
-            <td>Discovery Mode</td>
-            <td>Automatic via <code>@ComponentScan</code></td>
-            <td>Explicit execution inside <code>@Configuration</code></td>
-          </tr>
-          <tr>
-            <td>Custom Creation Logic</td>
-            <td>Limited to constructor execution</td>
-            <td>Full control using Java code & builders</td>
-          </tr>
-          <tr>
-            <td>Multiple Instances</td>
-            <td>One bean definition per class file</td>
-            <td>Multiple beans of same class via different methods</td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
-
-    <!-- SECTION 13 -->
-    <section id="sec13">
-      <h2>13. Complete Comparison Matrix</h2>
-      <p>A complete matrix comparing all stereotypic and configuration mechanisms in Spring:</p>
-
-      <table class="matrix">
-        <thead>
-          <tr>
-            <th>Annotation</th>
-            <th>Layer / Role</th>
-            <th>Auto-Scanned?</th>
-            <th>Special Framework Feature</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><code>@Component</code></td>
-            <td>Generic / Utility</td>
-            <td>Yes</td>
-            <td>Base archetype for component scanning</td>
-          </tr>
-          <tr>
-            <td><code>@Service</code></td>
-            <td>Business Logic</td>
-            <td>Yes</td>
-            <td>Pointcut target for business & transactions</td>
-          </tr>
-          <tr>
-            <td><code>@Repository</code></td>
-            <td>Data Access (DAO)</td>
-            <td>Yes</td>
-            <td>Translates SQL exceptions to <code>DataAccessException</code></td>
-          </tr>
-          <tr>
-            <td><code>@Controller</code></td>
-            <td>Web MVC View Handler</td>
-            <td>Yes</td>
-            <td>Maps HTTP routes to HTML view names</td>
-          </tr>
-          <tr>
-            <td><code>@RestController</code></td>
-            <td>REST Web API</td>
-            <td>Yes</td>
-            <td>Auto-applies <code>@ResponseBody</code> for JSON conversion</td>
-          </tr>
-          <tr>
-            <td><code>@Configuration</code></td>
-            <td>Bean Configuration</td>
-            <td>Yes</td>
-            <td>CGLIB proxying guarantees singleton calls</td>
-          </tr>
-          <tr>
-            <td><code>@Bean</code></td>
-            <td>Factory Method</td>
-            <td>No (Method)</td>
-            <td>Instantiates third-party classes & complex objects</td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
-
-    <!-- SECTION 14 -->
-    <section id="sec14">
-      <h2>14. Production Project Walkthrough</h2>
-      <p>Below is a clean architecture walkthrough illustrating proper layer decoupling in a production system:</p>
-
-      <pre><code><span class="cmnt">// 1. REST Controller Layer</span>
-<span class="anno">@RestController</span>
-<span class="anno">@RequestMapping</span>(<span class="str">"/api/v1/users"</span>)
-<span class="kw">public class</span> <span class="type">UserController</span> {
-    <span class="kw">private final</span> <span class="type">UserService</span> userService;
-    <span class="kw">public</span> <span class="fn">UserController</span>(<span class="type">UserService</span> userService) { <span class="kw">this</span>.userService = userService; }
-
-    <span class="anno">@PostMapping</span>
-    <span class="kw">public</span> <span class="type">ResponseEntity</span>&lt;<span class="type">User</span>&gt; <span class="fn">createUser</span>(<span class="anno">@RequestBody</span> <span class="type">UserDto</span> dto) {
-        <span class="kw">return</span> <span class="type">ResponseEntity</span>.ok(userService.register(dto));
+    @PostMapping
+    public ResponseEntity&lt;Order&gt; placeOrder(@RequestBody OrderDto dto) {
+        return ResponseEntity.ok(orderService.createOrder(dto));
     }
 }
 
-<span class="cmnt">// 2. Service Layer</span>
-<span class="anno">@Service</span>
-<span class="kw">public class</span> <span class="type">UserService</span> {
-    <span class="kw">private final</span> <span class="type">UserRepository</span> userRepo;
-    <span class="kw">public</span> <span class="fn">UserService</span>(<span class="type">UserRepository</span> userRepo) { <span class="kw">this</span>.userRepo = userRepo; }
+// 2. Service processes business rules inside transaction
+@Service
+public class OrderService {
+    private final OrderRepository orderRepository;
 
-    <span class="anno">@Transactional</span>
-    <span class="kw">public</span> <span class="type">User</span> <span class="fn">register</span>(<span class="type">UserDto</span> dto) {
-        <span class="kw">return</span> userRepo.save(<span class="kw">new</span> <span class="type">User</span>(dto.getName()));
+    public OrderService(OrderRepository orderRepository) {
+        this.orderRepository = orderRepository;
+    }
+
+    @Transactional
+    public Order createOrder(OrderDto dto) {
+        // Business logic here
+        return orderRepository.save(new Order(dto.getItem()));
     }
 }
 
-<span class="cmnt">// 3. Repository Layer</span>
-<span class="anno">@Repository</span>
-<span class="kw">public class</span> <span class="type">UserRepositoryImpl</span> <span class="kw">implements</span> <span class="type">UserRepository</span> {
-    <span class="cmnt">// Persistence logic</span>
+// 3. Configuration registers third-party external tool
+@Configuration
+public class NetworkConfig {
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
 }</code></pre>
-    </section>
 
-    <!-- SECTION 15 -->
-    <section id="sec15">
-      <h2>15. Common Production Mistakes</h2>
-      
-      <div class="callout warn">
-        <b>1. Using @Component Everywhere:</b> Strips away exception translation on repositories and transaction pointcuts on services.
-      </div>
-      <div class="callout warn">
-        <b>2. Calling @Bean Methods inside @Component Classes:</b> Without <code>@Configuration</code> CGLIB proxying, inter-bean method calls execute plain Java code, instantiating duplicate non-singleton objects.
-      </div>
-      <div class="callout warn">
-        <b>3. Package Scanning Mismatches:</b> Placing components outside the package hierarchy of the <code>@SpringBootApplication</code> class without declaring explicit <code>scanBasePackages</code>.
-      </div>
-    </section>
+  <h2>7. Common Pitfalls</h2>
+  <div class="note warn">
+    <b>1. Putting @Component Everywhere:</b> Don't mark everything as a generic component. You lose automated exception handling on repositories and clear architectural boundaries for AOP pointcuts.
+  </div>
+  <div class="note warn">
+    <b>2. Storing Mutable State in Singletons:</b> All stereotype beans are singletons by default. Never store request-specific user data in instance variables—incoming threads will overwrite each other's data.
+  </div>
+  <div class="note warn">
+    <b>3. Package Scanning Mismatches:</b> Spring Boot scans everything <i>under</i> the package containing your main <code>@SpringBootApplication</code> class. If you put classes in an external package, Spring won't discover them without an explicit <code>scanBasePackages</code> declaration.
+  </div>
 
-    <!-- SECTION 16 -->
-    <section id="sec16">
-      <h2>16. Top 50 Interview QA</h2>
-      <p>Key technical interview questions and answers for Senior Spring Boot Developer roles:</p>
-
-      <div class="faq-item">
-        <div class="faq-q">Q1: How does @Repository handle exception translation internally?</div>
-        <div class="faq-a">Spring applies <code>PersistenceExceptionTranslationPostProcessor</code> to beans marked with <code>@Repository</code>. It wraps the bean in an AOP interceptor that catches technology-specific exceptions (JPA, Hibernate, JDBC) and translates them using <code>PersistenceExceptionTranslator</code> into Spring's <code>DataAccessException</code> hierarchy.</div>
-      </div>
-
-      <div class="faq-item">
-        <div class="faq-q">Q2: What happens if I call a @Bean method from another @Bean method in a @Component class versus a @Configuration class?</div>
-        <div class="faq-a">In a <code>@Configuration</code> class, Spring proxies the class using CGLIB (Full Mode). Calling a <code>@Bean</code> method retrieves the existing singleton instance from the <code>BeanFactory</code>. In a <code>@Component</code> class (Lite Mode), CGLIB proxying is disabled; calling the method invokes standard Java execution, creating a second unmanaged instance.</div>
-      </div>
-
-      <div class="faq-item">
-        <div class="faq-q">Q3: Does Spring load classes into JVM memory during component scanning?</div>
-        <div class="faq-a">No. Spring uses ASM bytecode reading via <code>SimpleMetadataReaderFactory</code> to inspect <code>.class</code> streams without passing them to the JVM <code>ClassLoader</code>. This speeds up boot times and prevents premature static initialization.</div>
-      </div>
-
-      <div class="faq-item">
-        <div class="faq-q">Q4: What is the difference between @Controller and @RestController?</div>
-        <div class="faq-a"><code>@RestController</code> is meta-annotated with <code>@Controller</code> and <code>@ResponseBody</code>. While <code>@Controller</code> expects handler methods to return view names for rendering (e.g. HTML/Thymeleaf), <code>@RestController</code> automatically serializes method return values directly into the HTTP response body as JSON/XML using <code>HttpMessageConverters</code>.</div>
-      </div>
-
-      <div class="faq-item">
-        <div class="faq-q">Q5: Why can't we use @Component for 3rd party classes?</div>
-        <div class="faq-a"><code>@Component</code> requires editing source code to place the annotation above the class definition. Since 3rd party dependencies are compiled into <code>.class</code> files inside JARs, you must use <code>@Bean</code> inside a <code>@Configuration</code> class to declare third-party beans.</div>
-      </div>
-
-      <div class="faq-item">
-        <div class="faq-q">Q6: What is the proxyBeanMethods attribute in @Configuration?</div>
-        <div class="faq-a">Introduced in Spring 5.2, setting <code>proxyBeanMethods = false</code> disables CGLIB subclass generation for <code>@Configuration</code> classes (Lite Mode). This improves startup performance and reduces memory overhead when inter-bean method calls are not used.</div>
-      </div>
-
-      <div class="faq-item">
-        <div class="faq-q">Q7: Can a class have multiple stereotype annotations?</div>
-        <div class="faq-a">Technically Java allows stacking annotations, but doing so creates conflicting framework behavior (e.g., mixing MVC controller mapping with repository exception translation). Architecture requires assigning a single primary stereotype per class based on its layer.</div>
-      </div>
-
-      <div class="faq-item">
-        <div class="faq-q">Q8: How does Spring resolve bean name collisions during scanning?</div>
-        <div class="faq-a">If two scanned components resolve to the same bean name in the same context, Spring throws a <code>ConflictingBeanDefinitionException</code> during startup unless explicitly overridden using custom names or primary qualifiers.</div>
-      </div>
-
-      <div class="faq-item">
-        <div class="faq-q">Q9: What is the default scope of beans created via @Component or @Bean?</div>
-        <div class="faq-a">The default scope is <b>Singleton</b>. Spring creates one shared instance per <code>ApplicationContext</code> container.</div>
-      </div>
-
-      <div class="faq-item">
-        <div class="faq-q">Q10: What is the difference between @Autowired and @Bean?</div>
-        <div class="faq-a"><code>@Autowired</code> is an injection annotation used to request a dependency instance. <code>@Bean</code> is a factory method creation annotation used to register an instance inside the container.</div>
-      </div>
-
-      <div class="faq-item"><div class="faq-q">Q11: How does @ComponentScan work when no base packages are specified?</div><div class="faq-a">It defaults to scanning the package of the class declaring the <code>@ComponentScan</code> or <code>@SpringBootApplication</code> annotation, including all sub-packages underneath it.</div></div>
-      <div class="faq-item"><div class="faq-q">Q12: Can we declare @Bean methods as static?</div><div class="faq-a">Yes. Static <code>@Bean</code> methods are invoked without instantiating their enclosing <code>@Configuration</code> class, which is necessary when registering early infrastructure beans like <code>BeanFactoryPostProcessor</code>.</div></div>
-      <div class="faq-item"><div class="faq-q">Q13: What is Lite Mode in Spring configuration?</div><div class="faq-a">Lite Mode occurs when <code>@Bean</code> methods are defined inside plain <code>@Component</code> classes or when <code>proxyBeanMethods = false</code> is set on a <code>@Configuration</code> class. CGLIB proxying is bypassed.</div></div>
-      <div class="faq-item"><div class="faq-q">Q14: How does Spring's @Repository know which database exceptions to translate?</div><div class="faq-a">It uses persistence translators like <code>SQLExceptionTranslator</code> or <code>PersistenceExceptionTranslator</code> configured for specific ORMs (Hibernate/JPA) to map SQL error codes to Spring's <code>DataAccessException</code> hierarchy.</div></div>
-      <div class="faq-item"><div class="faq-q">Q15: What annotation is used to lazily initialize a stereotype bean?</div><div class="faq-a">The <code>@Lazy</code> annotation. It defers bean creation until the bean is requested for the first time instead of during application startup.</div></div>
-      <div class="faq-item"><div class="faq-q">Q16: How do you register a prototype-scoped bean using @Bean?</div><div class="faq-a">By decorating the <code>@Bean</code> method with <code>@Scope("prototype")</code> or <code>@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)</code>.</div></div>
-      <div class="faq-item"><div class="faq-q">Q17: Is @Service required for a service class to participate in transactions?</div><div class="faq-a">No. Transactional behavior is driven by <code>@Transactional</code> and Spring AOP. However, <code>@Service</code> provides architectural clarity and allows layer-specific pointcut expressions.</div></div>
-      <div class="faq-item"><div class="faq-q">Q18: What is meta-annotation in Spring?</div><div class="faq-a">An annotation applied to another annotation. For instance, <code>@Service</code> is meta-annotated with <code>@Component</code>, allowing scanners to recognize it as a Spring component.</div></div>
-      <div class="faq-item"><div class="faq-q">Q19: How to override a bean definition in Spring Boot?</div><div class="faq-a">By setting <code>spring.main.allow-bean-definition-overriding=true</code> in <code>application.properties</code> or using <code>@Primary</code> / <code>@ConditionalOnMissingBean</code>.</div></div>
-      <div class="faq-item"><div class="faq-q">Q20: What is the role of @Indexed in Spring 5?</div><div class="faq-a">An annotation from <code>org.springframework.stereotype</code> that generates an index file (<code>META-INF/spring.components</code>) at compile time to speed up classpath scanning in massive applications.</div></div>
-      <div class="faq-item"><div class="faq-q">Q21: Difference between @Primary and @Qualifier?</div><div class="faq-a"><code>@Primary</code> sets a default fallback preference when multiple beans match a injection candidate type. <code>@Qualifier</code> provides specific, explicit bean name targeting at the injection point.</div></div>
-      <div class="faq-item"><div class="faq-q">Q22: Can a @Bean method return void?</div><div class="faq-a">No. A <code>@Bean</code> method must return an object instance to register inside the <code>ApplicationContext</code> container. Returning void causes startup errors.</div></div>
-      <div class="faq-item"><div class="faq-q">Q23: How to define custom init and destroy methods on @Bean?</div><div class="faq-a">Using attributes: <code>@Bean(initMethod = "customInit", destroyMethod = "customDestroy")</code>.</div></div>
-      <div class="faq-item"><div class="faq-q">Q24: What happens if a @Service bean throws an unhandled RuntimeException?</div><div class="faq-a">If wrapped inside a <code>@Transactional</code> boundary, Spring AOP catches the <code>RuntimeException</code> and triggers a database transaction rollback.</div></div>
-      <div class="faq-item"><div class="faq-q">Q25: Why is Constructor Injection preferred over @Autowired on fields?</div><div class="faq-a">Constructor injection guarantees immutability (final fields), prevents <code>NullPointerException</code> during unit tests without Spring runner, and prevents circular dependencies at startup.</div></div>
-      <div class="faq-item"><div class="faq-q">Q26: Can we use @PostConstruct with @Bean?</div><div class="faq-a">Yes. Any object created by Spring (whether via <code>@Component</code> or <code>@Bean</code>) undergoes <code>BeanPostProcessor</code> execution, triggering <code>@PostConstruct</code> methods.</div></div>
-      <div class="faq-item"><div class="faq-q">Q27: Difference between @Component and @Configuration?</div><div class="faq-a">Both register components, but <code>@Configuration</code> classes are enhanced with CGLIB proxies to intercept inter-bean method calls and enforce singleton semantics.</div></div>
-      <div class="faq-item"><div class="faq-q">Q28: How does Spring Boot discover auto-configuration classes?</div><div class="faq-a">By reading the <code>META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports</code> file using Spring Factories loader.</div></div>
-      <div class="faq-item"><div class="faq-q">Q29: Can @Repository be used with Spring Data JPA interfaces?</div><div class="faq-a">Spring Data JPA interfaces extending <code>JpaRepository</code> do not strictly require <code>@Repository</code> because Spring Data infrastructure automatically discovers and creates proxy instances for them.</div></div>
-      <div class="faq-item"><div class="faq-q">Q30: What is AnnotationConfigApplicationContext?</div><div class="faq-a">A standalone application context implementation that accepts annotated classes (stereotypes and configurations) directly as input for bean registration.</div></div>
-      <div class="faq-item"><div class="faq-q">Q31: How to exclude specific components from @ComponentScan?</div><div class="faq-a">Using the <code>excludeFilters</code> attribute of <code>@ComponentScan</code> with custom regex or annotation type filters.</div></div>
-      <div class="faq-item"><div class="faq-q">Q32: Is @RestController thread-safe?</div><div class="faq-a">Because controllers are singleton by default, they are thread-safe only if they are stateless. Holding mutable instance state in a singleton controller introduces race conditions.</div></div>
-      <div class="faq-item"><div class="faq-q">Q33: Can we inject prototype beans into a singleton bean safely?</div><div class="faq-a">Not directly via field injection, because the singleton is injected only once at startup. You must use <code>@Lookup</code> method injection or <code>ObjectProvider&lt;T&gt;</code>.</div></div>
-      <div class="faq-item"><div class="faq-q">Q34: How to name a bean created via @Bean?</div><div class="faq-a">By setting the value attribute: <code>@Bean(name = "customBeanName")</code> or <code>@Bean("customBeanName")</code>.</div></div>
-      <div class="faq-item"><div class="faq-q">Q35: What happens if two @Bean methods in different configuration classes have identical names?</div><div class="faq-a">Unless bean overriding is allowed, the last loaded bean definition will overwrite the former, or Spring Boot will throw a <code>BeanDefinitionOverrideException</code>.</div></div>
-      <div class="faq-item"><div class="faq-q">Q36: Why should business logic not be written inside Controller methods?</div><div class="faq-a">It violates Single Responsibility Principle (SRP), prevents reusability across multiple controllers or asynchronous workers, and makes unit testing difficult.</div></div>
-      <div class="faq-item"><div class="faq-q">Q37: What is the purpose of @ResponseBody?</div><div class="faq-a">It tells Spring MVC that the method return value should be bound directly to the HTTP response payload body rather than rendered as a template view name.</div></div>
-      <div class="faq-item"><div class="faq-q">Q38: How does Spring match HTTP requests to @RestController handler methods?</div><div class="faq-a">Via <code>RequestMappingHandlerMapping</code>, which scans <code>@Controller</code> and <code>@RestController</code> beans to construct lookup tables matching HTTP path, method, headers, and media types.</div></div>
-      <div class="faq-item"><div class="faq-q">Q39: Does @Component work on abstract classes?</div><div class="faq-a">Spring scans the abstract class definition, but it cannot instantiate an abstract class directly. It will instantiate concrete subclasses that inherit the stereotype.</div></div>
-      <div class="faq-item"><div class="faq-q">Q40: How to conditionalize a @Bean on a configuration property?</div><div class="faq-a">Decorate the <code>@Bean</code> method with <code>@ConditionalOnProperty(name = "feature.enabled", havingValue = "true")</code>.</div></div>
-      <div class="faq-item"><div class="faq-q">Q41: Difference between @ControllerAdvice and @Controller?</div><div class="faq-a"><code>@Controller</code> handles specific web requests. <code>@ControllerAdvice</code> is a specialization used for cross-cutting global exception handling and model formatting across all controllers.</div></div>
-      <div class="faq-item"><div class="faq-q">Q42: What is a BeanDefinition?</div><div class="faq-a">An internal Spring interface that holds metadata describing a bean instance, including its class name, scope, factory method, properties, constructor arguments, and initialization lifecycle handlers.</div></div>
-      <div class="faq-item"><div class="faq-q">Q43: What interface does Spring use to scan bytecode?</div><div class="faq-a"><code>org.springframework.core.type.classreading.MetadataReader</code> backed by ASM framework.</div></div>
-      <div class="faq-item"><div class="faq-q">Q44: What is the purpose of @Order with Spring stereotypes?</div><div class="faq-a">It controls the sorting order when injecting a <code>List&lt;T&gt;</code> of beans matching the same interface type.</div></div>
-      <div class="faq-item"><div class="faq-q">Q45: Can @Service call another @Service?</div><div class="faq-a">Yes. Service orchestration is standard practice where high-level domain workflows compose fine-grained business logic services.</div></div>
-      <div class="faq-item"><div class="faq-q">Q46: What is the role of HttpMessageConverter?</div><div class="faq-a">A Spring strategy interface used by <code>@ResponseBody</code> / <code>@RequestBody</code> to marshal Java objects into HTTP response formats (JSON/XML) and unmarshal HTTP request payloads back into Java objects.</div></div>
-      <div class="faq-item"><div class="faq-q">Q47: Why does Spring recommend package-private constructors for components?</div><div class="faq-a">It prevents external classes outside the package from instantiating the component manually without Spring management, while allowing Spring reflection and local unit tests to execute cleanly.</div></div>
-      <div class="faq-item"><div class="faq-q">Q48: What is CGLIB?</div><div class="faq-a">Code Generation Library. A high-level bytecode generation library used by Spring to create runtime subclasses for proxying classes lacking interfaces, such as <code>@Configuration</code> classes.</div></div>
-      <div class="faq-item"><div class="faq-q">Q49: What is the impact of @Configuration(proxyBeanMethods = false)?</div><div class="faq-a">It turns off CGLIB proxying for the configuration class, improving performance and startup memory usage while switching bean processing to Lite Mode.</div></div>
-      <div class="faq-item"><div class="faq-q">Q50: What is the main architectural goal of Spring stereotypes?</div><div class="faq-a">To enforce clear separation of concerns (SoC), enable automatic declarative component management, and allow targeted cross-cutting framework features across enterprise layers.</div></div>
-    </section>
-
-    <!-- SECTION 17 -->
-    <section id="sec17">
-      <h2>17. Production Best Practices</h2>
-      <ul>
-        <li><b>Strict Layer Separation:</b> Controllers handle HTTP contracts; Services handle business rules; Repositories handle persistence. Never bleed persistence code into controllers.</li>
-        <li><b>Constructor Injection:</b> Always use constructor injection for required dependencies. Mark injected fields as <code>final</code>.</li>
-        <li><b>Use @Bean for Infrastructure:</b> Reserve <code>@Bean</code> for third-party client integrations (Redis, Kafka, RestTemplate) and complex multi-property factory setups.</li>
-        <li><b>Enable proxyBeanMethods = false:</b> If configuration classes do not execute inter-bean method calls, disable CGLIB proxying to save memory and improve startup speed.</li>
-      </ul>
-    </section>
-
-    <!-- SECTION 18 -->
-    <section id="sec18">
-      <h2>18. Quick Revision Cheat Sheet</h2>
-      <div class="card">
-        <p><b>@Component:</b> Generic component. Use for helpers and utilities.</p>
-        <p><b>@Service:</b> Business layer. Use for workflows and transactional boundaries.</p>
-        <p><b>@Repository:</b> Data access layer. Translates database exceptions automatically.</p>
-        <p><b>@Controller:</b> MVC Web Controller returning HTML view template paths.</p>
-        <p><b>@RestController:</b> REST API Controller returning serialized JSON/XML payloads directly.</p>
-        <p><b>@Configuration:</b> Factory setup class enhanced via CGLIB for singleton bean management.</p>
-        <p><b>@Bean:</b> Explicit method-level factory registration for third-party libraries and complex setups.</p>
-      </div>
-    </section>
-
-    <!-- SECTION 19 -->
-    <section id="sec19">
-      <h2>19. Visual Architectural Infographic</h2>
-      
-      <div class="diagram">
-        <h4>Spring Enterprise Request Architecture & Annotation Boundaries</h4>
-        <div class="grid">
-          <div class="card" style="border-color: var(--teal);">
-            <b style="color: var(--teal);">1. Web Layer</b>
-            <p><code>@RestController</code> / <code>@Controller</code></p>
-            <p>Receives HTTP Requests, converts JSON/XML, validates incoming DTO payloads, returns responses.</p>
-          </div>
-          <div class="card" style="border-color: var(--amber);">
-            <b style="color: var(--amber);">2. Business Layer</b>
-            <p><code>@Service</code></p>
-            <p>Orchestrates business workflows, applies transaction demarcation (<code>@Transactional</code>), enforces rules.</p>
-          </div>
-          <div class="card" style="border-color: var(--purple);">
-            <b style="color: var(--purple);">3. Persistence Layer</b>
-            <p><code>@Repository</code></p>
-            <p>Executes SQL/JPA queries, maps data entities, translates raw database driver exceptions to <code>DataAccessException</code>.</p>
-          </div>
-        </div>
-        
-        <div style="margin-top: 16px; border-top: 1px dashed var(--border); padding-top: 16px;">
-          <p><b>Cross-Cutting Infrastructure:</b> <code>@Configuration</code> + <code>@Bean</code> classes provide external 3rd-party connectors (Kafka, Redis, Databases) to all layers seamlessly.</p>
-        </div>
-      </div>
-    </section>
-
-  </main>
+  <h2>8. Quick Summary</h2>
+  <ul>
+    <li>Use <b style="color:var(--text)">@RestController</b> for REST APIs (JSON response bodies).</li>
+    <li>Use <b style="color:var(--text)">@Service</b> for business logic and <code>@Transactional</code> boundaries.</li>
+    <li>Use <b style="color:var(--text)">@Repository</b> for data access to enable automatic persistence exception translation.</li>
+    <li>Use <b style="color:var(--text)">@Bean</b> inside <b style="color:var(--text)">@Configuration</b> classes whenever configuring third-party libraries or complex custom setups.</li>
+  </ul>
 </div>
-
 </body>
 </html>
